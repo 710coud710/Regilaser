@@ -126,3 +126,4 @@ class LeftControlPanel(QWidget):
     def get_parts_input(self):
         return self.input_parts.text()
 
+

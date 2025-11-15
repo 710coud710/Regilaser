@@ -4,6 +4,7 @@ Main Entry Point - Khởi tạo ứng dụng
 import sys
 from PySide6.QtWidgets import QApplication
 from gui.main_window import MainWindow
+import signal
 
 
 def main():
@@ -13,11 +14,9 @@ def main():
     # Tạo main window
     window = MainWindow()
     window.show()
-    
-    # Sau này sẽ thêm presenter ở đây để quản lý logic
     # presenter = MainPresenter(window)
-    
-    sys.exit(app.exec_())
+    signal.signal(signal.SIGINT, signal.SIG_DFL) # tắt để ứng dụng ctrl+C
+    sys.exit(app.exec())
 
 
 if __name__ == "__main__":

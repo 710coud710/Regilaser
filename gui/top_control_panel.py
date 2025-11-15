@@ -1,18 +1,19 @@
 """
-Top Control Panel - Chứa Reset, Keyboard, PSN input, MO
+Top Control Panel - Chứa ALL PARTS SN, MO, SFIS, CCD inputs
 """
-from PySide6.QtWidgets import (QWidget, QHBoxLayout, QPushButton, 
-                             QLineEdit, QLabel, QSpacerItem, QSizePolicy)
-from PySide6.QtCore import Signal
+from PySide6.QtWidgets import (QWidget, QHBoxLayout, QLabel, QLineEdit, 
+                               QCheckBox, QGroupBox, QVBoxLayout, QComboBox)
+from PySide6.QtCore import Signal, Qt
 
 
 class TopControlPanel(QWidget):
     """Panel điều khiển phía trên"""
     
     # Signals
-    reset_clicked = Signal()
-    keyboard_clicked = Signal()
-    psn_changed = Signal(str)
+    all_parts_sn_changed = Signal(str)
+    mo_changed = Signal(str)
+    sfis_changed = Signal(str)
+    ccd_changed = Signal(str)
     
     def __init__(self):
         super().__init__()
@@ -21,37 +22,146 @@ class TopControlPanel(QWidget):
     def _init_ui(self):
         layout = QHBoxLayout(self)
         layout.setContentsMargins(5, 5, 5, 5)
-        layout.setSpacing(10)
+        layout.setSpacing(15)
         
-        # Reset button
-        self.btn_reset = QPushButton("Reset")
-        self.btn_reset.setFixedWidth(80)
-        self.btn_reset.clicked.connect(self.reset_clicked.emit)
-        layout.addWidget(self.btn_reset)
+        # ALL PARTS SN
+        all_parts_group = QGroupBox()
+        all_parts_layout = QVBoxLayout()
+        all_parts_layout.setContentsMargins(5, 5, 5, 5)
+        all_parts_layout.setSpacing(2)
+
+        # Horizontal layout for checkbox and label
+        all_parts_top_row = QHBoxLayout()
+        self.chk_all_parts = QCheckBox()
+        self.chk_all_parts.setChecked(False)
+        self.chk_all_parts.stateChanged.connect(self._on_all_parts_checkbox_changed)
+        lbl_all_parts = QLabel("ALL PARTS SN:")
+        lbl_all_parts.setStyleSheet("font-weight: bold;")
+        all_parts_top_row.addWidget(lbl_all_parts)
+        all_parts_top_row.addWidget(self.chk_all_parts)
+        all_parts_top_row.addStretch()
+        all_parts_layout.addLayout(all_parts_top_row)
+
+        self.input_all_parts_sn = QLineEdit()
+        self.input_all_parts_sn.setPlaceholderText("Enter ALL PARTS SN...")
+        self.input_all_parts_sn.textChanged.connect(self.all_parts_sn_changed.emit)
+        self.input_all_parts_sn.setVisible(False)
+        all_parts_layout.addWidget(self.input_all_parts_sn)
+
+        all_parts_group.setLayout(all_parts_layout)
+        layout.addWidget(all_parts_group)
         
-        # Keyboard button
-        self.btn_keyboard = QPushButton("Keyboard")
-        self.btn_keyboard.setFixedWidth(80)
-        self.btn_keyboard.clicked.connect(self.keyboard_clicked.emit)
-        layout.addWidget(self.btn_keyboard)
+        # MO
+        mo_group = QGroupBox()
+        mo_layout = QVBoxLayout()
+        mo_layout.setContentsMargins(5, 5, 5, 5)
+        mo_layout.setSpacing(2)
         
-        # Mystery buttons (từ ảnh: ??PSN?? và ???????)
-        self.btn_psn_label = QPushButton("??PSN??")
-        self.btn_psn_label.setFixedWidth(80)
-        layout.addWidget(self.btn_psn_label)
+        lbl_mo = QLabel("MO:")
+        lbl_mo.setStyleSheet("font-weight: bold;")
+        mo_layout.addWidget(lbl_mo)
         
-        self.btn_mystery = QPushButton("???????")
-        self.btn_mystery.setFixedWidth(80)
-        layout.addWidget(self.btn_mystery)
+        self.input_mo = QLineEdit()
+        self.input_mo.setReadOnly(True)
+        self.input_mo.setPlaceholderText("1234567890")
+        # self.input_mo.textChanged.connect(self.mo_changed.emit)
+        mo_layout.addWidget(self.input_mo)
         
-        # Spacer
-        layout.addSpacerItem(QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum))
+        mo_group.setLayout(mo_layout)
+        layout.addWidget(mo_group)
         
-        self.setMaximumHeight(50)
+        # SFIS
+        sfis_group = QGroupBox()
+        sfis_layout = QHBoxLayout()
+        sfis_layout.setContentsMargins(5, 5, 5, 5)
+        sfis_layout.setSpacing(10)
+
+        lbl_sfis = QLabel("SFIS:")
+        lbl_sfis.setStyleSheet("font-weight: bold;")
+        sfis_layout.addWidget(lbl_sfis)
+
+        self.combo_sfis_com = QComboBox()
+        self.combo_sfis_com.addItems(["COM2", "COM1", "COM3", "COM4", "COM5"])
+        self.combo_sfis_com.currentTextChanged.connect(self.sfis_changed.emit)
+        sfis_layout.addWidget(self.combo_sfis_com)
+        
+        # sfis_layout.addStretch()
+        sfis_group.setLayout(sfis_layout)
+        layout.addWidget(sfis_group)
+        
+        # CCD
+        ccd_group = QGroupBox()
+        ccd_layout = QHBoxLayout()
+        ccd_layout.setContentsMargins(5, 5, 5, 5)
+        ccd_layout.setSpacing(10)
+        
+        lbl_ccd = QLabel("CCD:")
+        lbl_ccd.setStyleSheet("font-weight: bold;")
+        ccd_layout.addWidget(lbl_ccd)
+        
+        self.combo_ccd_com = QComboBox()
+        self.combo_ccd_com.addItems(["COM2", "COM1", "COM3", "COM4", "COM5"])
+        self.combo_ccd_com.currentTextChanged.connect(self.ccd_changed.emit)
+        ccd_layout.addWidget(self.combo_ccd_com)
+
+        # ccd_layout.addStretch()        
+        ccd_group.setLayout(ccd_layout)
+        layout.addWidget(ccd_group)
+        
+        # Stretch để các group không bị kéo dãn quá mức
+        layout.addStretch()
+        
+        self.setMaximumHeight(80)
     
-    def get_reset_button(self):
-        return self.btn_reset
+    def _on_all_parts_checkbox_changed(self, state):
+        """Xử lý sự kiện khi checkbox ALL PARTS thay đổi"""
+        is_checked = (state == Qt.CheckState.Checked.value)
+        self.input_all_parts_sn.setVisible(is_checked)
+        if is_checked:
+            self.input_all_parts_sn.setFocus()
     
-    def get_keyboard_button(self):
-        return self.btn_keyboard
+    # Getter methods
+    def get_all_parts_sn(self):
+        """Lấy giá trị ALL PARTS SN"""
+        return self.input_all_parts_sn.text()
+    
+    def get_mo(self):
+        """Lấy giá trị MO"""
+        return self.input_mo.text()
+    
+    def get_sfis(self):
+        """Lấy giá trị SFIS COM port"""
+        return self.combo_sfis_com.currentText()
+    
+    def get_ccd(self):
+        """Lấy giá trị CCD COM port"""
+        return self.combo_ccd_com.currentText()
+    
+    def is_all_parts_checked(self):
+        """Kiểm tra xem checkbox ALL PARTS có được check không"""
+        return self.chk_all_parts.isChecked()
+    
+    # Setter methods
+    def set_all_parts_sn(self, text):
+        """Set giá trị ALL PARTS SN"""
+        self.input_all_parts_sn.setText(text)
+    
+    def set_mo(self, text):
+        """Set giá trị MO"""
+        self.input_mo.setText(text)
+    
+    def set_sfis(self, com_port):
+        """Set giá trị SFIS COM port"""
+        index = self.combo_sfis_com.findText(com_port)
+        if index >= 0:
+            self.combo_sfis_com.setCurrentIndex(index)
+    
+    def set_ccd(self, com_port):
+        """Set giá trị CCD COM port"""
+        index = self.combo_ccd_com.findText(com_port)
+        if index >= 0:
+            self.combo_ccd_com.setCurrentIndex(index)
+
+
+
 
