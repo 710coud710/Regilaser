@@ -55,8 +55,8 @@ class MainWindow(QMainWindow):
         main_layout.addLayout(middle_layout)
         
         # Result display area
-        # self.result_display = ResultDisplay()
-        # main_layout.addWidget(self.result_display, stretch=1)
+        self.result_display = ResultDisplay()
+        main_layout.addWidget(self.result_display, stretch=1)
         
         # Bottom status bar
         # self.bottom_status = BottomStatusBar()
@@ -65,7 +65,7 @@ class MainWindow(QMainWindow):
         # Kết nối signals (sẽ được xử lý bởi presenter)
         self._connect_signals()
     
-    def _create_menu_bar(self):
+    def _createMenuBar(self):
         """Tạo menu bar với các actions"""
         menubar = self.menuBar()
         # File menu
@@ -113,27 +113,27 @@ class MainWindow(QMainWindow):
 
         reset_menu.addSeparator()
 
-    def _connect_signals(self):
+    def _connectSignals(self):
         """Kết nối các signals giữa các panel"""
         # Các signals này sẽ được presenter subscribe
         pass
     
     # Getter methods để presenter có thể truy cập các panel
-    def get_top_panel(self):
+    def getTopPanel(self):
         return self.top_panel
     
-    def get_left_panel(self):
+    def getLeftPanel(self):
         return self.left_panel
     
-    def get_center_panel(self):
+    def getCenterPanel(self):
         return self.center_panel
     
-    def get_right_panel(self):
+    def getRightPanel(self):
         return self.right_panel
     
-    def get_result_display(self):
+    def getResultDisplay(self):
         return self.result_display
     
-    def get_bottom_status(self):
+    def getBottomStatus(self):
         return self.bottom_status
 

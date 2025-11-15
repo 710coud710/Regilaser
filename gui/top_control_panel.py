@@ -34,7 +34,7 @@ class TopControlPanel(QWidget):
         all_parts_top_row = QHBoxLayout()
         self.chk_all_parts = QCheckBox()
         self.chk_all_parts.setChecked(False)
-        self.chk_all_parts.stateChanged.connect(self._on_all_parts_checkbox_changed)
+        self.chk_all_parts.stateChanged.connect(self._eventCheckboxChanged)
         lbl_all_parts = QLabel("ALL PARTS SN:")
         lbl_all_parts.setStyleSheet("font-weight: bold;")
         all_parts_top_row.addWidget(lbl_all_parts)
@@ -113,7 +113,7 @@ class TopControlPanel(QWidget):
         
         self.setMaximumHeight(80)
     
-    def _on_all_parts_checkbox_changed(self, state):
+    def _eventCheckboxChanged(self, state):
         """Xử lý sự kiện khi checkbox ALL PARTS thay đổi"""
         is_checked = (state == Qt.CheckState.Checked.value)
         self.input_all_parts_sn.setVisible(is_checked)
@@ -121,42 +121,42 @@ class TopControlPanel(QWidget):
             self.input_all_parts_sn.setFocus()
     
     # Getter methods
-    def get_all_parts_sn(self):
+    def getAllPartsSN(self):
         """Lấy giá trị ALL PARTS SN"""
         return self.input_all_parts_sn.text()
     
-    def get_mo(self):
+    def getMO(self):
         """Lấy giá trị MO"""
         return self.input_mo.text()
     
-    def get_sfis(self):
+    def getSFIS(self):
         """Lấy giá trị SFIS COM port"""
         return self.combo_sfis_com.currentText()
     
-    def get_ccd(self):
+    def getCCD(self):
         """Lấy giá trị CCD COM port"""
         return self.combo_ccd_com.currentText()
     
-    def is_all_parts_checked(self):
+    def isAllPartsChecked(self):
         """Kiểm tra xem checkbox ALL PARTS có được check không"""
         return self.chk_all_parts.isChecked()
     
     # Setter methods
-    def set_all_parts_sn(self, text):
+    def setAllPartsSN(self, text):
         """Set giá trị ALL PARTS SN"""
         self.input_all_parts_sn.setText(text)
     
-    def set_mo(self, text):
+    def setMO(self, text):
         """Set giá trị MO"""
         self.input_mo.setText(text)
     
-    def set_sfis(self, com_port):
+    def setSFIS(self, com_port):
         """Set giá trị SFIS COM port"""
         index = self.combo_sfis_com.findText(com_port)
         if index >= 0:
             self.combo_sfis_com.setCurrentIndex(index)
     
-    def set_ccd(self, com_port):
+    def setCCD(self, com_port):
         """Set giá trị CCD COM port"""
         index = self.combo_ccd_com.findText(com_port)
         if index >= 0:
