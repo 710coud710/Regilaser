@@ -4,12 +4,14 @@ Main Window - Container chính cho toàn bộ giao diện
 from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QAction
-from gui.top_control_panel import TopControlPanel
-from gui.left_control_panel import LeftControlPanel
-from gui.center_panel import CenterPanel
-from gui.right_panel import RightPanel
-from gui.result_display import ResultDisplay
-from gui.bottom_status_bar import BottomStatusBar
+from gui import (
+    TopControlPanel,
+    LeftControlPanel,
+    CenterPanel,
+    RightPanel,
+    LogDisplay,
+    BottomStatusBar
+)
 
 
 class MainWindow(QMainWindow):
@@ -23,47 +25,44 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Regilazi - Version 1.0 Prenium")
-        self.setGeometry(100, 100, 1200, 700)
+        # self.setGeometry(100, 100, 1000, 700)
         # Tạo menu bar
-        self._create_menu_bar()
-        
+        self._createMenuBar()
         # Main widget
         main_widget = QWidget()
         self.setCentralWidget(main_widget)
         
-        # Main layout
+        """Main layout"""
         main_layout = QVBoxLayout(main_widget)
         main_layout.setContentsMargins(5, 5, 5, 5)
         main_layout.setSpacing(5)
-        
-        """Top control panel
-        A
-"""
-        self.top_panel = TopControlPanel()
-        main_layout.addWidget(self.top_panel)
-        # Middle section (left + center + right)
+
+        """Top control panel"""
+        # self.top_panel = TopControlPanel()
+        # main_layout.addWidget(self.top_panel)
+   
+        """Middle control panel"""
         middle_layout = QHBoxLayout()
         middle_layout.setSpacing(5)
-        # Left control panel
         self.left_panel = LeftControlPanel()
         middle_layout.addWidget(self.left_panel)        
         self.center_panel = CenterPanel()
         middle_layout.addWidget(self.center_panel)
-        self.right_panel = RightPanel()
-        middle_layout.addWidget(self.right_panel)
-        
+        # self.right_panel = RightPanel()
+        # middle_layout.addWidget(self.right_panel)
+
         main_layout.addLayout(middle_layout)
         
-        # Result display area
-        self.result_display = ResultDisplay()
+        """Result display panel"""
+        self.result_display = LogDisplay()
         main_layout.addWidget(self.result_display, stretch=1)
         
-        # Bottom status bar
-        # self.bottom_status = BottomStatusBar()
+        """Bottom status panel"""
+        self.bottom_status = BottomStatusBar()
         # main_layout.addWidget(self.bottom_status)
         
         # Kết nối signals (sẽ được xử lý bởi presenter)
-        self._connect_signals()
+        self._connectSignals()
     
     def _createMenuBar(self):
         """Tạo menu bar với các actions"""

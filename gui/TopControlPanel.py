@@ -2,7 +2,8 @@
 Top Control Panel - Chứa ALL PARTS SN, MO, SFIS, CCD inputs
 """
 from PySide6.QtWidgets import (QWidget, QHBoxLayout, QLabel, QLineEdit, 
-                               QCheckBox, QGroupBox, QVBoxLayout, QComboBox)
+                               QCheckBox, QGroupBox, QVBoxLayout, QComboBox, 
+                               QPushButton)
 from PySide6.QtCore import Signal, Qt
 
 
@@ -76,9 +77,16 @@ class TopControlPanel(QWidget):
         sfis_layout.setContentsMargins(5, 5, 5, 5)
         sfis_layout.setSpacing(10)
 
-        lbl_sfis = QLabel("SFIS:")
-        lbl_sfis.setStyleSheet("font-weight: bold;")
-        sfis_layout.addWidget(lbl_sfis)
+        self.btn_sfis = QPushButton("SFIS OFF")
+        self.btn_sfis.setCheckable(True)
+        self.btn_sfis.setChecked(False)
+        self.btn_sfis.setStyleSheet("""
+            QPushButton { background-color: #ffc0cb; }
+            QPushButton:checked { background-color: #9fff9f; }
+        """)
+        self.btn_sfis.toggled.connect(self.updateSFISButton)
+        self.updateSFISButton(self.btn_sfis.isChecked())
+        sfis_layout.addWidget(self.btn_sfis)
 
         self.combo_sfis_com = QComboBox()
         self.combo_sfis_com.addItems(["COM2", "COM1", "COM3", "COM4", "COM5"])
@@ -88,31 +96,17 @@ class TopControlPanel(QWidget):
         # sfis_layout.addStretch()
         sfis_group.setLayout(sfis_layout)
         layout.addWidget(sfis_group)
-        
-        # CCD
-        ccd_group = QGroupBox()
-        ccd_layout = QHBoxLayout()
-        ccd_layout.setContentsMargins(5, 5, 5, 5)
-        ccd_layout.setSpacing(10)
-        
-        lbl_ccd = QLabel("CCD:")
-        lbl_ccd.setStyleSheet("font-weight: bold;")
-        ccd_layout.addWidget(lbl_ccd)
-        
-        self.combo_ccd_com = QComboBox()
-        self.combo_ccd_com.addItems(["COM2", "COM1", "COM3", "COM4", "COM5"])
-        self.combo_ccd_com.currentTextChanged.connect(self.ccd_changed.emit)
-        ccd_layout.addWidget(self.combo_ccd_com)
 
-        # ccd_layout.addStretch()        
-        ccd_group.setLayout(ccd_layout)
-        layout.addWidget(ccd_group)
-        
         # Stretch để các group không bị kéo dãn quá mức
         layout.addStretch()
         
         self.setMaximumHeight(80)
-    
+        
+    def updateSFISButton(self, state):
+        if state:
+            self.btn_sfis.setText("SFIS ON")
+        else:
+            self.btn_sfis.setText("SFIS OFF")
     def _eventCheckboxChanged(self, state):
         """Xử lý sự kiện khi checkbox ALL PARTS thay đổi"""
         is_checked = (state == Qt.CheckState.Checked.value)

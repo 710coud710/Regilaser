@@ -3,7 +3,7 @@ Main Entry Point - Khởi tạo ứng dụng
 """
 import sys
 from PySide6.QtWidgets import QApplication
-from gui.main_window import MainWindow
+from gui.MainWindow import MainWindow
 import signal
 
 

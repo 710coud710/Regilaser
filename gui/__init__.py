@@ -1,21 +1,17 @@
-"""
-GUI Package - Chứa tất cả các component giao diện
-"""
-from gui.main_window import MainWindow
-from gui.top_control_panel import TopControlPanel
-from gui.left_control_panel import LeftControlPanel
-from gui.center_panel import CenterPanel
-from gui.right_panel import RightPanel
-from gui.result_display import ResultDisplay
-from gui.bottom_status_bar import BottomStatusBar
+from gui.TopControlPanel import TopControlPanel
+from gui.LeftControlPanel import LeftControlPanel
+from gui.CenterPanel import CenterPanel
+from gui.RightPanel import RightPanel
+from gui.BottomStatusBar import BottomStatusBar
+from gui.LogDisplay import LogDisplay
+
 
 __all__ = [
-    'MainWindow',
     'TopControlPanel',
     'LeftControlPanel',
     'CenterPanel',
     'RightPanel',
-    'ResultDisplay',
+    'LogDisplay',
     'BottomStatusBar',
 ]
 
