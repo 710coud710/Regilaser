@@ -60,32 +60,6 @@ class LogDisplay(QWidget):
         layout.addWidget(self.log_view, stretch=1)
         
         self.setMinimumHeight(300)
-
-        # thử mẫu vài giá trị log
-        sample_logs = [
-            ("System initialized successfully", self.INFO),
-            ("Application version: 1.0.0", self.INFO),
-            ("Device detected: ARDUINO UNO", self.INFO),
-            ("Port COM3 opened", self.INFO),
-            ("Loading configuration...", self.INFO),
-            ("Configuration loaded", self.SUCCESS),
-            ("Checking connection to PLC...", self.INFO),
-            ("PLC responded successfully", self.SUCCESS),
-            ("User pressed Start", self.DEBUG),
-            ("Sending initialization command to device", self.DEBUG),
-            ("Device ACK received", self.SUCCESS),
-            ("Sensor 1 value: 23.1", self.DEBUG),
-            ("Sensor 2 disconnected", self.WARNING),
-            ("Timeout waiting for response", self.WARNING),
-            ("Received unexpected value from device", self.WARNING),
-            ("Data packet malformed", self.ERROR),
-            ("Test step #3 failed", self.ERROR),
-            ("Test step #4 passed", self.SUCCESS),
-            ("Test complete", self.INFO),
-            ("All tests passed", self.SUCCESS),
-        ]       
-        for msg, lvl in sample_logs:
-            self.addLog(msg, lvl)
     
     def formatEntry(self, message, level):
         timestamp = QDateTime.currentDateTime().toString("dd/MM/yyyy hh:mm:ss")

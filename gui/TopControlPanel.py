@@ -11,10 +11,11 @@ class TopControlPanel(QWidget):
     """Panel điều khiển phía trên"""
     
     # Signals
-    all_parts_sn_changed = Signal(str)
-    mo_changed = Signal(str)
-    sfis_changed = Signal(str)
-    ccd_changed = Signal(str)
+    allPartsSnChanged = Signal(str)
+    moChanged = Signal(str)
+    sfisChanged = Signal(str)
+    sfisConnectRequested = Signal(bool, str)  # (connect, port_name)
+    ccdChanged = Signal(str)
     
     def __init__(self):
         super().__init__()
@@ -45,7 +46,7 @@ class TopControlPanel(QWidget):
 
         self.input_all_parts_sn = QLineEdit()
         self.input_all_parts_sn.setPlaceholderText("Enter ALL PARTS SN...")
-        self.input_all_parts_sn.textChanged.connect(self.all_parts_sn_changed.emit)
+        self.input_all_parts_sn.textChanged.connect(self.allPartsSnChanged.emit)
         self.input_all_parts_sn.setVisible(False)
         all_parts_layout.addWidget(self.input_all_parts_sn)
 
@@ -82,17 +83,22 @@ class TopControlPanel(QWidget):
         self.btn_sfis.setCheckable(True)
         self.btn_sfis.setChecked(False)
         self.btn_sfis.setStyleSheet("""
-            QPushButton { background-color: #ffc0cb; }
-            QPushButton:checked { background-color: #9fff9f; }
+            QPushButton { 
+                background-color: #ffc0cb; 
+                font-weight: bold;
+                padding: 5px;
+            }
+            QPushButton:checked { 
+                background-color: #9fff9f; 
+            }
         """)
-        self.btn_sfis.toggled.connect(self.updateSFISButton)
-        self.updateSFISButton(self.btn_sfis.isChecked())
+        self.btn_sfis.toggled.connect(self._onSfisButtonToggled)
         sfis_layout.addWidget(self.btn_sfis)
 
         # SFIS COM port
         self.combo_sfis_com = QComboBox()
         self.combo_sfis_com.addItems(["COM2", "COM1", "COM3", "COM4", "COM5"])
-        self.combo_sfis_com.currentTextChanged.connect(self.sfis_changed.emit)
+        self.combo_sfis_com.currentTextChanged.connect(self.sfisChanged.emit)
         sfis_layout.addWidget(self.combo_sfis_com)
     
         # sfis_layout.addStretch()
@@ -106,10 +112,38 @@ class TopControlPanel(QWidget):
 
 
 
-    def updateSFISButton(self, state):
-        if state:
+    def _onSfisButtonToggled(self, checked):
+        """Xử lý khi toggle nút SFIS ON/OFF"""
+        port_name = self.combo_sfis_com.currentText()
+        
+        if checked:
+            # Yêu cầu kết nối
+            self.btn_sfis.setText("Connecting...")
+            self.btn_sfis.setEnabled(False)
+            self.combo_sfis_com.setEnabled(False)
+            self.sfisConnectRequested.emit(True, port_name)
+        else:
+            # Yêu cầu ngắt kết nối
+            self.btn_sfis.setText("Disconnecting...")
+            self.btn_sfis.setEnabled(False)
+            self.sfisConnectRequested.emit(False, port_name)
+    
+    def setSFISConnectionStatus(self, connected, message=""):
+        """
+        Cập nhật trạng thái kết nối SFIS từ Presenter
+        
+        Args:
+            connected (bool): True nếu đã kết nối
+            message (str): Thông báo (optional)
+        """
+        self.btn_sfis.setEnabled(True)
+        self.combo_sfis_com.setEnabled(not connected)
+        
+        if connected:
+            self.btn_sfis.setChecked(True)
             self.btn_sfis.setText("SFIS ON")
         else:
+            self.btn_sfis.setChecked(False)
             self.btn_sfis.setText("SFIS OFF")
 
     def _eventCheckboxChanged(self, state):

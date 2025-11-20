@@ -11,7 +11,7 @@ class LeftControlPanel(QWidget):
     """Panel điều khiển bên trái"""
     
     # Signals
-    start_clicked = Signal()
+    startClicked = Signal()
     
     def __init__(self):
         super().__init__()
@@ -31,7 +31,7 @@ class LeftControlPanel(QWidget):
         self.btn_start.setFont(font)
         self.btn_start.setMinimumHeight(80)
         self.btn_start.setStyleSheet("background-color: #f0f0f0;")
-        self.btn_start.clicked.connect(self.start_clicked.emit)
+        self.btn_start.clicked.connect(self.startClicked.emit)
         layout.addWidget(self.btn_start)
         
         #INTERVAL
@@ -50,9 +50,7 @@ class LeftControlPanel(QWidget):
         layout.addStretch()
         
         self.setFixedWidth(200)
-    
-    
-    
+
     def getStartButton(self):
         return self.btn_start
     
