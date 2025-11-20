@@ -38,8 +38,8 @@ class MainWindow(QMainWindow):
         main_layout.setSpacing(5)
 
         """Top control panel"""
-        # self.top_panel = TopControlPanel()
-        # main_layout.addWidget(self.top_panel)
+        self.top_panel = TopControlPanel()
+        main_layout.addWidget(self.top_panel)
    
         """Middle control panel"""
         middle_layout = QHBoxLayout()

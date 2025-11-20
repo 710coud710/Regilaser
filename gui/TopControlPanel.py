@@ -77,6 +77,7 @@ class TopControlPanel(QWidget):
         sfis_layout.setContentsMargins(5, 5, 5, 5)
         sfis_layout.setSpacing(10)
 
+        # SFIS button
         self.btn_sfis = QPushButton("SFIS OFF")
         self.btn_sfis.setCheckable(True)
         self.btn_sfis.setChecked(False)
@@ -88,11 +89,12 @@ class TopControlPanel(QWidget):
         self.updateSFISButton(self.btn_sfis.isChecked())
         sfis_layout.addWidget(self.btn_sfis)
 
+        # SFIS COM port
         self.combo_sfis_com = QComboBox()
         self.combo_sfis_com.addItems(["COM2", "COM1", "COM3", "COM4", "COM5"])
         self.combo_sfis_com.currentTextChanged.connect(self.sfis_changed.emit)
         sfis_layout.addWidget(self.combo_sfis_com)
-        
+    
         # sfis_layout.addStretch()
         sfis_group.setLayout(sfis_layout)
         layout.addWidget(sfis_group)
@@ -101,12 +103,15 @@ class TopControlPanel(QWidget):
         layout.addStretch()
         
         self.setMaximumHeight(80)
-        
+
+
+
     def updateSFISButton(self, state):
         if state:
             self.btn_sfis.setText("SFIS ON")
         else:
             self.btn_sfis.setText("SFIS OFF")
+
     def _eventCheckboxChanged(self, state):
         """Xử lý sự kiện khi checkbox ALL PARTS thay đổi"""
         is_checked = (state == Qt.CheckState.Checked.value)

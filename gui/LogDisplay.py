@@ -1,14 +1,13 @@
 """
-Log Display - Bảng hiển thị log với thời gian, level và message
+Log Display - Hiển thị log dạng text có thể copy và cuộn
 """
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QLabel, QTableWidget, 
-                               QTableWidgetItem, QHeaderView)
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QPlainTextEdit
 from PySide6.QtCore import Qt, QDateTime
-from PySide6.QtGui import QColor, QFont
+from PySide6.QtGui import QFont
 
 
 class LogDisplay(QWidget):
-    """Widget hiển thị log dạng bảng"""
+    """Widget hiển thị log dạng text"""
     
     # Log levels
     INFO = "INFO"
@@ -40,116 +39,89 @@ class LogDisplay(QWidget):
         self.lbl_header.setMaximumHeight(30)
         layout.addWidget(self.lbl_header)
         
-        # Table widget for logs
-        self.table = QTableWidget()
-        self.table.setColumnCount(3)
-        
-        # Set column widths
-        header = self.table.horizontalHeader()
+        # Text area for logs
+        self.log_view = QPlainTextEdit()
+        self.log_view.setReadOnly(True)
+        self.log_view.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
+        self.log_view.setMaximumBlockCount(2000)  # Giữ lại 2000 dòng gần nhất
 
-        
-        # Table styling
-        self.table.setAlternatingRowColors(True)
-        self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
-        self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
-        self.table.setShowGrid(True)
-        self.table.verticalHeader().setVisible(False)
-        
-        # Font settings
-        font = QFont()
-        font.setPointSize(9)
-        font.setFamily("Consolas")
-        self.table.setFont(font)
-        
-        # Style
-        self.table.setStyleSheet("""
-            QTableWidget {
+        font = QFont("Consolas", 10)
+        self.log_view.setFont(font)
+
+        self.log_view.setStyleSheet("""
+            QPlainTextEdit {
                 border: 1px solid grey;
-                background-color: white;
-            }
-            QTableWidget::item {
-                padding: 3px;
-            }
-            QHeaderView::section {
-                background-color: #e0e0e0;
+                background-color: #f0f0f0;
+                color: black;
                 padding: 5px;
-                border: 1px solid grey;
-                font-weight: bold;
             }
         """)
         
-        layout.addWidget(self.table, stretch=1)
+        layout.addWidget(self.log_view, stretch=1)
         
         self.setMinimumHeight(300)
+
+        # thử mẫu vài giá trị log
+        sample_logs = [
+            ("System initialized successfully", self.INFO),
+            ("Application version: 1.0.0", self.INFO),
+            ("Device detected: ARDUINO UNO", self.INFO),
+            ("Port COM3 opened", self.INFO),
+            ("Loading configuration...", self.INFO),
+            ("Configuration loaded", self.SUCCESS),
+            ("Checking connection to PLC...", self.INFO),
+            ("PLC responded successfully", self.SUCCESS),
+            ("User pressed Start", self.DEBUG),
+            ("Sending initialization command to device", self.DEBUG),
+            ("Device ACK received", self.SUCCESS),
+            ("Sensor 1 value: 23.1", self.DEBUG),
+            ("Sensor 2 disconnected", self.WARNING),
+            ("Timeout waiting for response", self.WARNING),
+            ("Received unexpected value from device", self.WARNING),
+            ("Data packet malformed", self.ERROR),
+            ("Test step #3 failed", self.ERROR),
+            ("Test step #4 passed", self.SUCCESS),
+            ("Test complete", self.INFO),
+            ("All tests passed", self.SUCCESS),
+        ]       
+        for msg, lvl in sample_logs:
+            self.addLog(msg, lvl)
     
-    def add_log(self, message, level=INFO):
-        """Thêm một dòng log vào bảng"""
-        current_time = QDateTime.currentDateTime().toString("hh:mm:ss.zzz")
-        
-        row = self.table.rowCount()
-        self.table.insertRow(row)
-        
-        # Time column
-        time_item = QTableWidgetItem(current_time)
-        time_item.setTextAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-        self.table.setItem(row, 0, time_item)
-        
-        # Level column
-        level_item = QTableWidgetItem(level)
-        level_item.setTextAlignment(Qt.AlignCenter | Qt.AlignVCenter)
-        
-        # Set color based on level
-        if level == self.ERROR:
-            level_item.setForeground(QColor("red"))
-            level_item.setBackground(QColor("#ffe0e0"))
-        elif level == self.WARNING:
-            level_item.setForeground(QColor("orange"))
-            level_item.setBackground(QColor("#fff4e0"))
-        elif level == self.SUCCESS:
-            level_item.setForeground(QColor("green"))
-            level_item.setBackground(QColor("#e0ffe0"))
-        elif level == self.DEBUG:
-            level_item.setForeground(QColor("blue"))
-            level_item.setBackground(QColor("#e0e0ff"))
-        else:  # INFO
-            level_item.setForeground(QColor("black"))
-            level_item.setBackground(QColor("#f0f0f0"))
-        
-        self.table.setItem(row, 1, level_item)
-        
-        # Message column
-        message_item = QTableWidgetItem(str(message))
-        message_item.setTextAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-        self.table.setItem(row, 2, message_item)
-        
-        # Auto scroll to bottom
-        self.table.scrollToBottom()
+    def formatEntry(self, message, level):
+        timestamp = QDateTime.currentDateTime().toString("dd/MM/yyyy hh:mm:ss")
+        return f"[{timestamp}] [{level:>7}]  {message}"
+
+    def addLog(self, message, level=INFO):
+        """Thêm một dòng log vào text area"""
+        entry = self.formatEntry(message, level)
+        self.log_view.appendPlainText(entry)
+        self.log_view.verticalScrollBar().setValue(self.log_view.verticalScrollBar().maximum())
     
-    def add_info(self, message):
+    def addInfo(self, message):
         """Thêm log INFO"""
-        self.add_log(message, self.INFO)
+        self.addLog(message, self.INFO)
     
-    def add_warning(self, message):
+    def addWarning(self, message):
         """Thêm log WARNING"""
-        self.add_log(message, self.WARNING)
+        self.addLog(message, self.WARNING)
     
-    def add_error(self, message):
+    def addError(self, message):
         """Thêm log ERROR"""
-        self.add_log(message, self.ERROR)
+        self.addLog(message, self.ERROR)
     
-    def add_debug(self, message):
+    def addDebug(self, message):
         """Thêm log DEBUG"""
-        self.add_log(message, self.DEBUG)
+        self.addLog(message, self.DEBUG)
     
-    def add_success(self, message):
+    def addSuccess(self, message):
         """Thêm log SUCCESS"""
-        self.add_log(message, self.SUCCESS)
+        self.addLog(message, self.SUCCESS)
     
-    def clear_logs(self):
+    def clearLogs(self):
         """Xóa tất cả logs"""
-        self.table.setRowCount(0)
+        self.log_view.clear()
     
-    def set_header_text(self, text):
+    def setHeaderText(self, text):
         """Set text cho header label"""
         self.lbl_header.setText(text)
 
