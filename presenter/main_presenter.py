@@ -48,6 +48,7 @@ class MainPresenter(QObject):
         self.sfis_presenter.logMessage.connect(self.forwardLog)
         self.sfis_presenter.connectionStatusChanged.connect(self.onSfisConnectionChanged)
         self.sfis_presenter.dataReady.connect(self.onSfisDataReady)
+        self.sfis_presenter.startSignalSent.connect(self.onStartSignalSent)
         
         # PLC Presenter signals
         self.plc_presenter.logMessage.connect(self.forwardLog)
@@ -113,7 +114,10 @@ class MainPresenter(QObject):
     
     
     def onStartClicked(self):
-        """Xử lý khi nhấn nút START"""
+        """
+        Xử lý khi nhấn nút START
+        Gửi tín hiệu START đến SFIS qua COM port (fire and forget)
+        """
         if self.isRunning:
             self.logMessage.emit("Hệ thống đang chạy, vui lòng đợi...", "WARNING")
             return
@@ -130,9 +134,31 @@ class MainPresenter(QObject):
         mo = topPanel.getMO()
         allPartsSn = topPanel.getAllPartsSN()
         
-        # Bắt đầu quy trình
+        # Validate dữ liệu đầu vào
+        if not mo or not allPartsSn:
+            self.logMessage.emit("Vui lòng nhập đầy đủ MO và ALL PARTS SN", "ERROR")
+            return
+        
+        # Tạo Panel Number (có thể lấy từ UI hoặc tự động tạo)
+        # Tạm thời sử dụng giá trị mặc định hoặc từ MO
+        panelNo = mo 
+        
+        # Đánh dấu hệ thống đang chạy
         self.isRunning = True
-        self.startTestProcess(mo, allPartsSn)
+        
+        # Gửi START signal đến SFIS (fire and forget - không chờ phản hồi)
+        # Chạy trong QThread riêng
+        success = self.sfis_presenter.sendStartSignal(mo, allPartsSn, panelNo)
+        
+        if not success:
+            self.logMessage.emit("Không thể gửi START signal", "ERROR")
+            self.isRunning = False
+            return
+        
+        self.logMessage.emit("Đã yêu cầu gửi START signal đến SFIS...", "INFO")
+        
+        # Tiếp tục quy trình test (nếu cần)
+        # self.startTestProcess(mo, allPartsSn)
     
     def startTestProcess(self, mo, allPartsSn):
         """
@@ -203,6 +229,25 @@ class MainPresenter(QObject):
         """Xử lý khi trạng thái kết nối SFIS thay đổi"""
         # Trạng thái đã được cập nhật trong sfis_presenter
         pass
+    
+    def onStartSignalSent(self, success, message):
+        """
+        Xử lý khi START signal đã được gửi
+        
+        Args:
+            success (bool): True nếu gửi thành công
+            message (str): Thông báo kết quả
+        """
+        if success:
+            self.logMessage.emit("✓ START signal đã được gửi đến SFIS", "SUCCESS")
+            # Có thể tiếp tục các bước tiếp theo ở đây
+            # Ví dụ: Chờ nhận dữ liệu từ SFIS, hoặc bắt đầu laser marking, etc.
+        else:
+            self.logMessage.emit(f"✗ Gửi START signal thất bại: {message}", "ERROR")
+        
+        # Reset trạng thái running
+        self.isRunning = False
+        self.logMessage.emit("=== KẾT THÚC GỬI START SIGNAL ===", "INFO")
     
     def onSfisPortChanged(self, portName):
         """Xử lý khi thay đổi COM port SFIS"""

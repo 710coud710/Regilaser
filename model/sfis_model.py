@@ -190,6 +190,41 @@ class SFISModel(QObject):
             self.validation_error.emit(f"Lỗi parse response: {str(e)}")
             return None
     
+    def createStartSignal(self, mo, all_parts_no, panel_no):
+        """
+        Tạo tín hiệu START gửi đến SFIS (fire and forget)
+        
+        Format: MO(20) + AllPar_NO(12) + PANEL_NO(20) + START(5)
+        Total: 57 bytes
+        
+        Args:
+            mo (str): Manufacturing Order
+            all_parts_no (str): ALL PARTS Number
+            panel_no (str): Panel Number
+            
+        Returns:
+            str: START signal string (57 bytes)
+        """
+        try:
+            # Padding các field đúng độ dài
+            mo_padded = mo.ljust(self.MO_LENGTH)[:self.MO_LENGTH]
+            all_parts_padded = all_parts_no.ljust(self.ALL_PARTS_NO_LENGTH)[:self.ALL_PARTS_NO_LENGTH]
+            panel_padded = panel_no.ljust(self.PANEL_NO_LENGTH)[:self.PANEL_NO_LENGTH]
+            
+            # Tạo START signal
+            start_signal = f"{mo_padded}{all_parts_padded}{panel_padded}START"
+            
+            # Lưu vào current_data
+            self.current_data.mo = mo
+            self.current_data.all_parts_no = all_parts_no
+            self.current_data.panel_no = panel_no
+            
+            return start_signal
+            
+        except Exception as e:
+            self.validation_error.emit(f"Lỗi tạo START signal: {str(e)}")
+            return None
+    
     def createTestComplete(self, mo, panel_no):
         """
         Tạo message báo hoàn thành test
