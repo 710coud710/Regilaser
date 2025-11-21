@@ -5,7 +5,9 @@ from PySide6.QtCore import QObject, QThread, Signal
 from model.sfis_model import SFISModel
 from workers.sfis_worker import SFISWorker
 from workers.start_signal_worker import StartSignalWorker
+from utils.Logging import getLogger
 
+log = getLogger()
 
 class SFISPresenter(QObject):
     """Presenter xử lý SFIS communication"""
@@ -69,78 +71,66 @@ class SFISPresenter(QObject):
             bool: True nếu kết nối thành công
         """
         self.logMessage.emit(f"Đang kết nối SFIS qua {portName}...", "INFO")
+        log.info(f"Đang kết nối SFIS qua {portName}...")
         
         success = self.sfis_worker.connect(portName)
         
         if success:
             self.currentPort = portName
             self.logMessage.emit(f"Kết nối SFIS thành công: {portName}", "SUCCESS")
+            log.info(f"Kết nối SFIS thành công: {portName}")
         else:
             self.logMessage.emit(f"Kết nối SFIS thất bại: {portName}", "ERROR")
-        
+            log.error(f"Kết nối SFIS thất bại: {portName}")
         return success
     
     def disconnect(self):
-        """
-        Ngắt kết nối SFIS
-        
-        Returns:
-            bool: True nếu ngắt kết nối thành công
-        """
+        """Ngắt kết nối SFIS - True nếu ngắt kết nối thành công"""
         self.logMessage.emit("Đang ngắt kết nối SFIS...", "INFO")
-        
+        log.info("Đang ngắt kết nối SFIS...")
         success = self.sfis_worker.disconnect()
-        
         if success:
             self.currentPort = None
             self.logMessage.emit("Ngắt kết nối SFIS thành công", "INFO")
+            log.info("Ngắt kết nối SFIS thành công")
         else:
             self.logMessage.emit("Lỗi ngắt kết nối SFIS", "ERROR")
+            log.error("Lỗi ngắt kết nối SFIS")
         
         return success
     
     def requestData(self, mo=None, allPartsSn=None):
         """
-        Yêu cầu dữ liệu từ SFIS
-        
+        Yêu cầu dữ liệu từ SFIS - Dữ liệu nhận được, hoặc None nếu lỗi        
         Args:
-            mo (str): Manufacturing Order (optional)
-            allPartsSn (str): ALL PARTS SN (optional)
-            
-        Returns:
-            str: Dữ liệu nhận được, hoặc None nếu lỗi
+            mo (str): Manufacturing Order (không bắt buộc)
+            allPartsSn (str): ALL PARTS SN (không bắt buộc)
+
         """
         if not self.isConnected:
             self.logMessage.emit("Chưa kết nối SFIS", "ERROR")
+            log.error("Chưa kết nối SFIS")
             return None
         
         self.logMessage.emit("Đang chờ dữ liệu từ SFIS...", "INFO")
-        
+        log.info("Đang chờ dữ liệu từ SFIS...")
         # Đọc dữ liệu với timeout 5s
         response = self.sfis_worker.read_data(expected_length=70, timeout_ms=5000)
         
         if response:
             self.logMessage.emit(f"Nhận dữ liệu từ SFIS: {response}", "DEBUG")
+            log.debug(f"Nhận dữ liệu từ SFIS: {response}")
             return response
         else:
             self.logMessage.emit("Timeout hoặc không nhận được dữ liệu từ SFIS", "ERROR")
+            log.error("Timeout hoặc không nhận được dữ liệu từ SFIS")
             return None
     
     def sendStartSignal(self, mo, all_parts_no, panel_no):
-        """
-        Gửi tín hiệu START đến SFIS (fire and forget - không chờ phản hồi)
-        Chạy trong QThread riêng
-        
-        Args:
-            mo (str): Manufacturing Order
-            all_parts_no (str): ALL PARTS Number
-            panel_no (str): Panel Number
-            
-        Returns:
-            bool: True nếu bắt đầu gửi thành công
-        """
+        """Gửi tín hiệu START đến SFIS - Chạy trong QThread riêng - True nếu gửi thành công """
         if not self.isConnected:
             self.logMessage.emit("Chưa kết nối SFIS", "ERROR")
+            log.error("Chưa kết nối SFIS")
             return False
         
         # Validate dữ liệu

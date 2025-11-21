@@ -48,3 +48,29 @@
 [2025-11-21 15:38:56] [INFO] [main.py] [main:50] [Name=MainThread] ======================================================================
 [2025-11-21 15:38:56] [INFO] [main.py] [main:51] [Name=MainThread] Application exited successfully
 [2025-11-21 15:38:56] [INFO] [main.py] [main:52] [Name=MainThread] ======================================================================
+[2025-11-21 16:08:38] [INFO] [Logging.py] [__new__:115] [Name=MainThread] Logger initialized: Regilazi
+[2025-11-21 16:08:38] [INFO] [Logging.py] [__new__:116] [Name=MainThread] Log file: logs\Regilazi_2025-11-21.log
+[2025-11-21 16:08:38] [INFO] [Logging.py] [__new__:117] [Name=MainThread] ==========
+[2025-11-21 16:08:38] [INFO] [main.py] [main:17] [Name=MainThread] ======================================================================
+[2025-11-21 16:08:38] [INFO] [main.py] [main:18] [Name=MainThread] Khởi động ứng dụng Regilazi Laser Marking System...
+[2025-11-21 16:08:38] [INFO] [main.py] [main:19] [Name=MainThread] ======================================================================
+[2025-11-21 16:08:38] [INFO] [main.py] [main:22] [Name=MainThread] QApplication initialized
+[2025-11-21 16:08:38] [INFO] [main.py] [main:26] [Name=MainThread] MainWindow created
+[2025-11-21 16:08:38] [INFO] [main_presenter.py] [__init__:25] [Name=MainThread] MainPresenter.__init__ started
+[2025-11-21 16:08:38] [INFO] [main_presenter.py] [__init__:30] [Name=MainThread] Initializing sub-presenters...
+[2025-11-21 16:08:38] [INFO] [main_presenter.py] [__init__:37] [Name=MainThread] Signals connected
+[2025-11-21 16:08:38] [INFO] [main_presenter.py] [__init__:42] [Name=MainThread] MainPresenter initialized successfully
+[2025-11-21 16:08:38] [INFO] [main.py] [main:30] [Name=MainThread] MainPresenter initialized
+[2025-11-21 16:08:38] [INFO] [main_presenter.py] [initialize:102] [Name=MainThread] MainPresenter.initialize() called
+[2025-11-21 16:08:38] [INFO] [main_presenter.py] [initialize:104] [Name=MainThread] System initialization completed
+[2025-11-21 16:08:38] [INFO] [main.py] [main:37] [Name=MainThread] Application window shown - Ready for user interaction
+[2025-11-21 16:08:38] [INFO] [main.py] [main:43] [Name=MainThread] Application event loop starting...
+[2025-11-21 16:08:39] [INFO] [sfis_presenter.py] [connect:74] [Name=MainThread] Đang kết nối SFIS qua COM2...
+[2025-11-21 16:08:39] [INFO] [sfis_presenter.py] [connect:81] [Name=MainThread] Kết nối SFIS thành công: COM2
+[2025-11-21 16:08:52] [INFO] [main_presenter.py] [onStartClicked:132] [Name=MainThread] ======================================================================
+[2025-11-21 16:08:52] [INFO] [main_presenter.py] [onStartClicked:133] [Name=MainThread] START button clicked - Beginning test process
+[2025-11-21 16:08:52] [INFO] [main_presenter.py] [onStartClicked:153] [Name=MainThread] Test parameters - MO: '', ALL PARTS SN: ''
+[2025-11-21 16:08:52] [DEBUG] [main_presenter.py] [onStartClicked:164] [Name=MainThread] Panel Number: ''
+[2025-11-21 16:08:52] [INFO] [main_presenter.py] [onStartClicked:168] [Name=MainThread] System status set to RUNNING
+[2025-11-21 16:08:52] [INFO] [main_presenter.py] [onStartClicked:172] [Name=MainThread] Requesting to send START signal to SFIS...
+[2025-11-21 16:08:52] [ERROR] [main_presenter.py] [onStartClicked:176] [Name=MainThread] Failed to send START signal request
