@@ -6,6 +6,10 @@ from presenter.sfis_presenter import SFISPresenter
 from presenter.plc_presenter import PLCPresenter
 from presenter.laser_presenter import LaserPresenter
 from presenter.ccd_presenter import CCDPresenter
+from utils.Logging import getLogger
+
+# Khởi tạo logger
+log = getLogger()
 
 
 class MainPresenter(QObject):
@@ -18,19 +22,24 @@ class MainPresenter(QObject):
     
     def __init__(self, main_window):
         super().__init__()
+        log.info("MainPresenter.__init__ started")
+        
         self.main_window = main_window
         
         # Khởi tạo các Presenter con
+        log.info("Initializing sub-presenters...")
         self.sfis_presenter = SFISPresenter()
         self.plc_presenter = PLCPresenter()
         self.laser_presenter = LaserPresenter()
-        self.ccd_presenter = CCDPresenter()
-        
+        self.ccd_presenter = CCDPresenter()       
         # Kết nối signals
         self.connectSignals()
+        log.info("Signals connected")
         
         # Trạng thái
         self.isRunning = False
+        
+        log.info("MainPresenter initialized successfully")
         
     def connectSignals(self):
         """Kết nối các signals giữa View và các Presenter con"""
@@ -90,7 +99,9 @@ class MainPresenter(QObject):
     
     def initialize(self):
         """Khởi tạo kết nối và cấu hình ban đầu"""
+        log.info("MainPresenter.initialize() called")
         self.logMessage.emit("Hệ thống đang khởi động...", "INFO")
+        log.info("System initialization completed")
         self.logMessage.emit("Hệ thống đã sẵn sàng!", "INFO")
     
     def onSfisConnectRequested(self, shouldConnect, portName):
@@ -118,7 +129,11 @@ class MainPresenter(QObject):
         Xử lý khi nhấn nút START
         Gửi tín hiệu START đến SFIS qua COM port (fire and forget)
         """
+        log.info("=" * 70)
+        log.info("START button clicked - Beginning test process")
+        
         if self.isRunning:
+            log.warning("System is already running - Ignoring START request")
             self.logMessage.emit("Hệ thống đang chạy, vui lòng đợi...", "WARNING")
             return
         
@@ -126,6 +141,7 @@ class MainPresenter(QObject):
         
         # Kiểm tra kết nối SFIS
         if not self.sfis_presenter.isConnected:
+            log.error("Cannot start: SFIS not connected")
             self.logMessage.emit("Chưa kết nối SFIS. Vui lòng bật SFIS trước.", "ERROR")
             return
         
@@ -134,27 +150,35 @@ class MainPresenter(QObject):
         mo = topPanel.getMO()
         allPartsSn = topPanel.getAllPartsSN()
         
+        log.info(f"Test parameters - MO: '{mo}', ALL PARTS SN: '{allPartsSn}'")
+        
         # Validate dữ liệu đầu vào
-        if not mo or not allPartsSn:
-            self.logMessage.emit("Vui lòng nhập đầy đủ MO và ALL PARTS SN", "ERROR")
-            return
+        # if not mo or not allPartsSn:
+        #     log.error("Validation failed: Missing MO or ALL PARTS SN")
+        #     self.logMessage.emit("Vui lòng nhập đầy đủ MO và ALL PARTS SN", "ERROR")
+        #     return
         
         # Tạo Panel Number (có thể lấy từ UI hoặc tự động tạo)
         # Tạm thời sử dụng giá trị mặc định hoặc từ MO
-        panelNo = mo 
+        panelNo = mo
+        log.debug(f"Panel Number: '{panelNo}'")
         
         # Đánh dấu hệ thống đang chạy
         self.isRunning = True
+        log.info("System status set to RUNNING")
         
         # Gửi START signal đến SFIS (fire and forget - không chờ phản hồi)
         # Chạy trong QThread riêng
+        log.info("Requesting to send START signal to SFIS...")
         success = self.sfis_presenter.sendStartSignal(mo, allPartsSn, panelNo)
         
         if not success:
+            log.error("Failed to send START signal request")
             self.logMessage.emit("Không thể gửi START signal", "ERROR")
             self.isRunning = False
             return
         
+        log.info("START signal request sent successfully - Waiting for worker callback")
         self.logMessage.emit("Đã yêu cầu gửi START signal đến SFIS...", "INFO")
         
         # Tiếp tục quy trình test (nếu cần)
@@ -260,13 +284,17 @@ class MainPresenter(QObject):
     
     def cleanup(self):
         """Dọn dẹp tài nguyên khi đóng ứng dụng"""
+        log.info("MainPresenter.cleanup() called")
         self.logMessage.emit("Đang dọn dẹp tài nguyên...", "INFO")
         
         # Cleanup các presenter con
+        log.info("Cleaning up sub-presenters...")
         self.sfis_presenter.cleanup()
         self.plc_presenter.cleanup()
         self.laser_presenter.cleanup()
         self.ccd_presenter.cleanup()
+        log.info("Sub-presenters cleaned up")
         
         self.logMessage.emit("Dọn dẹp hoàn tất", "INFO")
+        log.info("MainPresenter cleanup completed")
 

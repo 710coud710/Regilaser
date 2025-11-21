@@ -48,7 +48,7 @@ class SFISPresenter(QObject):
         # SFIS Worker signals
         self.sfis_worker.data_received.connect(self.onDataReceived)
         self.sfis_worker.error_occurred.connect(self.onError)
-        self.sfis_worker.connection_status_changed.connect(self.onConnectionChanged)
+        self.sfis_worker.connectionStatusChanged.connect(self.onConnectionChanged)
         
         # START Signal Worker signals
         self.start_worker.signal_sent.connect(self.onStartSignalSent)
@@ -144,15 +144,15 @@ class SFISPresenter(QObject):
             return False
         
         # Validate dữ liệu
-        valid_mo, msg_mo = self.sfis_model.validateMo(mo)
-        if not valid_mo:
-            self.logMessage.emit(f"Validation error: {msg_mo}", "ERROR")
-            return False
+        # valid_mo, msg_mo = self.sfis_model.validateMo(mo)
+        # if not valid_mo:
+        #     self.logMessage.emit(f"Validation error: {msg_mo}", "ERROR")
+        #     return False
         
-        valid_parts, msg_parts = self.sfis_model.validateAllPartsNo(all_parts_no)
-        if not valid_parts:
-            self.logMessage.emit(f"Validation error: {msg_parts}", "ERROR")
-            return False
+        # valid_parts, msg_parts = self.sfis_model.validateAllPartsNo(all_parts_no)
+        # if not valid_parts:
+        #     self.logMessage.emit(f"Validation error: {msg_parts}", "ERROR")
+        #     return False
         
         valid_panel, msg_panel = self.sfis_model.validatePanelNo(panel_no)
         if not valid_panel:

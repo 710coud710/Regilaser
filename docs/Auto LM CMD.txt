@@ -1,0 +1,31 @@
+PLC To TE:
+START1
+
+Laser 8PSN finish + MO and time
+TE Send PLC:
+PRO1_DONE___
+
+PLC To TE:
+START2
+
+Laser Panel_Number+4PSN
+TE Send PLC:
+PRO2_DONE___
+
+check Lable 1
+PLC To TE:
+CHECK1
+
+1 check ok,TE Send PLC:
+CHE1_DONE___
+CHE_OK______
+CHE_NG______
+
+check Lable 2
+PLC To TE:
+CHECK2
+
+2 check ok,TE Send PLC:
+CHE_OK______
+CHE_NG______
+

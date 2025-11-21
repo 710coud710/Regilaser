@@ -1,10 +1,7 @@
-"""
-SFIS Worker - Xử lý giao tiếp COM port với SFIS (Shop Floor Information System)
-"""
+"""SFIS Worker - Xử lý giao tiếp COM port với SFIS (Shop Floor Information System)"""
 import serial
 import time
 from PySide6.QtCore import QObject, Signal, QThread
-
 
 class SFISWorker(QObject):
     """Worker xử lý giao tiếp serial với SFIS"""
@@ -12,7 +9,7 @@ class SFISWorker(QObject):
     # Signals
     data_received = Signal(str)  # Dữ liệu nhận được từ SFIS
     error_occurred = Signal(str)  # Lỗi xảy ra
-    connection_status_changed = Signal(bool)  # Trạng thái kết nối
+    connectionStatusChanged = Signal(bool)  # Trạng thái kết nối
     
     def __init__(self):
         super().__init__()
@@ -48,12 +45,12 @@ class SFISWorker(QObject):
             )
             
             self.is_connected = True
-            self.connection_status_changed.emit(True)
+            self.connectionStatusChanged.emit(True)
             return True
             
         except Exception as e:
             self.is_connected = False
-            self.connection_status_changed.emit(False)
+            self.connectionStatusChanged.emit(False)
             self.error_occurred.emit(f"Lỗi kết nối SFIS: {str(e)}")
             return False
     
@@ -63,7 +60,7 @@ class SFISWorker(QObject):
             if self.serial_port and self.serial_port.is_open:
                 self.serial_port.close()
             self.is_connected = False
-            self.connection_status_changed.emit(False)
+            self.connectionStatusChanged.emit(False)
             return True
         except Exception as e:
             self.error_occurred.emit(f"Lỗi ngắt kết nối: {str(e)}")

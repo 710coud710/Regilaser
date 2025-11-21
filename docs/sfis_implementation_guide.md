@@ -51,7 +51,7 @@ Kết nối đến SFIS qua COM port.
 **Returns:** `bool` - True nếu kết nối thành công
 
 **Signals:**
-- `connection_status_changed(bool)` - Thông báo trạng thái kết nối
+- `connectionStatusChanged(bool)` - Thông báo trạng thái kết nối
 
 #### `send_data(data)`
 Gửi dữ liệu đến SFIS.
@@ -257,7 +257,7 @@ Log được hiển thị trong `LogDisplay` với các level:
 |--------|--------|---------|
 | `data_received` | SFISWorker | `on_sfis_data_received()` |
 | `error_occurred` | SFISWorker | `on_sfis_error()` |
-| `connection_status_changed` | SFISWorker | `on_sfis_connection_changed()` |
+| `connectionStatusChanged` | SFISWorker | `on_sfis_connection_changed()` |
 
 ### Model → Presenter
 

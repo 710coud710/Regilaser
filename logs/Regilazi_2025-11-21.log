@@ -1,0 +1,50 @@
+[2025-11-21 15:28:34] [INFO] [Logging.py] [__new__:115] [Name=MainThread] Logger initialized: Regilazi
+[2025-11-21 15:28:34] [INFO] [Logging.py] [__new__:116] [Name=MainThread] Log file: logs\Regilazi_2025-11-21.log
+[2025-11-21 15:28:34] [INFO] [Logging.py] [__new__:117] [Name=MainThread] ==========
+[2025-11-21 15:28:34] [INFO] [main.py] [main:17] [Name=MainThread] ======================================================================
+[2025-11-21 15:28:34] [INFO] [main.py] [main:18] [Name=MainThread] Khởi động ứng dụng Regilazi Laser Marking System...
+[2025-11-21 15:28:34] [INFO] [main.py] [main:19] [Name=MainThread] ======================================================================
+[2025-11-21 15:28:34] [INFO] [main.py] [main:22] [Name=MainThread] QApplication initialized
+[2025-11-21 15:28:34] [INFO] [main.py] [main:26] [Name=MainThread] MainWindow created
+[2025-11-21 15:28:34] [INFO] [main_presenter.py] [__init__:25] [Name=MainThread] MainPresenter.__init__ started
+[2025-11-21 15:28:34] [INFO] [main_presenter.py] [__init__:30] [Name=MainThread] Initializing sub-presenters...
+[2025-11-21 15:28:34] [INFO] [main_presenter.py] [__init__:35] [Name=MainThread] Sub-presenters initialized
+[2025-11-21 15:28:34] [INFO] [main_presenter.py] [__init__:39] [Name=MainThread] Signals connected
+[2025-11-21 15:28:34] [INFO] [main_presenter.py] [__init__:44] [Name=MainThread] MainPresenter initialized successfully
+[2025-11-21 15:28:34] [INFO] [main.py] [main:30] [Name=MainThread] MainPresenter initialized
+[2025-11-21 15:28:34] [INFO] [main_presenter.py] [initialize:104] [Name=MainThread] MainPresenter.initialize() called
+[2025-11-21 15:28:34] [INFO] [main_presenter.py] [initialize:106] [Name=MainThread] System initialization completed
+[2025-11-21 15:28:34] [INFO] [main.py] [main:37] [Name=MainThread] Application window shown - Ready for user interaction
+[2025-11-21 15:28:34] [INFO] [main.py] [main:43] [Name=MainThread] Application event loop starting...
+[2025-11-21 15:30:01] [INFO] [main_presenter.py] [onStartClicked:134] [Name=MainThread] ======================================================================
+[2025-11-21 15:30:01] [INFO] [main_presenter.py] [onStartClicked:135] [Name=MainThread] START button clicked - Beginning test process
+[2025-11-21 15:30:01] [ERROR] [main_presenter.py] [onStartClicked:146] [Name=MainThread] Cannot start: SFIS not connected
+[2025-11-21 15:37:09] [INFO] [main_presenter.py] [onStartClicked:134] [Name=MainThread] ======================================================================
+[2025-11-21 15:37:09] [INFO] [main_presenter.py] [onStartClicked:135] [Name=MainThread] START button clicked - Beginning test process
+[2025-11-21 15:37:09] [ERROR] [main_presenter.py] [onStartClicked:146] [Name=MainThread] Cannot start: SFIS not connected
+[2025-11-21 15:38:52] [INFO] [Logging.py] [__new__:115] [Name=MainThread] Logger initialized: Regilazi
+[2025-11-21 15:38:52] [INFO] [Logging.py] [__new__:116] [Name=MainThread] Log file: logs\Regilazi_2025-11-21.log
+[2025-11-21 15:38:52] [INFO] [Logging.py] [__new__:117] [Name=MainThread] ==========
+[2025-11-21 15:38:52] [INFO] [main.py] [main:17] [Name=MainThread] ======================================================================
+[2025-11-21 15:38:52] [INFO] [main.py] [main:18] [Name=MainThread] Khởi động ứng dụng Regilazi Laser Marking System...
+[2025-11-21 15:38:52] [INFO] [main.py] [main:19] [Name=MainThread] ======================================================================
+[2025-11-21 15:38:52] [INFO] [main.py] [main:22] [Name=MainThread] QApplication initialized
+[2025-11-21 15:38:52] [INFO] [main.py] [main:26] [Name=MainThread] MainWindow created
+[2025-11-21 15:38:52] [INFO] [main_presenter.py] [__init__:25] [Name=MainThread] MainPresenter.__init__ started
+[2025-11-21 15:38:52] [INFO] [main_presenter.py] [__init__:30] [Name=MainThread] Initializing sub-presenters...
+[2025-11-21 15:38:52] [INFO] [main_presenter.py] [__init__:37] [Name=MainThread] Signals connected
+[2025-11-21 15:38:52] [INFO] [main_presenter.py] [__init__:42] [Name=MainThread] MainPresenter initialized successfully
+[2025-11-21 15:38:52] [INFO] [main.py] [main:30] [Name=MainThread] MainPresenter initialized
+[2025-11-21 15:38:52] [INFO] [main_presenter.py] [initialize:102] [Name=MainThread] MainPresenter.initialize() called
+[2025-11-21 15:38:52] [INFO] [main_presenter.py] [initialize:104] [Name=MainThread] System initialization completed
+[2025-11-21 15:38:52] [INFO] [main.py] [main:37] [Name=MainThread] Application window shown - Ready for user interaction
+[2025-11-21 15:38:52] [INFO] [main.py] [main:43] [Name=MainThread] Application event loop starting...
+[2025-11-21 15:38:56] [INFO] [main.py] [main:47] [Name=MainThread] Application closing...
+[2025-11-21 15:38:56] [INFO] [main_presenter.py] [cleanup:287] [Name=MainThread] MainPresenter.cleanup() called
+[2025-11-21 15:38:56] [INFO] [main_presenter.py] [cleanup:291] [Name=MainThread] Cleaning up sub-presenters...
+[2025-11-21 15:38:56] [INFO] [main_presenter.py] [cleanup:296] [Name=MainThread] Sub-presenters cleaned up
+[2025-11-21 15:38:56] [INFO] [main_presenter.py] [cleanup:299] [Name=MainThread] MainPresenter cleanup completed
+[2025-11-21 15:38:56] [INFO] [main.py] [main:49] [Name=MainThread] Cleanup completed
+[2025-11-21 15:38:56] [INFO] [main.py] [main:50] [Name=MainThread] ======================================================================
+[2025-11-21 15:38:56] [INFO] [main.py] [main:51] [Name=MainThread] Application exited successfully
+[2025-11-21 15:38:56] [INFO] [main.py] [main:52] [Name=MainThread] ======================================================================

@@ -1,0 +1,21 @@
+TE->SFC:
+MO(20)+Panel_Number(20)+NEEDPSN08(9)  =  49
+
+SFC->TE:
+MO(20)+Panel_Number(20)+PSN1(20)+PSN2(20)+PSN3(20)+PSN4(20)+PSN5(20)+PSN6(20)+PSN7(20)+PSN8(20)+PASS(4) = 204
+
+
+<--Test PASS-->
+TE->SFC:
+MO(20)+Panel_Number(20)+END(3)  = 43
+
+SFC->TE:
+MO(20)+Panel_Number(20)+END(3)+PASS(4) =  47
+
+
+<--Test FAIL-->
+TE->SFC:
+MO(20)+Panel_Number(20)+END(3)+ErrorCode(6)  = 49
+
+SFC->TE:
+MO(20)+Panel_Number(20)+END(3)+ErrorCode(6)+PASS(4)  = 53

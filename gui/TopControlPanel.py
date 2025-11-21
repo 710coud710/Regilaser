@@ -117,13 +117,13 @@ class TopControlPanel(QWidget):
         port_name = self.combo_sfis_com.currentText()
         
         if checked:
-            # Yêu cầu kết nối
+            # kết nối
             self.btn_sfis.setText("Connecting...")
             self.btn_sfis.setEnabled(False)
             self.combo_sfis_com.setEnabled(False)
             self.sfisConnectRequested.emit(True, port_name)
         else:
-            # Yêu cầu ngắt kết nối
+            # ngắt kết nối
             self.btn_sfis.setText("Disconnecting...")
             self.btn_sfis.setEnabled(False)
             self.sfisConnectRequested.emit(False, port_name)
