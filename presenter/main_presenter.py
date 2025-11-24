@@ -124,32 +124,20 @@ class MainPresenter(QObject):
             topPanel.setSFISConnectionStatus(False, "Disconnected" if success else "Error")
     
     
-    def onStartClicked(self):
-        """
-        Xử lý khi nhấn nút START
-        
-        Flow:
-        1. MainPresenter nhận sự kiện từ UI
-        2. Kiểm tra trạng thái hệ thống
-        3. Điều hướng đến SFISPresenter để gửi START signal
-        4. SFISPresenter → SFISModel (tạo message) → SFISWorker (gửi qua COM)
-        """
-        log.info("=" * 70)
+    def onStartClicked(self):    
         log.info("MainPresenter.onStartClicked() - START button clicked")
         
         # Kiểm tra hệ thống đang chạy
         if self.isRunning:
             log.warning("System is already running")
-            self.logMessage.emit("Hệ thống đang chạy, vui lòng đợi...", "WARNING")
+            self.logMessage.emit("System is already running, please wait...", "WARNING")
             return
-        
-        self.logMessage.emit("=" * 70, "INFO")
-        self.logMessage.emit("=== NHẤN NÚT START ===", "INFO")
+        self.logMessage.emit("== BUTTON START CLICKED ==", "INFO")
         
         # Kiểm tra kết nối SFIS
         if not self.sfis_presenter.isConnected:
             log.error("SFIS not connected - cannot send START signal")
-            self.logMessage.emit("Chưa kết nối SFIS. Vui lòng bật SFIS trước.", "ERROR")
+            self.logMessage.emit("SFIS not connected - please connect SFIS before starting", "ERROR")
             return
         
         log.info(f"SFIS connected on port: {self.sfis_presenter.currentPort}")
@@ -157,35 +145,29 @@ class MainPresenter(QObject):
         # Đánh dấu hệ thống đang chạy
         self.isRunning = True
         
-        # Điều hướng đến SFISPresenter để gửi START signal
         # Flow: MainPresenter → SFISPresenter → SFISModel → SFISWorker → COM Port
         log.info("Routing to SFISPresenter.sendStartSignal()...")
-        self.logMessage.emit("Đang chuẩn bị gửi START signal...", "INFO")
+        self.logMessage.emit("Preparing to send START signal...", "INFO")
         
         success = self.sfis_presenter.sendStartSignal()
         
         if not success:
             log.error("Failed to initiate START signal sending")
-            self.logMessage.emit("Không thể khởi tạo gửi START signal", "ERROR")
+            self.logMessage.emit("Cannot initiate START signal sending", "ERROR")
             self.isRunning = False
             return
         
         log.info("START signal routing successful - waiting for worker callback")
-        self.logMessage.emit("Đã gửi lệnh đến worker, đợi phản hồi...", "INFO")
+        self.logMessage.emit("Command sent to worker - waiting for response...", "INFO")
     
     def startTestProcess(self, mo, allPartsSn):
-        """
-        Bắt đầu quy trình test trong QThread
-        
-        Args:
-            mo (str): Manufacturing Order
-            allPartsSn (str): ALL PARTS SN
-        """
+        """Bắt đầu quy trình test trong QThread"""
         # Bước 1: Nhận dữ liệu từ SFIS (đã chạy trong QThread của sfis_presenter)
         response = self.sfis_presenter.requestData(mo, allPartsSn)
-        
+
         if not response:
-            self.logMessage.emit("Không nhận được dữ liệu từ SFIS", "ERROR")
+            self.logMessage.emit("Cannot receive data from SFIS", "ERROR")
+            log.error("Cannot receive data from SFIS")
             self.isRunning = False
             return
         
@@ -193,7 +175,8 @@ class MainPresenter(QObject):
         sfisData = self.sfis_presenter.parseResponse(response)
         
         if not sfisData:
-            self.logMessage.emit("Lỗi parse dữ liệu SFIS", "ERROR")
+            self.logMessage.emit("Error parsing SFIS data", "ERROR")
+            log.error("Error parsing SFIS data")
             self.isRunning = False
             return
         
@@ -201,15 +184,9 @@ class MainPresenter(QObject):
         self.onSfisDataReady(sfisData)
     
     def onSfisDataReady(self, sfisData):
-        """
-        Xử lý khi dữ liệu SFIS đã sẵn sàng
-        
-        Args:
-            sfisData (SFISData): Dữ liệu từ SFIS
-        """
-        self.logMessage.emit("Dữ liệu SFIS sẵn sàng", "SUCCESS")
+        """Xử lý khi dữ liệu SFIS đã sẵn sàng"""
+        self.logMessage.emit("SFIS data is ready", "SUCCESS")
         self.logMessage.emit(f"  Laser SN: {sfisData.laser_sn}", "INFO")
-        self.logMessage.emit(f"  Security Code: {sfisData.security_code}", "INFO")
         
         # Bước 2: Laser marking
         # TODO: Implement laser marking
@@ -244,26 +221,15 @@ class MainPresenter(QObject):
         pass
     
     def onStartSignalSent(self, success, message):
-        """
-        Callback khi START signal đã được gửi qua COM port
-        
-        Flow: SFISWorker → SFISPresenter → MainPresenter (callback này)
-        
-        Args:
-            success (bool): True nếu gửi thành công qua COM port
-            message (str): Thông báo kết quả từ worker
-        """
-        log.info("=" * 70)
+        """Flow: SFISWorker → SFISPresenter → MainPresenter (callback này)"""
         log.info("MainPresenter.onStartSignalSent() - Callback received")
         log.info(f"Success: {success}")
         log.info(f"Message: {message}")
         
         if success:
             log.info("START signal sent successfully via COM port")
-            self.logMessage.emit("=" * 70, "INFO")
-            self.logMessage.emit("✓ START signal đã gửi thành công qua COM port", "SUCCESS")
+            self.logMessage.emit("START signal sent successfully via COM port", "SUCCESS")
             self.logMessage.emit(f"  Port: {self.sfis_presenter.currentPort}", "INFO")
-            self.logMessage.emit("=" * 70, "INFO")
             
             # Có thể tiếp tục các bước tiếp theo ở đây
             # Ví dụ: Chờ nhận dữ liệu từ SFIS, hoặc bắt đầu laser marking, etc.
@@ -291,17 +257,12 @@ class MainPresenter(QObject):
     
     def cleanup(self):
         """Dọn dẹp tài nguyên khi đóng ứng dụng"""
-        log.info("MainPresenter.cleanup() called")
         self.logMessage.emit("Đang dọn dẹp tài nguyên...", "INFO")
-        
-        # Cleanup các presenter con
         log.info("Cleaning up sub-presenters...")
         self.sfis_presenter.cleanup()
         self.plc_presenter.cleanup()
         self.laser_presenter.cleanup()
         self.ccd_presenter.cleanup()
-        log.info("Sub-presenters cleaned up")
-        
         self.logMessage.emit("Dọn dẹp hoàn tất", "INFO")
         log.info("MainPresenter cleanup completed")
 

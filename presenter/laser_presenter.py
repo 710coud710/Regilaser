@@ -8,12 +8,7 @@ class LaserPresenter(BasePresenter):
     """Presenter xử lý Laser Marking communication"""
     
     def __init__(self):
-        super().__init__()
-        
-        # TODO: Khởi tạo Laser Worker và Model
-        # self.laser_worker = LaserWorker()
-        # self.laser_model = LaserModel()
-        
+        super().__init__()        
         self.is_connected = False
         self.laser_ip = "192.168.1.20"
         self.laser_port = 50002

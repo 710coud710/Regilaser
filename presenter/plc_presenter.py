@@ -8,14 +8,9 @@ class PLCPresenter(BasePresenter):
     """Presenter xử lý PLC communication"""
     
     def __init__(self):
-        super().__init__()
-        
-        # TODO: Khởi tạo PLC Worker và Model
-        # self.plc_worker = PLCWorker()
-        # self.plc_model = PLCModel()
-        
+        super().__init__()                
         self.is_connected = False
-        self.current_port = "COM3"  # Default PLC port
+        self.current_port = "COM3"
     
     def connect(self, port_name="COM3"):
         """

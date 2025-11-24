@@ -57,19 +57,8 @@ class SFISModel(QObject):
         self.current_data = SFISData()
     
     def createRequestPsn(self, mo, all_parts_no, panel_no):
-        """
-        Tạo request yêu cầu PSN từ SFIS (định dạng cũ)
-        
-        Format: MO(20) + AllPar_NO(12) + PANEL_NO(20) + NEED(4) + PSN10(5)
-        Total: 61 bytes
-        
-        Args:
-            mo (str): Manufacturing Order
-            all_parts_no (str): ALL PARTS Number
-            panel_no (str): Panel Number
-            
-        Returns:
-            str: Request string (61 bytes)
+        """ MO(20) + AllPar_NO(12) + PANEL_NO(20) + NEEDPSN10(9)
+        Total: 61 bytes    
         """
         try:
             # Padding các field đúng độ dài

@@ -3,6 +3,7 @@ import threading
 import time
 import os
 from pydantic import BaseModel, StrictStr, StrictInt, ValidationError
+from utils.Logging import log
 
 # === CONFIG SCHEMA (tối giản – bạn có thể mở rộng sau) ===
 class Config(BaseModel):
@@ -36,9 +37,9 @@ class ConfigManager:
                 data = yaml.safe_load(f)
             self._config = Config(**data)
             self._file_mtime = os.path.getmtime(self.filename)
-            logger.info("Reloaded YAML config")
+            log.info(f"Config loaded successfully from {self.filename}")
         except (ValidationError, Exception) as e:
-            logger.info(f"Config load error:\n{e}")
+            log.error(f"Config load error:\n{e}")
 
     def get(self) -> Config:
         return self._config
@@ -55,7 +56,6 @@ class ConfigManager:
                     time.sleep(1)
                 except Exception:
                     time.sleep(1)
-
         t = threading.Thread(target=watcher, daemon=True)
         t.start()
 
@@ -68,9 +68,10 @@ class ConfigManager:
             try:
                 new_config = Config(**data)
             except ValidationError as e:
+                log.error(f"Validation error:\n{e}")
                 return False
 
             with open(self.filename, "w", encoding="utf-8") as f:
                 yaml.dump(new_config.model_dump(), f, allow_unicode=True)
-                
+            log.info(f"Config updated successfully and saved to {self.filename}")
             return True

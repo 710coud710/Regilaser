@@ -102,7 +102,7 @@ class SFISWorker(QObject):
         except Exception as e:
             self.is_connected = False
             error_msg = f"Connection error: {str(e)}"
-            log.error(f"✗ {error_msg}")
+            log.error(f"{error_msg}")
             log.debug("Exception details:", exc_info=True)
             self.connectionStatusChanged.emit(False)
             self.error_occurred.emit(error_msg)
