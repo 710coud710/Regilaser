@@ -127,62 +127,51 @@ class MainPresenter(QObject):
     def onStartClicked(self):
         """
         Xử lý khi nhấn nút START
-        Gửi tín hiệu START đến SFIS qua COM port (fire and forget)
+        
+        Flow:
+        1. MainPresenter nhận sự kiện từ UI
+        2. Kiểm tra trạng thái hệ thống
+        3. Điều hướng đến SFISPresenter để gửi START signal
+        4. SFISPresenter → SFISModel (tạo message) → SFISWorker (gửi qua COM)
         """
         log.info("=" * 70)
-        log.info("START button clicked - Beginning test process")
+        log.info("MainPresenter.onStartClicked() - START button clicked")
         
+        # Kiểm tra hệ thống đang chạy
         if self.isRunning:
-            log.warning("System is already running - Ignoring START request")
+            log.warning("System is already running")
             self.logMessage.emit("Hệ thống đang chạy, vui lòng đợi...", "WARNING")
             return
         
-        self.logMessage.emit("=== BẮT ĐẦU QUY TRÌNH TEST ===", "INFO")
+        self.logMessage.emit("=" * 70, "INFO")
+        self.logMessage.emit("=== NHẤN NÚT START ===", "INFO")
         
         # Kiểm tra kết nối SFIS
         if not self.sfis_presenter.isConnected:
-            log.error("Cannot start: SFIS not connected")
+            log.error("SFIS not connected - cannot send START signal")
             self.logMessage.emit("Chưa kết nối SFIS. Vui lòng bật SFIS trước.", "ERROR")
             return
         
-        # Lấy dữ liệu từ GUI
-        topPanel = self.main_window.getTopPanel()
-        mo = topPanel.getMO()
-        allPartsSn = topPanel.getAllPartsSN()
-        
-        log.info(f"Test parameters - MO: '{mo}', ALL PARTS SN: '{allPartsSn}'")
-        
-        # Validate dữ liệu đầu vào
-        # if not mo or not allPartsSn:
-        #     log.error("Validation failed: Missing MO or ALL PARTS SN")
-        #     self.logMessage.emit("Vui lòng nhập đầy đủ MO và ALL PARTS SN", "ERROR")
-        #     return
-        
-        # Tạo Panel Number (có thể lấy từ UI hoặc tự động tạo)
-        # Tạm thời sử dụng giá trị mặc định hoặc từ MO
-        panelNo = mo
-        log.debug(f"Panel Number: '{panelNo}'")
+        log.info(f"SFIS connected on port: {self.sfis_presenter.currentPort}")
         
         # Đánh dấu hệ thống đang chạy
         self.isRunning = True
-        log.info("System status set to RUNNING")
         
-        # Gửi START signal đến SFIS (fire and forget - không chờ phản hồi)
-        # Chạy trong QThread riêng
-        log.info("Requesting to send START signal to SFIS...")
-        success = self.sfis_presenter.sendStartSignal(mo, allPartsSn, panelNo)
+        # Điều hướng đến SFISPresenter để gửi START signal
+        # Flow: MainPresenter → SFISPresenter → SFISModel → SFISWorker → COM Port
+        log.info("Routing to SFISPresenter.sendStartSignal()...")
+        self.logMessage.emit("Đang chuẩn bị gửi START signal...", "INFO")
+        
+        success = self.sfis_presenter.sendStartSignal()
         
         if not success:
-            log.error("Failed to send START signal request")
-            self.logMessage.emit("Không thể gửi START signal", "ERROR")
+            log.error("Failed to initiate START signal sending")
+            self.logMessage.emit("Không thể khởi tạo gửi START signal", "ERROR")
             self.isRunning = False
             return
         
-        log.info("START signal request sent successfully - Waiting for worker callback")
-        self.logMessage.emit("Đã yêu cầu gửi START signal đến SFIS...", "INFO")
-        
-        # Tiếp tục quy trình test (nếu cần)
-        # self.startTestProcess(mo, allPartsSn)
+        log.info("START signal routing successful - waiting for worker callback")
+        self.logMessage.emit("Đã gửi lệnh đến worker, đợi phản hồi...", "INFO")
     
     def startTestProcess(self, mo, allPartsSn):
         """
@@ -256,22 +245,40 @@ class MainPresenter(QObject):
     
     def onStartSignalSent(self, success, message):
         """
-        Xử lý khi START signal đã được gửi
+        Callback khi START signal đã được gửi qua COM port
+        
+        Flow: SFISWorker → SFISPresenter → MainPresenter (callback này)
         
         Args:
-            success (bool): True nếu gửi thành công
-            message (str): Thông báo kết quả
+            success (bool): True nếu gửi thành công qua COM port
+            message (str): Thông báo kết quả từ worker
         """
+        log.info("=" * 70)
+        log.info("MainPresenter.onStartSignalSent() - Callback received")
+        log.info(f"Success: {success}")
+        log.info(f"Message: {message}")
+        
         if success:
-            self.logMessage.emit("✓ START signal đã được gửi đến SFIS", "SUCCESS")
+            log.info("START signal sent successfully via COM port")
+            self.logMessage.emit("=" * 70, "INFO")
+            self.logMessage.emit("✓ START signal đã gửi thành công qua COM port", "SUCCESS")
+            self.logMessage.emit(f"  Port: {self.sfis_presenter.currentPort}", "INFO")
+            self.logMessage.emit("=" * 70, "INFO")
+            
             # Có thể tiếp tục các bước tiếp theo ở đây
             # Ví dụ: Chờ nhận dữ liệu từ SFIS, hoặc bắt đầu laser marking, etc.
+            log.info("Next steps: Wait for SFIS response or continue process...")
         else:
-            self.logMessage.emit(f"✗ Gửi START signal thất bại: {message}", "ERROR")
+            log.error(f"Failed to send START signal: {message}")
+            self.logMessage.emit("=" * 70, "INFO")
+            self.logMessage.emit(f"✗ Gửi START signal thất bại", "ERROR")
+            self.logMessage.emit(f"  Lỗi: {message}", "ERROR")
+            self.logMessage.emit("=" * 70, "INFO")
         
         # Reset trạng thái running
         self.isRunning = False
-        self.logMessage.emit("=== KẾT THÚC GỬI START SIGNAL ===", "INFO")
+        log.info("System status reset - ready for next operation")
+        log.info("=" * 70)
     
     def onSfisPortChanged(self, portName):
         """Xử lý khi thay đổi COM port SFIS"""

@@ -1,13 +1,14 @@
 """
 SFIS Presenter - Xử lý logic giao tiếp SFIS
 """
-from PySide6.QtCore import QObject, QThread, Signal
+from PySide6.QtCore import QObject, QThread, Signal, QMetaObject, Qt, Q_ARG
 from model.sfis_model import SFISModel
 from workers.sfis_worker import SFISWorker
-from workers.start_signal_worker import StartSignalWorker
 from utils.Logging import getLogger
 
+# Khởi tạo logger
 log = getLogger()
+
 
 class SFISPresenter(QObject):
     """Presenter xử lý SFIS communication"""
@@ -20,30 +21,28 @@ class SFISPresenter(QObject):
     
     def __init__(self):
         super().__init__()
+        log.info("SFISPresenter.__init__ started")
         
         # Khởi tạo Model
         self.sfis_model = SFISModel()
         
-        # Khởi tạo Worker và Thread cho SFIS
+        # Khởi tạo Worker và Thread cho SFIS (chỉ cần 1 worker)
         self.sfis_worker = SFISWorker()
         self.sfis_thread = QThread()
         self.sfis_worker.moveToThread(self.sfis_thread)
         
-        # Khởi tạo Worker và Thread cho START signal
-        self.start_worker = StartSignalWorker(self.sfis_worker)
-        self.start_thread = QThread()
-        self.start_worker.moveToThread(self.start_thread)
-        
         # Kết nối signals
         self.connectSignals()
         
-        # Khởi động threads
+        # Khởi động thread
         self.sfis_thread.start()
-        self.start_thread.start()
+        log.info("SFIS thread started")
         
         # Trạng thái
         self.isConnected = False
         self.currentPort = None
+        
+        log.info("SFISPresenter initialized successfully")
     
     def connectSignals(self):
         """Kết nối signals giữa Worker và Model"""
@@ -51,10 +50,7 @@ class SFISPresenter(QObject):
         self.sfis_worker.data_received.connect(self.onDataReceived)
         self.sfis_worker.error_occurred.connect(self.onError)
         self.sfis_worker.connectionStatusChanged.connect(self.onConnectionChanged)
-        
-        # START Signal Worker signals
-        self.start_worker.signal_sent.connect(self.onStartSignalSent)
-        self.start_worker.log_message.connect(self.onStartWorkerLog)
+        self.sfis_worker.signal_sent.connect(self.onStartSignalSent)
         
         # SFIS Model signals
         self.sfis_model.data_parsed.connect(self.onDataParsed)
@@ -62,7 +58,7 @@ class SFISPresenter(QObject):
     
     def connect(self, portName):
         """
-        Kết nối đến SFIS
+        Kết nối đến SFIS qua COM port
         
         Args:
             portName (str): Tên COM port
@@ -73,7 +69,16 @@ class SFISPresenter(QObject):
         self.logMessage.emit(f"Đang kết nối SFIS qua {portName}...", "INFO")
         log.info(f"Đang kết nối SFIS qua {portName}...")
         
-        success = self.sfis_worker.connect(portName)
+        # Gọi connect() trong thread của worker
+        QMetaObject.invokeMethod(
+            self.sfis_worker,
+            "connect",
+            Qt.BlockingQueuedConnection,  # Chờ kết quả
+            Q_ARG(str, portName)
+        )
+        
+        # Kiểm tra trạng thái kết nối
+        success = self.sfis_worker.is_connected
         
         if success:
             self.currentPort = portName
@@ -85,10 +90,24 @@ class SFISPresenter(QObject):
         return success
     
     def disconnect(self):
-        """Ngắt kết nối SFIS - True nếu ngắt kết nối thành công"""
+        """
+        Ngắt kết nối SFIS
+        
+        Returns:
+            bool: True nếu ngắt kết nối thành công
+        """
         self.logMessage.emit("Đang ngắt kết nối SFIS...", "INFO")
         log.info("Đang ngắt kết nối SFIS...")
-        success = self.sfis_worker.disconnect()
+        
+        # Gọi disconnect() trong thread của worker
+        QMetaObject.invokeMethod(
+            self.sfis_worker,
+            "disconnect",
+            Qt.BlockingQueuedConnection  # Chờ kết quả
+        )
+        
+        success = not self.sfis_worker.is_connected
+        
         if success:
             self.currentPort = None
             self.logMessage.emit("Ngắt kết nối SFIS thành công", "INFO")
@@ -126,49 +145,82 @@ class SFISPresenter(QObject):
             log.error("Timeout hoặc không nhận được dữ liệu từ SFIS")
             return None
     
-    def sendStartSignal(self, mo, all_parts_no, panel_no):
-        """Gửi tín hiệu START đến SFIS - Chạy trong QThread riêng - True nếu gửi thành công """
+    def sendStartSignal(self, mo=None, all_parts_no=None, panel_no=None):
+        """
+        Gửi tín hiệu START đến SFIS qua COM port (fire and forget)
+        
+        Flow:
+        1. SFISModel tạo START message (49 bytes)
+        2. SFISWorker gửi qua COM port trong thread riêng
+        3. Không chờ phản hồi từ SFIS
+        
+        Format: MO(20) + Panel_Number(20) + NEEDPSN08(9) = 49 bytes
+        - MO: Lấy từ config.yaml nếu không truyền vào
+        - Panel Number: Để trống (20 spaces)
+        - NEEDPSN08: Keyword cố định (9 bytes)
+        
+        Args:
+            mo (str, optional): Manufacturing Order
+            all_parts_no (str, optional): ALL PARTS Number (không dùng)
+            panel_no (str, optional): Panel Number (không dùng)
+        
+        Returns:
+            bool: True nếu bắt đầu gửi thành công
+        """
+        log.info("=" * 70)
+        log.info("SFISPresenter.sendStartSignal() called")
+        
+        # Kiểm tra kết nối
         if not self.isConnected:
             self.logMessage.emit("Chưa kết nối SFIS", "ERROR")
-            log.error("Chưa kết nối SFIS")
+            log.error("SFIS not connected")
             return False
         
-        # Validate dữ liệu
-        # valid_mo, msg_mo = self.sfis_model.validateMo(mo)
-        # if not valid_mo:
-        #     self.logMessage.emit(f"Validation error: {msg_mo}", "ERROR")
-        #     return False
-        
-        # valid_parts, msg_parts = self.sfis_model.validateAllPartsNo(all_parts_no)
-        # if not valid_parts:
-        #     self.logMessage.emit(f"Validation error: {msg_parts}", "ERROR")
-        #     return False
-        
-        valid_panel, msg_panel = self.sfis_model.validatePanelNo(panel_no)
-        if not valid_panel:
-            self.logMessage.emit(f"Validation error: {msg_panel}", "ERROR")
-            return False
-        
-        # Tạo START signal
+        # Bước 1: SFISModel tạo START message
+        log.info("Step 1: Creating START message via SFISModel...")
         start_message = self.sfis_model.createStartSignal(mo, all_parts_no, panel_no)
         
         if not start_message:
             self.logMessage.emit("Lỗi tạo START signal", "ERROR")
+            log.error("Failed to create START message")
             return False
         
-        # Gửi signal trong thread riêng (fire and forget)
-        self.logMessage.emit("Bắt đầu gửi START signal...", "INFO")
-        QThread.currentThread().msleep(10)  # Đảm bảo thread sẵn sàng
+        # Lấy MO thực tế đã dùng
+        actual_mo = self.sfis_model.current_data.mo
         
-        # Invoke worker method trong thread của nó
-        from PySide6.QtCore import QMetaObject, Qt, Q_ARG
+        # LOG chi tiết message
+        log.info("START Message created successfully:")
+        log.info(f"  MO (from config): '{actual_mo}'")
+        log.info(f"  Format: MO(20) + Panel(20) + NEEDPSN08(9)")
+        log.info(f"  Length: {len(start_message)} bytes (expected: 49)")
+        log.info(f"  Content (text): '{start_message}'")
+        log.info(f"  Content (HEX): {start_message.encode('ascii').hex()}")
+        log.info("=" * 70)
+        
+        # UI Log
+        self.logMessage.emit("=" * 70, "INFO")
+        self.logMessage.emit("CHUẨN BỊ GỬI START SIGNAL:", "INFO")
+        self.logMessage.emit(f"  MO: {actual_mo}", "INFO")
+        self.logMessage.emit(f"  Format: MO(20) + Panel(20) + NEEDPSN08(9)", "INFO")
+        self.logMessage.emit(f"  Length: {len(start_message)} bytes", "INFO")
+        self.logMessage.emit(f"  COM Port: {self.currentPort}", "INFO")
+        self.logMessage.emit("=" * 70, "INFO")
+        
+        # Bước 2: Gửi qua SFISWorker trong thread riêng
+        log.info("Step 2: Invoking SFISWorker to send via COM port...")
+        self.logMessage.emit("Đang gửi START signal qua COM port...", "INFO")
+        
+        # Invoke worker method trong thread của nó (fire and forget)
         QMetaObject.invokeMethod(
-            self.start_worker,
+            self.sfis_worker,
             "send_start_signal",
-            Qt.QueuedConnection,
+            Qt.QueuedConnection,  # Không chờ kết quả
             Q_ARG(str, start_message)
         )
         
+        log.info("SFISWorker invoked successfully (fire and forget)")
+        log.info("Waiting for signal_sent callback...")
+        log.info("=" * 70)
         return True
     
     def sendTestComplete(self, mo, panelNo):
@@ -288,26 +340,25 @@ class SFISPresenter(QObject):
     def onStartSignalSent(self, success, message):
         """Xử lý khi START signal đã được gửi"""
         if success:
-            self.logMessage.emit("START signal đã gửi thành công", "SUCCESS")
+            log.info("START signal sent successfully")
+            self.logMessage.emit("✓ START signal đã gửi thành công", "SUCCESS")
         else:
-            self.logMessage.emit(f"START signal gửi thất bại: {message}", "ERROR")
+            log.error(f"START signal failed: {message}")
+            self.logMessage.emit(f"✗ START signal gửi thất bại: {message}", "ERROR")
         
         # Emit signal để MainPresenter biết
         self.startSignalSent.emit(success, message)
     
-    def onStartWorkerLog(self, message, level):
-        """Forward log từ StartSignalWorker"""
-        self.logMessage.emit(message, level)
-    
     def cleanup(self):
         """Dọn dẹp tài nguyên"""
+        log.info("SFISPresenter.cleanup() called")
+        
         if self.isConnected:
             self.sfis_worker.disconnect()
         
-        # Dừng các threads
+        # Dừng thread
         self.sfis_thread.quit()
         self.sfis_thread.wait()
         
-        self.start_thread.quit()
-        self.start_thread.wait()
+        log.info("SFISPresenter cleanup completed")
 

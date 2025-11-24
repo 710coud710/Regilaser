@@ -4,6 +4,7 @@ SFIS Model - Logic nghiệp vụ và cấu trúc dữ liệu cho SFIS
 from dataclasses import dataclass
 from typing import Optional, List
 from PySide6.QtCore import QObject, Signal
+import yaml
 
 
 @dataclass
@@ -91,18 +92,7 @@ class SFISModel(QObject):
             return None
     
     def parseResponsePsn(self, response):
-        """
-        Parse phản hồi PSN từ SFIS (định dạng cũ)
-        
-        Format: MO(20) + PANEL_NO(20) + PSN1(20) + ... + PSN10(20) + PASS(4)
-        Total: 244 bytes
-        
-        Args:
-            response (str): Response string từ SFIS
-            
-        Returns:
-            SFISData: Dữ liệu đã parse, hoặc None nếu lỗi
-        """
+
         try:
             expected_length = self.MO_LENGTH + self.PANEL_NO_LENGTH + (self.PSN_LENGTH * self.PSN_COUNT) + 4
             
@@ -190,34 +180,33 @@ class SFISModel(QObject):
             self.validation_error.emit(f"Lỗi parse response: {str(e)}")
             return None
     
-    def createStartSignal(self, mo, all_parts_no, panel_no):
-        """
-        Tạo tín hiệu START gửi đến SFIS (fire and forget)
-        
-        Format: MO(20) + AllPar_NO(12) + PANEL_NO(20) + START(5)
-        Total: 57 bytes
-        
-        Args:
-            mo (str): Manufacturing Order
-            all_parts_no (str): ALL PARTS Number
-            panel_no (str): Panel Number
-            
-        Returns:
-            str: START signal string (57 bytes)
-        """
+    def createStartSignal(self, mo=None, all_parts_no=None, panel_no=None):
         try:
-            # Padding các field đúng độ dài
-            mo_padded = mo.ljust(self.MO_LENGTH)[:self.MO_LENGTH]
-            all_parts_padded = all_parts_no.ljust(self.ALL_PARTS_NO_LENGTH)[:self.ALL_PARTS_NO_LENGTH]
-            panel_padded = panel_no.ljust(self.PANEL_NO_LENGTH)[:self.PANEL_NO_LENGTH]
+            # Nếu không truyền MO, lấy từ config
+            if not mo:
+                import yaml
+                try:
+                    with open('config.yaml', 'r', encoding='utf-8') as f:
+                        config = yaml.safe_load(f)
+                        mo = config.get('MO', '')
+                except:
+                    mo = ""
             
-            # Tạo START signal
-            start_signal = f"{mo_padded}{all_parts_padded}{panel_padded}START"
+            # MO: 20 bytes
+            mo_padded = str(mo).ljust(20)[:20]
+            
+            # Panel Number: 20 bytes (để trống)
+            panel_padded = "".ljust(20)
+            
+            # NEEDPSN08: 9 bytes (cố định)
+            need_keyword = "NEEDPSN08"
+            
+            # Tạo START signal: 20 + 20 + 9 = 49 bytes
+            start_signal = f"{mo_padded}{panel_padded}{need_keyword}"
             
             # Lưu vào current_data
             self.current_data.mo = mo
-            self.current_data.all_parts_no = all_parts_no
-            self.current_data.panel_no = panel_no
+            self.current_data.panel_no = ""
             
             return start_signal
             
