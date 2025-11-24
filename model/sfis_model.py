@@ -4,7 +4,7 @@ SFIS Model - Logic nghiệp vụ và cấu trúc dữ liệu cho SFIS
 from dataclasses import dataclass
 from typing import Optional, List
 from PySide6.QtCore import QObject, Signal
-import yaml
+from config import ConfigManager
 
 
 @dataclass
@@ -55,6 +55,8 @@ class SFISModel(QObject):
     def __init__(self):
         super().__init__()
         self.current_data = SFISData()
+        # Khởi tạo ConfigManager (singleton)
+        self.config_manager = ConfigManager()
     
     def createRequestPsn(self, mo, all_parts_no, panel_no):
         """ MO(20) + AllPar_NO(12) + PANEL_NO(20) + NEEDPSN10(9)
@@ -170,25 +172,40 @@ class SFISModel(QObject):
             return None
     
     def createStartSignal(self, mo=None, all_parts_no=None, panel_no=None):
+        """ 
+        Format: MO(20) + Panel_Number(20) + NEEDPSNxx(9) = 49 bytes
+        - MO: Lấy từ config.yaml nếu không truyền vào
+        - Panel_Number: Để trống (20 spaces)
+        - NEEDPSNxx: Động theo Panel_Num từ config (ex: Panel_Num=5 → NEEDPSN05)       
+        """
         try:
+            # Lấy config từ ConfigManager
+            config = self.config_manager.get()
+            
+            if not config:
+                self.validation_error.emit("Không thể đọc config")
+                return None
+            
             # Nếu không truyền MO, lấy từ config
             if not mo:
-                import yaml
-                try:
-                    with open('config.yaml', 'r', encoding='utf-8') as f:
-                        config = yaml.safe_load(f)
-                        mo = config.get('MO', '')
-                except:
-                    mo = ""
+                mo = str(config.MO)
+            
+            # Lấy Panel_Num từ config để tạo NEEDPSNxx
+            panel_num = config.Panel_Num
+            
+            # Tạo NEEDPSNxx: "NEEDPSN" + 2 số cuối của Panel_Num
+            need_keyword = f"NEEDPSN{panel_num:02d}"  # Format 2 chữ số, thêm 0 phía trước nếu cần
+            
+            # Kiểm tra độ dài keyword (phải là 9 bytes)
+            if len(need_keyword) != 9:
+                self.validation_error.emit(f"NEEDPSN keyword is not the correct length: {len(need_keyword)} (expected: 9)")
+                return None
             
             # MO: 20 bytes
             mo_padded = str(mo).ljust(20)[:20]
             
             # Panel Number: 20 bytes (để trống)
             panel_padded = "".ljust(20)
-            
-            # NEEDPSN08: 9 bytes (cố định)
-            need_keyword = "NEEDPSN08"
             
             # Tạo START signal: 20 + 20 + 9 = 49 bytes
             start_signal = f"{mo_padded}{panel_padded}{need_keyword}"
@@ -199,6 +216,10 @@ class SFISModel(QObject):
             
             return start_signal
             
+        except AttributeError as e:
+            error_msg = f"Lỗi đọc config: {str(e)} - Kiểm tra Panel_Num trong config.yaml"
+            self.validation_error.emit(error_msg)
+            return None
         except Exception as e:
             self.validation_error.emit(f"Lỗi tạo START signal: {str(e)}")
             return None

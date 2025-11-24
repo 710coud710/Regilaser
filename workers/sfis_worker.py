@@ -1,24 +1,12 @@
-"""
-SFIS Worker - Xử lý giao tiếp COM port với SFIS (Shop Floor Information System)
-Xử lý dữ liệu dưới dạng text ASCII
-"""
 import serial
 import time
 from PySide6.QtCore import QObject, Signal, QThread, Slot
 from utils.Logging import getLogger
 
-# Khởi tạo logger
 log = getLogger()
 
 
 class SFISWorker(QObject):
-    """
-    Worker xử lý giao tiếp serial với SFIS
-    - Kết nối/ngắt kết nối COM port
-    - Gửi dữ liệu dạng text ASCII
-    - Nhận dữ liệu dạng text ASCII
-    """
-    
     # Signals
     data_received = Signal(str)  # Dữ liệu nhận được từ SFIS (text ASCII)
     error_occurred = Signal(str)  # Lỗi xảy ra
@@ -44,18 +32,8 @@ class SFISWorker(QObject):
     @Slot(str)
     @Slot()
     def connect(self, port_name=None, baudrate=None):
-        """
-        Kết nối đến SFIS qua COM port
-        
-        Args:
-            port_name (str): Tên COM port (vd: "COM2")
-            baudrate (int): Tốc độ baud (mặc định: 9600)
-            
-        Returns:
-            bool: True nếu kết nối thành công
-        """
+        """Kết nối đến SFIS qua COM port"""
         try:
-            # Cập nhật cấu hình nếu có
             if port_name:
                 self.port_name = port_name
             if baudrate:
@@ -64,7 +42,7 @@ class SFISWorker(QObject):
             log.info(f"Connecting to {self.port_name}...")
             log.info(f"Config: baudrate={self.baudrate}, bytesize=8, parity=N, stopbits=1")
             
-            # Đóng kết nối cũ nếu có
+            # Close existing connection if any
             if self.serial_port and self.serial_port.is_open:
                 log.info("Closing existing connection...")
                 self.serial_port.close()
@@ -134,17 +112,9 @@ class SFISWorker(QObject):
             return False
     
     def send_data(self, data):
-        """
-        Gửi dữ liệu text ASCII đến SFIS qua COM port
-        
-        Args:
-            data (str): Dữ liệu text cần gửi
-            
-        Returns:
-            bool: True nếu gửi thành công
-        """
+        """Gửi dữ liệu text ASCII đến SFIS qua COM port"""
         try:
-            # Kiểm tra kết nối
+            # Check connection
             if not self.is_connected or not self.serial_port:
                 error_msg = "Not connected to SFIS"
                 log.error(error_msg)
@@ -193,13 +163,8 @@ class SFISWorker(QObject):
     
     @Slot(str)
     def send_start_signal(self, start_message):
-        """
-        Gửi tín hiệu START text đến SFIS (fire and forget - không chờ phản hồi)
-        Slot method để được gọi từ QMetaObject.invokeMethod trong thread
-        
-        Args:
-            start_message (str): Message START text cần gửi
-        """
+        """Gửi tín hiệu START text đến SFIS (fire and forget - không chờ phản hồi)
+        Slot method để được gọi từ QMetaObject.invokeMethod trong thread"""
         log.info("=" * 70)
         log.info("send_start_signal() called")
         log.info(f"Message: {start_message}")
@@ -224,26 +189,16 @@ class SFISWorker(QObject):
             self.signal_sent.emit(False, error_msg)
     
     def read_data(self, expected_length=None, timeout_ms=5000):
-        """
-        Đọc dữ liệu text ASCII từ SFIS qua COM port
-        
-        Args:
-            expected_length (int): Độ dài dữ liệu mong đợi (None = đọc tất cả có sẵn)
-            timeout_ms (int): Thời gian timeout (milliseconds)
-            
-        Returns:
-            str: Dữ liệu text nhận được, hoặc None nếu timeout/lỗi
-        """
+        """Đọc dữ liệu text ASCII từ SFIS qua COM port """
         try:
-            # Kiểm tra kết nối
+            # Check connection
             if not self.is_connected or not self.serial_port:
                 error_msg = "Not connected to SFIS"
                 log.error(error_msg)
                 self.error_occurred.emit(error_msg)
                 return None
-            
-            log.info("=" * 70)
-            log.info("Reading data from SFIS...")
+
+            log.info("Reading data from SFIS via COM port...")
             log.info(f"Port: {self.port_name}")
             log.info(f"Expected length: {expected_length if expected_length else 'all available'} bytes")
             log.info(f"Timeout: {timeout_ms}ms")
@@ -261,7 +216,7 @@ class SFISWorker(QObject):
                     # Kiểm tra timeout
                     if time.time() - start_time > timeout_sec:
                         error_msg = f"Timeout: Received {len(data_bytes)}/{expected_length} bytes"
-                        log.error(f"✗ {error_msg}")
+                        log.error(f"{error_msg}")
                         self.error_occurred.emit(error_msg)
                         return None
                     
@@ -285,24 +240,19 @@ class SFISWorker(QObject):
                     time.sleep(0.01)
                 else:
                     error_msg = "Timeout: No data received"
-                    log.error(f"✗ {error_msg}")
+                    log.error(f"{error_msg}")
                     self.error_occurred.emit(error_msg)
                     return None
             
-            # Kiểm tra dữ liệu
+            # Check data
             if not data_bytes:
                 log.warning("No data received")
                 return None
             
             # Chuyển bytes sang text string (ASCII decoding)
             data_str = data_bytes.decode('ascii', errors='ignore').strip()
-            
-            log.info(f"✓ Data received successfully")
-            log.info(f"  Bytes received: {len(data_bytes)}")
-            log.info(f"  Data (text): {data_str}")
-            log.info(f"  Data (HEX): {data_bytes.hex()}")
-            log.info("=" * 70)
-            
+            # log.info(f"  Bytes received: {len(data_bytes)}")
+            log.info(f"  Data received from SFIS: {data_str}")            
             # Emit signal
             self.data_received.emit(data_str)
             return data_str
@@ -328,34 +278,17 @@ class SFISWorker(QObject):
             return None
     
     def send_and_wait(self, data, expected_length=None, timeout_ms=5000):
-        """
-        Gửi dữ liệu text và chờ phản hồi text từ SFIS
-        
-        Args:
-            data (str): Dữ liệu text gửi đi
-            expected_length (int): Độ dài phản hồi mong đợi (bytes)
-            timeout_ms (int): Thời gian timeout (milliseconds)
-            
-        Returns:
-            str: Dữ liệu text nhận được, hoặc None nếu lỗi
-        """
+        """Gửi dữ liệu text và chờ phản hồi text từ SFIS"""
         log.info("Send and wait for response...")
         
-        # Gửi dữ liệu
         if self.send_data(data):
-            # Chờ phản hồi
             return self.read_data(expected_length, timeout_ms)
         else:
             log.error("Failed to send data, skipping read")
             return None
     
     def clear_buffer(self):
-        """
-        Xóa buffer đọc/ghi của COM port
-        
-        Returns:
-            bool: True nếu xóa thành công
-        """
+        """Xóa buffer đọc/ghi của COM port"""
         try:
             if self.serial_port and self.serial_port.is_open:
                 self.serial_port.reset_input_buffer()
@@ -372,15 +305,7 @@ class SFISWorker(QObject):
             return False
     
     def is_port_available(self, port_name):
-        """
-        Kiểm tra COM port có khả dụng không
-        
-        Args:
-            port_name (str): Tên COM port (vd: "COM2")
-            
-        Returns:
-            bool: True nếu port khả dụng
-        """
+        """Kiểm tra COM port có khả dụng """
         try:
             test_port = serial.Serial(port_name)
             test_port.close()
@@ -392,12 +317,7 @@ class SFISWorker(QObject):
     
     @staticmethod
     def list_available_ports():
-        """
-        Liệt kê các COM port khả dụng trên hệ thống
-        
-        Returns:
-            list: Danh sách tên COM port (vd: ["COM1", "COM2", "COM3"])
-        """
+        """Liệt kê các COM port khả dụng trên hệ thống"""
         import serial.tools.list_ports
         ports = serial.tools.list_ports.comports()
         port_list = [port.device for port in ports]
@@ -405,12 +325,7 @@ class SFISWorker(QObject):
         return port_list
     
     def get_port_info(self):
-        """
-        Lấy thông tin cấu hình COM port hiện tại
-        
-        Returns:
-            dict: Thông tin cấu hình
-        """
+        """Lấy thông tin cấu hình COM port hiện tại"""
         return {
             'port_name': self.port_name,
             'baudrate': self.baudrate,

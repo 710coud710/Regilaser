@@ -145,29 +145,15 @@ class SFISPresenter(QObject):
             log.error("Timeout hoặc không nhận được dữ liệu từ SFIS")
             return None
     
-    def sendStartSignal(self, mo=None, all_parts_no=None, panel_no=None):
+    def sendStartSignal(self, mo=None, panel_no=None):
         """
         Gửi tín hiệu START đến SFIS qua COM port (fire and forget)
-        
         Flow:
         1. SFISModel tạo START message (49 bytes)
         2. SFISWorker gửi qua COM port trong thread riêng
-        3. Không chờ phản hồi từ SFIS
-        
-        Format: MO(20) + Panel_Number(20) + NEEDPSN08(9) = 49 bytes
-        - MO: Lấy từ config.yaml nếu không truyền vào
-        - Panel Number: Để trống (20 spaces)
-        - NEEDPSN08: Keyword cố định (9 bytes)
-        
-        Args:
-            mo (str, optional): Manufacturing Order
-            all_parts_no (str, optional): ALL PARTS Number (không dùng)
-            panel_no (str, optional): Panel Number (không dùng)
-        
-        Returns:
-            bool: True nếu bắt đầu gửi thành công
+        3. Không chờ phản hồi từ SFIS       
         """
-        log.info("=" * 70)
+        log.info("=" * 20)
         log.info("SFISPresenter.sendStartSignal() called")
         
         # Kiểm tra kết nối
@@ -176,39 +162,34 @@ class SFISPresenter(QObject):
             log.error("SFIS not connected")
             return False
         
+        # Lấy config để hiển thị Panel_Num
+        from config import ConfigManager
+        config = ConfigManager().get()
+        panel_num = config.Panel_Num if config else "??"
+        
         # Bước 1: SFISModel tạo START message
         log.info("Step 1: Creating START message via SFISModel...")
-        start_message = self.sfis_model.createStartSignal(mo, all_parts_no, panel_no)
+        start_message = self.sfis_model.createStartSignal(mo, None, panel_no)
         
         if not start_message:
             self.logMessage.emit("Lỗi tạo START signal", "ERROR")
             log.error("Failed to create START message")
             return False
-        
-        # Lấy MO thực tế đã dùng
-        actual_mo = self.sfis_model.current_data.mo
-        
-        # LOG chi tiết message
+        # LOG detailed message
         log.info("START Message created successfully:")
-        log.info(f"  MO (from config): '{actual_mo}'")
-        log.info(f"  Format: MO(20) + Panel(20) + NEEDPSN08(9)")
+        log.info(f"  Data sent: {start_message}")
         log.info(f"  Length: {len(start_message)} bytes (expected: 49)")
-        log.info(f"  Content (text): '{start_message}'")
-        log.info(f"  Content (HEX): {start_message.encode('ascii').hex()}")
-        log.info("=" * 70)
+        log.info("=" * 20)
         
         # UI Log
-        self.logMessage.emit("=" * 70, "INFO")
-        self.logMessage.emit("CHUẨN BỊ GỬI START SIGNAL:", "INFO")
-        self.logMessage.emit(f"  MO: {actual_mo}", "INFO")
-        self.logMessage.emit(f"  Format: MO(20) + Panel(20) + NEEDPSN08(9)", "INFO")
+        self.logMessage.emit("GỬI START SIGNAL:", "INFO")
+        self.logMessage.emit(f"  DATA: {start_message}", "INFO")
         self.logMessage.emit(f"  Length: {len(start_message)} bytes", "INFO")
         self.logMessage.emit(f"  COM Port: {self.currentPort}", "INFO")
-        self.logMessage.emit("=" * 70, "INFO")
         
         # Bước 2: Gửi qua SFISWorker trong thread riêng
         log.info("Step 2: Invoking SFISWorker to send via COM port...")
-        self.logMessage.emit("Đang gửi START signal qua COM port...", "INFO")
+        self.logMessage.emit("Sending START signal via COM port...", "INFO")
         
         # Invoke worker method trong thread của nó (fire and forget)
         QMetaObject.invokeMethod(

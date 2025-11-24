@@ -3,15 +3,19 @@ import threading
 import time
 import os
 from pydantic import BaseModel, StrictStr, StrictInt, ValidationError
-from utils.Logging import log
+from utils.Logging import getLogger
+
+# Khởi tạo logger
+log = getLogger()
 
 # === CONFIG SCHEMA (tối giản – bạn có thể mở rộng sau) ===
 class Config(BaseModel):
-    model_config = {"extra": "forbid"}  # chặn key dư
+    model_config = {"extra": "allow"}  # cho phép thêm key khác (FrontPSN_Num, etc.)
 
     PANEL_NO: StrictStr
     MO: StrictInt
     SECURITY_CODE: StrictStr
+    Panel_Num: StrictInt  # Panel Number để tạo NEEDPSNxx
 
 
 # === CONFIG MANAGER (singleton + hot reload + thread-safe) ===
