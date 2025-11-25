@@ -274,6 +274,87 @@ class SFISWorker(QObject):
             
         except serial.SerialException as e:
             error_msg = f"Serial port error: {str(e)}"
+            log.error(f"{error_msg}")
+            self.error_occurred.emit(error_msg)
+            return None
+            
+        except Exception as e:
+            error_msg = f"Read data error: {str(e)}"
+            log.error(f"✗ {error_msg}")
+            log.debug("Exception details:", exc_info=True)
+            self.error_occurred.emit(error_msg)
+            return None
+    
+    @Slot(int)
+    def read_data_all(self, timeout_ms=10000):
+        """Read ALL available data from SFIS via COM port"""
+        try:
+            # Kiểm tra kết nối
+            if not self.is_connected or not self.serial_port:
+                error_msg = "Not connected to SFIS"
+                log.error(error_msg)
+                self.error_occurred.emit(error_msg)
+                return None
+            
+            log.info("Reading ALL available data from SFIS...")
+            log.info(f"Port: {self.port_name}")
+            log.info(f"Timeout: {timeout_ms}ms")
+            log.info("No length restriction - reading until no more data")
+            
+            # Đợi và đọc tất cả dữ liệu
+            start_time = time.time()
+            timeout_sec = timeout_ms / 1000.0
+            data_bytes = b''
+            no_data_count = 0
+            max_no_data_count = 10  # Dừng sau 10 lần không có dữ liệu (100ms)
+            
+            log.info("Waiting for data...")
+            
+            while time.time() - start_time < timeout_sec:
+                if self.serial_port.in_waiting > 0:
+                    # Có dữ liệu, đọc tất cả
+                    chunk = self.serial_port.read(self.serial_port.in_waiting)
+                    data_bytes += chunk
+                    no_data_count = 0  # Reset counter
+                    log.debug(f"Received {len(chunk)} bytes, total: {len(data_bytes)}")
+                else:
+                    # Không có dữ liệu
+                    no_data_count += 1
+                    if len(data_bytes) > 0 and no_data_count >= max_no_data_count:
+                        # Đã có dữ liệu và không còn dữ liệu mới trong 100ms → dừng
+                        log.info(f"No more data after {max_no_data_count * 10}ms, stopping read")
+                        break
+                    time.sleep(0.01)  # Chờ 10ms
+            
+            # Kiểm tra dữ liệu
+            if not data_bytes:
+                error_msg = "Timeout: No data received"
+                log.error(f"{error_msg}")
+                self.error_occurred.emit(error_msg)
+                return None
+            
+            # Chuyển bytes sang text string (ASCII decoding)
+            data_str = data_bytes.decode('ascii', errors='ignore')
+            
+            log.info(f"✓ Data received successfully")
+            log.info(f"  Total bytes: {len(data_bytes)}")
+            log.info(f"  Data (text): '{data_str}'")
+            log.info(f"  Data (HEX): {data_bytes.hex()}")
+            log.info("=" * 70)
+            
+            # Emit signal
+            self.data_received.emit(data_str)
+            return data_str
+                
+        except UnicodeDecodeError as e:
+            error_msg = f"ASCII decoding error: {str(e)} - Data contains non-ASCII bytes"
+            log.error(f"✗ {error_msg}")
+            log.error(f"  Raw bytes (HEX): {data_bytes.hex()}")
+            self.error_occurred.emit(error_msg)
+            return None
+            
+        except serial.SerialException as e:
+            error_msg = f"Serial port error: {str(e)}"
             log.error(f"✗ {error_msg}")
             self.error_occurred.emit(error_msg)
             return None

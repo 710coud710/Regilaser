@@ -269,35 +269,65 @@ class SFISPresenter(QObject):
         return self.sfis_model.get_current_data()
     
     def onDataReceived(self, data):
-        """Xử lý khi nhận được dữ liệu từ SFIS Worker"""
+        """
+        Xử lý khi nhận được dữ liệu từ SFIS Worker
+        Hiển thị TẤT CẢ dữ liệu nhận được lên log để phân tích
+        """
         log.info("=" * 70)
-        log.info("onDataReceived() - Data received from SFIS")
-        log.info(f"  Data length: {len(data)} bytes")
+        log.info("DATA RECEIVED FROM SFIS")
+        log.info("=" * 70)
+        log.info(f"Length: {len(data)} bytes")
+        log.info(f"Data (text): '{data}'")
+        log.info(f"Data (HEX):  {data.encode('ascii', errors='ignore').hex()}")
         
-        self.logMessage.emit(f"Received data from SFIS ({len(data)} bytes)", "SUCCESS")
+        # Phân tích chi tiết từng phần (mỗi 20 bytes)
+        log.info("-" * 70)
+        log.info("DETAILED BREAKDOWN (20-byte chunks):")
+        for i in range(0, len(data), 20):
+            chunk = data[i:i+20]
+            chunk_hex = chunk.encode('ascii', errors='ignore').hex()
+            log.info(f"  [{i:3d}-{i+len(chunk)-1:3d}] '{chunk}' (HEX: {chunk_hex})")
+        log.info("=" * 70)
         
-        # Parse dữ liệu PSN
-        log.info("Parsing PSN response...")
-        parsedData = self.sfis_model.parseResponsePsn(data)
+        # Hiển thị trên UI
+        self.logMessage.emit("=" * 70, "INFO")
+        self.logMessage.emit(f"✓ RECEIVED DATA FROM SFIS", "SUCCESS")
+        self.logMessage.emit(f"  Length: {len(data)} bytes", "INFO")
+        self.logMessage.emit(f"  Data: {data}", "INFO")
+        self.logMessage.emit("=" * 70, "INFO")
         
-        if parsedData:
-            log.info("Parse PSN response successfully")
-            log.info(f"  MO: {parsedData.mo}")
-            log.info(f"  Panel Number: {parsedData.panel_no}")
-            log.info(f"  PSN count: {len(parsedData.psn_list)}")
-            for i, psn in enumerate(parsedData.psn_list, 1):
-                log.info(f"  PSN{i}: {psn}")
+        # Phân tích chi tiết trên UI (mỗi 20 bytes)
+        self.logMessage.emit("DETAILED BREAKDOWN:", "INFO")
+        for i in range(0, len(data), 20):
+            chunk = data[i:i+20]
+            self.logMessage.emit(f"  [{i:3d}-{i+len(chunk)-1:3d}] {chunk}", "INFO")
+        self.logMessage.emit("=" * 70, "INFO")
+        
+        # Thử parse nếu có thể (không bắt buộc)
+        try:
+            log.info("Attempting to parse as PSN response...")
+            parsedData = self.sfis_model.parseResponsePsn(data)
             
-            # Hiển thị trên UI
-            self.logMessage.emit("Parse data successfully", "SUCCESS")
-            self.logMessage.emit(f"  MO: {parsedData.mo}", "INFO")
-            self.logMessage.emit(f"  Panel Number: {parsedData.panel_no}", "INFO")
-            self.logMessage.emit(f"  PSN count: {len(parsedData.psn_list)}", "INFO")
-            for i, psn in enumerate(parsedData.psn_list, 1):
-                self.logMessage.emit(f"  PSN{i}: {psn}", "INFO")
-        else:
-            log.error("Failed to parse PSN response")
-            self.logMessage.emit("Error parsing PSN data", "ERROR")
+            if parsedData:
+                log.info("✓ Successfully parsed as PSN response:")
+                log.info(f"  MO: {parsedData.mo}")
+                log.info(f"  Panel Number: {parsedData.panel_no}")
+                log.info(f"  PSN count: {len(parsedData.psn_list)}")
+                for i, psn in enumerate(parsedData.psn_list, 1):
+                    log.info(f"  PSN{i}: {psn}")
+                
+                # Hiển thị parsed data trên UI
+                self.logMessage.emit("PARSED DATA:", "SUCCESS")
+                self.logMessage.emit(f"  MO: {parsedData.mo}", "INFO")
+                self.logMessage.emit(f"  Panel: {parsedData.panel_no}", "INFO")
+                for i, psn in enumerate(parsedData.psn_list, 1):
+                    self.logMessage.emit(f"  PSN{i}: {psn}", "INFO")
+            else:
+                log.warning("Could not parse as PSN response (format may differ)")
+                self.logMessage.emit("(Could not parse as PSN format)", "WARNING")
+        except Exception as e:
+            log.warning(f"Parse attempt failed: {str(e)}")
+            self.logMessage.emit(f"(Parse attempt failed: {str(e)})", "WARNING")
     
     def onDataParsed(self, sfisData):
         """Xử lý khi dữ liệu đã được parse thành công"""
@@ -344,40 +374,31 @@ class SFISPresenter(QObject):
         self.startSignalSent.emit(success, message)
     
     def receiveResponsePsn(self):
-        """Receive PSN response from SFIS after sending START signal"""
+        """
+        Nhận TẤT CẢ dữ liệu từ SFIS sau khi gửi START signal
+        Không giới hạn format hay độ dài, đọc tất cả có sẵn
+        """
         try:
-            # Lấy số lượng PSN expected
-            psn_count = self.sfis_model.expected_psn_count
+            log.info("=" * 70)
+            log.info("Starting to receive data from SFIS...")
+            log.info("Reading ALL available data (no format restriction)")
             
-            if psn_count <= 0:
-                log.warning("PSN count not set, using default value from config")
-                from config import ConfigManager
-                config = ConfigManager().get()
-                psn_count = config.Panel_Num if config else 10
+            # Đọc TẤT CẢ dữ liệu có sẵn từ COM port (timeout 10s)
+            self.logMessage.emit("Waiting for data from SFIS...", "INFO")
             
-            # Tính độ dài expected
-            # MO(20) + Panel(20) + PSN*n(20*n) + PASS(4)
-            expected_length = 20 + 20 + (20 * psn_count) + 4
-            
-            log.info(f"  Expected PSN count: {psn_count}")
-            log.info(f"  Expected length: {expected_length} bytes")
-            
-            # Đọc dữ liệu từ COM port (timeout 10s)
-            self.logMessage.emit(f"Receiving {expected_length} bytes from SFIS...", "INFO")
-            
-            # Invoke read_data in worker thread
+            # Gọi read_data_all để đọc tất cả (không giới hạn độ dài)
             QMetaObject.invokeMethod(
                 self.sfis_worker,
-                "read_data",
+                "read_data_all",
                 Qt.QueuedConnection,
-                Q_ARG(int, expected_length),
                 Q_ARG(int, 10000)  # 10 seconds timeout
             )
             
-            log.info("Read request sent to worker successfully")
+            log.info("Read request sent to worker (reading all available data)")
+            log.info("=" * 70)
             
         except Exception as e:
-            error_msg = f"Error receiving PSN response: {str(e)}"
+            error_msg = f"Error receiving data from SFIS: {str(e)}"
             log.error(error_msg)
             log.debug("Exception details:", exc_info=True)
             self.logMessage.emit(error_msg, "ERROR")
