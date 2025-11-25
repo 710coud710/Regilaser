@@ -3,10 +3,18 @@ import time
 from PySide6.QtCore import QObject, Signal, QThread, Slot
 from utils.Logging import getLogger
 
+# Khởi tạo logger
 log = getLogger()
 
 
 class SFISWorker(QObject):
+    """
+    Worker xử lý giao tiếp serial với SFIS
+    - Kết nối/ngắt kết nối COM port
+    - Gửi dữ liệu dạng text ASCII
+    - Nhận dữ liệu dạng text ASCII
+    """
+    
     # Signals
     data_received = Signal(str)  # Dữ liệu nhận được từ SFIS (text ASCII)
     error_occurred = Signal(str)  # Lỗi xảy ra

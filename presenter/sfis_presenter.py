@@ -57,15 +57,7 @@ class SFISPresenter(QObject):
         self.sfis_model.validation_error.connect(self.onValidationError)
     
     def connect(self, portName):
-        """
-        Kết nối đến SFIS qua COM port
-        
-        Args:
-            portName (str): Tên COM port
-            
-        Returns:
-            bool: True nếu kết nối thành công
-        """
+        """Kết nối đến SFIS qua COM port"""
         self.logMessage.emit(f"Đang kết nối SFIS qua {portName}...", "INFO")
         log.info(f"Đang kết nối SFIS qua {portName}...")
         
@@ -90,14 +82,9 @@ class SFISPresenter(QObject):
         return success
     
     def disconnect(self):
-        """
-        Ngắt kết nối SFIS
-        
-        Returns:
-            bool: True nếu ngắt kết nối thành công
-        """
-        self.logMessage.emit("Đang ngắt kết nối SFIS...", "INFO")
-        log.info("Đang ngắt kết nối SFIS...")
+        """Ngắt kết nối SFIS"""
+        self.logMessage.emit("Disconnecting from SFIS...", "INFO")
+        log.info("Disconnecting from SFIS...")
         
         # Gọi disconnect() trong thread của worker
         QMetaObject.invokeMethod(
@@ -283,17 +270,38 @@ class SFISPresenter(QObject):
     
     def onDataReceived(self, data):
         """Xử lý khi nhận được dữ liệu từ SFIS Worker"""
-        self.logMessage.emit(f"SFIS Data: {data}", "DEBUG")
+        log.info("=" * 70)
+        log.info("onDataReceived() - Data received from SFIS")
+        log.info(f"  Data length: {len(data)} bytes")
         
-        # Parse dữ liệu
-        parsedData = self.sfis_model.parse_response_new_format(data)
+        self.logMessage.emit(f"Received data from SFIS ({len(data)} bytes)", "SUCCESS")
         
-        if not parsedData:
-            self.logMessage.emit("Lỗi parse dữ liệu SFIS", "ERROR")
+        # Parse dữ liệu PSN
+        log.info("Parsing PSN response...")
+        parsedData = self.sfis_model.parseResponsePsn(data)
+        
+        if parsedData:
+            log.info("Parse PSN response successfully")
+            log.info(f"  MO: {parsedData.mo}")
+            log.info(f"  Panel Number: {parsedData.panel_no}")
+            log.info(f"  PSN count: {len(parsedData.psn_list)}")
+            for i, psn in enumerate(parsedData.psn_list, 1):
+                log.info(f"  PSN{i}: {psn}")
+            
+            # Hiển thị trên UI
+            self.logMessage.emit("Parse data successfully", "SUCCESS")
+            self.logMessage.emit(f"  MO: {parsedData.mo}", "INFO")
+            self.logMessage.emit(f"  Panel Number: {parsedData.panel_no}", "INFO")
+            self.logMessage.emit(f"  PSN count: {len(parsedData.psn_list)}", "INFO")
+            for i, psn in enumerate(parsedData.psn_list, 1):
+                self.logMessage.emit(f"  PSN{i}: {psn}", "INFO")
+        else:
+            log.error("Failed to parse PSN response")
+            self.logMessage.emit("Error parsing PSN data", "ERROR")
     
     def onDataParsed(self, sfisData):
         """Xử lý khi dữ liệu đã được parse thành công"""
-        self.logMessage.emit("Parse dữ liệu SFIS thành công", "SUCCESS")
+        self.logMessage.emit("Parse SFIS data successfully", "SUCCESS")
         self.logMessage.emit(f"  Laser SN: {sfisData.laser_sn}", "INFO")
         self.logMessage.emit(f"  Security Code: {sfisData.security_code}", "INFO")
         self.logMessage.emit(f"  Status: {sfisData.status}", "INFO")
@@ -322,13 +330,57 @@ class SFISPresenter(QObject):
         """Xử lý khi START signal đã được gửi"""
         if success:
             log.info("START signal sent successfully")
-            self.logMessage.emit("✓ START signal đã gửi thành công", "SUCCESS")
+            self.logMessage.emit("START signal sent successfully", "SUCCESS")
+            
+            # Bắt đầu nhận dữ liệu từ SFIS
+            log.info("Starting to receive PSN data from SFIS...")
+            self.logMessage.emit("Waiting for PSN data from SFIS...", "INFO")
+            self.receiveResponsePsn()
         else:
             log.error(f"START signal failed: {message}")
-            self.logMessage.emit(f"✗ START signal gửi thất bại: {message}", "ERROR")
+            self.logMessage.emit(f"START signal sent failed: {message}", "ERROR")
         
         # Emit signal để MainPresenter biết
         self.startSignalSent.emit(success, message)
+    
+    def receiveResponsePsn(self):
+        """Receive PSN response from SFIS after sending START signal"""
+        try:
+            # Lấy số lượng PSN expected
+            psn_count = self.sfis_model.expected_psn_count
+            
+            if psn_count <= 0:
+                log.warning("PSN count not set, using default value from config")
+                from config import ConfigManager
+                config = ConfigManager().get()
+                psn_count = config.Panel_Num if config else 10
+            
+            # Tính độ dài expected
+            # MO(20) + Panel(20) + PSN*n(20*n) + PASS(4)
+            expected_length = 20 + 20 + (20 * psn_count) + 4
+            
+            log.info(f"  Expected PSN count: {psn_count}")
+            log.info(f"  Expected length: {expected_length} bytes")
+            
+            # Đọc dữ liệu từ COM port (timeout 10s)
+            self.logMessage.emit(f"Receiving {expected_length} bytes from SFIS...", "INFO")
+            
+            # Invoke read_data in worker thread
+            QMetaObject.invokeMethod(
+                self.sfis_worker,
+                "read_data",
+                Qt.QueuedConnection,
+                Q_ARG(int, expected_length),
+                Q_ARG(int, 10000)  # 10 seconds timeout
+            )
+            
+            log.info("Read request sent to worker successfully")
+            
+        except Exception as e:
+            error_msg = f"Error receiving PSN response: {str(e)}"
+            log.error(error_msg)
+            log.debug("Exception details:", exc_info=True)
+            self.logMessage.emit(error_msg, "ERROR")
     
     def cleanup(self):
         """Dọn dẹp tài nguyên"""

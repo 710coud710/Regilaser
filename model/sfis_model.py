@@ -57,18 +57,20 @@ class SFISModel(QObject):
         self.current_data = SFISData()
         # Khởi tạo ConfigManager (singleton)
         self.config_manager = ConfigManager()
+        # Lưu số lượng PSN đã request (để parse response)
+        self.expected_psn_count = 0
     
     def createRequestPsn(self, mo, all_parts_no, panel_no):
         """ MO(20) + AllPar_NO(12) + PANEL_NO(20) + NEEDPSN10(9)
         Total: 61 bytes    
         """
         try:
-            # Padding các field đúng độ dài
+            # Padding fields to correct length
             mo_padded = mo.ljust(self.MO_LENGTH)[:self.MO_LENGTH]
             all_parts_padded = all_parts_no.ljust(self.ALL_PARTS_NO_LENGTH)[:self.ALL_PARTS_NO_LENGTH]
             panel_padded = panel_no.ljust(self.PANEL_NO_LENGTH)[:self.PANEL_NO_LENGTH]
             
-            # Tạo request string
+            # Tạo request string        
             request = f"{mo_padded}{all_parts_padded}{panel_padded}{self.NEED_KEYWORD}{self.PSN10_KEYWORD}"
             
             # Lưu vào current_data
@@ -83,7 +85,7 @@ class SFISModel(QObject):
             return None
     
     def parseResponsePsn(self, response):
-
+        """Parse response PSN from SFIS (dynamic based on expected PSN count)"""
         try:
             expected_length = self.MO_LENGTH + self.PANEL_NO_LENGTH + (self.PSN_LENGTH * self.PSN_COUNT) + 4
             

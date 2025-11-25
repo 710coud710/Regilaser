@@ -73,7 +73,7 @@ class MainPresenter(QObject):
         self.statusChanged.connect(self.updateStatusBar)
     
     def forwardLog(self, message, level):
-        """Forward log từ các presenter con đến View"""
+        """Forward log from sub-presenters to View"""
         self.logMessage.emit(message, level)
     
     def updateLog(self, message, level):
@@ -105,13 +105,7 @@ class MainPresenter(QObject):
         self.logMessage.emit("Hệ thống đã sẵn sàng!", "INFO")
     
     def onSfisConnectRequested(self, shouldConnect, portName):
-        """
-        Xử lý yêu cầu kết nối/ngắt kết nối SFIS từ nút toggle
-        
-        Args:
-            shouldConnect (bool): True = kết nối, False = ngắt kết nối
-            portName (str): Tên COM port
-        """
+        """Xử lý yêu cầu kết nối/ngắt kết nối SFIS từ nút toggle"""
         topPanel = self.main_window.getTopPanel()
         
         if shouldConnect:
