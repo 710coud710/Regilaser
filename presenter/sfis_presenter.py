@@ -321,7 +321,8 @@ class SFISPresenter(BasePresenter):
     
     def onError(self, errorMsg):
         """Xử lý lỗi từ SFIS Worker"""
-        self.show_info(f"SFIS Error: {errorMsg}", "ERROR")
+        self.show_error(f"SFIS Error: {errorMsg}")
+        log.error(f"SFIS Error: {errorMsg}")
     
     def onValidationError(self, errorMsg):
         """Xử lý lỗi validation từ Model"""
@@ -330,7 +331,7 @@ class SFISPresenter(BasePresenter):
     def onConnectionChanged(self, isConnected):
         """Xử lý khi trạng thái kết nối thay đổi"""
         self.isConnected = isConnected
-        status = "Đã kết nối" if isConnected else "Ngắt kết nối"
+        status = "Connected" if isConnected else "Disconnected"
         self.show_info(f"SFIS: {status}", "INFO")
         
         # Emit signal để MainPresenter cập nhật UI
