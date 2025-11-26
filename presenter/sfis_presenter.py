@@ -1,7 +1,7 @@
 """
 SFIS Presenter - Xử lý logic giao tiếp SFIS
 """
-from PySide6.QtCore import QObject, QThread, Signal, QMetaObject, Qt, Q_ARG
+from PySide6.QtCore import QThread, Signal, QMetaObject, Qt, Q_ARG
 from model.sfis_model import SFISModel
 from workers.sfis_worker import SFISWorker
 from utils.Logging import getLogger
@@ -97,26 +97,24 @@ class SFISPresenter(BasePresenter):
         
         return success
     
-    def requestData(self, mo=None, allPartsSn=None):
-        """
-        Yêu cầu dữ liệu từ SFIS - Dữ liệu nhận được, hoặc None nếu lỗi 
-        """
+    def requestData(self, mo=None, panelNo=None):
+        """Yêu cầu dữ liệu từ SFIS - Dữ liệu nhận được, hoặc None nếu lỗi"""
         if not self.isConnected:
-            self.show_info("Chưa kết nối SFIS", "ERROR")
-            log.error("Chưa kết nối SFIS")
+            self.show_error("SFIS not connected")
+            log.error("SFIS not connected")
             return None
         
-        self.show_info("Đang chờ dữ liệu từ SFIS...", "INFO")
-        log.info("Đang chờ dữ liệu từ SFIS...")
+        self.show_info("Waiting for data from SFIS...")
+        log.info("Waiting for data from SFIS...")
         # Đọc dữ liệu với timeout 5s
-        response = self.sfis_worker.read_data(expected_length=70, timeout_ms=5000)
+        response = self.sfis_worker.read_data(expected_length=70, timeout_ms=5000, mo=mo, panelNo=panelNo)
         
         if response:
-            self.show_info(f"Nhận dữ liệu từ SFIS: {response}", "DEBUG")
-            log.debug(f"Nhận dữ liệu từ SFIS: {response}")
+            self.show_info(f"Received data from SFIS: {response}")
+            log.info(f"Received data from SFIS: {response}")
             return response
         else:
-            self.show_info("Timeout hoặc không nhận được dữ liệu từ SFIS", "ERROR")
+            self.show_error("Timeout hoặc không nhận được dữ liệu từ SFIS")
             log.error("Timeout hoặc không nhận được dữ liệu từ SFIS")
             return None
     
@@ -133,21 +131,21 @@ class SFISPresenter(BasePresenter):
         
         # Kiểm tra kết nối
         if not self.isConnected:
-            self.show_info("Chưa kết nối SFIS", "ERROR")
+            self.show_error("SFIS not connected")
             log.error("SFIS not connected")
             return False
         
-        # Lấy config để hiển thị Panel_Num
+        # Lấy config để hiển thị PANEL_NUM
         from config import ConfigManager
         config = ConfigManager().get()
-        panel_num = config.Panel_Num if config else "??"
+        panel_num = config.PANEL_NUM if config else "??"
         
         # Bước 1: SFISModel tạo START message
         log.info("Step 1: Creating START message via SFISModel...")
-        start_message = self.sfis_model.createStartSignal(mo, None, panel_no)
+        start_message = self.sfis_model.createStartSignal(mo, panel_no)
         
         if not start_message:
-            self.show_info("Lỗi tạo START signal", "ERROR")
+            self.show_error("Lỗi tạo START signal")
             log.error("Failed to create START message")
             return False
         # LOG detailed message
@@ -157,14 +155,14 @@ class SFISPresenter(BasePresenter):
         log.info("=" * 20)
         
         # UI Log
-        self.show_info("GỬI START SIGNAL:", "INFO")
-        self.show_info(f"  DATA: {start_message}", "INFO")
-        self.show_info(f"  Length: {len(start_message)} bytes", "INFO")
-        self.show_info(f"  COM Port: {self.currentPort}", "INFO")
+        self.show_info("GỬI START SIGNAL:")
+        self.show_info(f"  DATA: {start_message}")
+        self.show_info(f"  Length: {len(start_message)} bytes")
+        self.show_info(f"  COM Port: {self.currentPort}")
         
         # Bước 2: Gửi qua SFISWorker trong thread riêng
         log.info("Step 2: Invoking SFISWorker to send via COM port...")
-        self.show_info("Sending START signal via COM port...", "INFO")
+        self.show_info("Sending START signal via COM port...")
         
         # Invoke worker method trong thread của nó (fire and forget)
         QMetaObject.invokeMethod(
@@ -176,7 +174,6 @@ class SFISPresenter(BasePresenter):
         
         log.info("SFISWorker invoked successfully (fire and forget)")
         log.info("Waiting for signal_sent callback...")
-        log.info("=" * 70)
         return True
     
     def sendTestComplete(self, mo, panelNo):
@@ -273,15 +270,15 @@ class SFISPresenter(BasePresenter):
             log.info(f"  [{i:3d}-{i+len(chunk)-1:3d}] '{chunk}' (HEX: {chunk_hex})")
         
         # Hiển thị trên UI
-        self.show_info(f" RECEIVED DATA FROM SFIS", "SUCCESS")
-        self.show_info(f"  Length: {len(data)} bytes", "INFO")
-        self.show_info(f"  Data: {data}", "INFO")
+        self.show_info(f" RECEIVED DATA FROM SFIS")
+        self.show_info(f"  Length: {len(data)} bytes")
+        self.show_info(f"  Data: {data}")
         
         # Phân tích chi tiết trên UI (mỗi 20 bytes)
-        self.show_info("DETAILED BREAKDOWN:", "INFO")
+        self.show_info("DETAILED BREAKDOWN:")
         for i in range(0, len(data), 20):
             chunk = data[i:i+20]
-            self.show_info(f"  [{i:3d}-{i+len(chunk)-1:3d}] {chunk}", "INFO")
+            self.show_info(f"  [{i:3d}-{i+len(chunk)-1:3d}] {chunk}")
         
         # Thử parse nếu có thể (không bắt buộc)
         try:
@@ -297,24 +294,24 @@ class SFISPresenter(BasePresenter):
                     log.info(f"  PSN{i}: {psn}")
                 
                 # Hiển thị parsed data trên UI
-                self.show_info("PARSED DATA:", "SUCCESS")
-                self.show_info(f"  MO: {parsedData.mo}", "INFO")
-                self.show_info(f"  Panel: {parsedData.panel_no}", "INFO")
+                self.show_info("PARSED DATA:")
+                self.show_info(f"  MO: {parsedData.mo}")
+                self.show_info(f"  Panel: {parsedData.panel_no}")
                 for i, psn in enumerate(parsedData.psn_list, 1):
-                    self.show_info(f"  PSN{i}: {psn}", "INFO")
+                    self.show_info(f"  PSN{i}: {psn}")
             else:
                 log.warning("Could not parse as PSN response (format may differ)")
-                self.show_info("(Could not parse as PSN format)", "WARNING")
+                self.show_info("(Could not parse as PSN format)")
         except Exception as e:
             log.warning(f"Parse attempt failed: {str(e)}")
-            self.show_info(f"(Parse attempt failed: {str(e)})", "WARNING")
+            self.show_info(f"(Parse attempt failed: {str(e)})")
     
     def onDataParsed(self, sfisData):
         """Xử lý khi dữ liệu đã được parse thành công"""
-        self.show_info("Parse SFIS data successfully", "SUCCESS")
-        self.show_info(f"  Laser SN: {sfisData.laser_sn}", "INFO")
-        self.show_info(f"  Security Code: {sfisData.security_code}", "INFO")
-        self.show_info(f"  Status: {sfisData.status}", "INFO")
+        self.show_info("Parse SFIS data successfully")
+        self.show_info(f"  Laser SN: {sfisData.laser_sn}")
+        self.show_info(f"  Security Code: {sfisData.security_code}")
+        self.show_info(f"  Status: {sfisData.status}")
         
         # Emit signal để MainPresenter xử lý tiếp
         self.dataReady.emit(sfisData)
@@ -326,13 +323,13 @@ class SFISPresenter(BasePresenter):
     
     def onValidationError(self, errorMsg):
         """Xử lý lỗi validation từ Model"""
-        self.show_info(f"Validation Error: {errorMsg}", "ERROR")
+        self.show_error(f"Validation Error: {errorMsg}")
     
     def onConnectionChanged(self, isConnected):
         """Xử lý khi trạng thái kết nối thay đổi"""
         self.isConnected = isConnected
         status = "Connected" if isConnected else "Disconnected"
-        self.show_info(f"SFIS: {status}", "INFO")
+        self.show_info(f"SFIS: {status}")
         
         # Emit signal để MainPresenter cập nhật UI
         self.connectionStatusChanged.emit(isConnected)
@@ -341,15 +338,15 @@ class SFISPresenter(BasePresenter):
         """Xử lý khi START signal đã được gửi"""
         if success:
             log.info("START signal sent successfully")
-            self.show_info("START signal sent successfully", "SUCCESS")
+            self.show_success("START signal sent successfully")
             
             # Bắt đầu nhận dữ liệu từ SFIS
             log.info("Starting to receive PSN data from SFIS...")
-            self.show_info("Waiting for PSN data from SFIS...", "INFO")
+            self.show_info("Waiting for PSN data from SFIS...")
             self.receiveResponsePsn()
         else:
             log.error(f"START signal failed: {message}")
-            self.show_info(f"START signal sent failed: {message}", "ERROR")
+            self.show_error(f"START signal sent failed: {message}")
         
         # Emit signal để MainPresenter biết
         self.startSignalSent.emit(success, message)
@@ -357,15 +354,11 @@ class SFISPresenter(BasePresenter):
     def receiveResponsePsn(self):
         """
         Nhận TẤT CẢ dữ liệu từ SFIS sau khi gửi START signal
-        Không giới hạn format hay độ dài, đọc tất cả có sẵn
         """
         try:
-            log.info("=" * 70)
             log.info("Starting to receive data from SFIS...")
             log.info("Reading ALL available data (no format restriction)")
-            
-            # Đọc TẤT CẢ dữ liệu có sẵn từ COM port (timeout 10s)
-            self.show_info("Waiting for data from SFIS...", "INFO")
+            self.show_info("Waiting for data from SFIS...")
             
             # Gọi read_data_all để đọc tất cả (không giới hạn độ dài)
             QMetaObject.invokeMethod(
@@ -376,7 +369,6 @@ class SFISPresenter(BasePresenter):
             )
             
             log.info("Read request sent to worker (reading all available data)")
-            log.info("=" * 70)
             
         except Exception as e:
             error_msg = f"Error receiving data from SFIS: {str(e)}"

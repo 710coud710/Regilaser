@@ -141,7 +141,8 @@ class LaserPresenter(BasePresenter):
         if not self.start_marking():
             return False
 
-        self.show_success("Laser marking hoàn tất")
+        self.show_success("Laser marking completed")
+        log.success("Laser marking completed")
         return True
 
     def send_custom_command(self, command, expect_keyword=None):

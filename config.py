@@ -15,7 +15,7 @@ class Config(BaseModel):
     PANEL_NO: StrictStr
     MO: StrictInt
     SECURITY_CODE: StrictStr
-    Panel_Num: StrictInt  # Panel Number để tạo NEEDPSNxx
+    PANEL_NUM: StrictInt  # Panel Number để tạo NEEDPSNxx
     LASER_IP: StrictStr
     LASER_PORT: StrictInt
     LASER_SCRIPT: StrictStr

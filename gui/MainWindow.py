@@ -21,8 +21,10 @@ class MainWindow(QMainWindow):
     menu_clicked = Signal()
     reset_clicked = Signal()
     keyboard_clicked = Signal()
-    send_laser_psn20_clicked = Signal()
-    send_laser_psn16_clicked = Signal()
+    sendLaserPsn20_clicked = Signal()
+    sendLaserPsn16_clicked = Signal()
+    sendPLCPOK_clicked = Signal()
+    sendPLCNG_clicked = Signal()
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Regilazi - Version 1.0 Prenium")
@@ -70,7 +72,9 @@ class MainWindow(QMainWindow):
         menubar = self.menuBar()
         # File menu
         file_menu = menubar.addMenu("&File")
-        tools_menu = menubar.addMenu("&Tools")
+        plc_menu = menubar.addMenu("&PLC")
+        sfis_menu = menubar.addMenu("&SFIS")
+        laser_menu = menubar.addMenu("&Laser")
         check_menu = menubar.addMenu("&Check")
         ######File menu#####
         # Menu action
@@ -86,24 +90,31 @@ class MainWindow(QMainWindow):
         exit_action.triggered.connect(self.close)
         file_menu.addAction(exit_action)
         
-        ######Tools menu#####
-        # Reset action
-        reset_action = QAction("Reset", self)
-        reset_action.setShortcut("F5")
-        reset_action.triggered.connect(self.reset_clicked.emit)
-        tools_menu.addAction(reset_action)
-        
-        
+        #--------------------------------PLC menu--------------------------------
+        send_plc_ok_action = QAction("Send OK to PLC", self)
+        send_plc_ok_action.setShortcut("Ctrl+P")
+        send_plc_ok_action.triggered.connect(self.sendPLCPOK_clicked.emit)
+        plc_menu.addAction(send_plc_ok_action)
+
+        send_plc_ng_action = QAction("Send NG to PLC", self)
+        send_plc_ng_action.setShortcut("Ctrl+N")
+        send_plc_ng_action.triggered.connect(self.sendPLCNG_clicked.emit)
+        plc_menu.addAction(send_plc_ng_action)  
+
+
         ######Check menu#####
+
+
+        
         send_psn16_action = QAction("Send PSN16 to LASER", self)
-        send_psn16_action.setShortcut("Ctrl+P")
-        send_psn16_action.triggered.connect(self.send_laser_psn16_clicked.emit)
+        send_psn16_action.setShortcut("Ctrl+1")
+        send_psn16_action.triggered.connect(self.sendLaserPsn16_clicked.emit)
         check_menu.addAction(send_psn16_action)
 
 
         send_psn_action = QAction("Send PSN20 to LASER", self)
-        send_psn_action.setShortcut("Ctrl+P")
-        send_psn_action.triggered.connect(self.send_laser_psn20_clicked.emit)
+        send_psn_action.setShortcut("Ctrl+2")
+        send_psn_action.triggered.connect(self.sendLaserPsn20_clicked.emit)
         check_menu.addAction(send_psn_action)
         
 

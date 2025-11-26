@@ -1,100 +1,127 @@
 """
 PLC Presenter - Xử lý logic giao tiếp PLC (Programmable Logic Controller)
 """
+from PySide6.QtCore import QThread, QMetaObject, Qt, Q_ARG, Signal
+
 from presenter.base_presenter import BasePresenter
+from model.plc_model import PLCModel
+from workers.plc_worker import PLCWorker
 from utils.Logging import getLogger
-# Khởi tạo logger
+
+
 log = getLogger()
 
+
 class PLCPresenter(BasePresenter):
-    """Presenter xử lý PLC communication"""
-    
+    """Presenter xử lý PLC communication thông qua PLCModel/PLCWorker"""
+
+    logMessage = Signal(str, str)
+
     def __init__(self):
-        super().__init__()                
+        super().__init__()
+        self.plc_model = PLCModel()
+        self.plc_worker = PLCWorker()
+        self.plc_thread = QThread()
+        self.plc_worker.moveToThread(self.plc_thread)
+        self._connect_worker_signals()
+        self.plc_thread.start()
+
         self.is_connected = False
-        self.current_port = "COM3"
-        
-        log.info("PLCPresenter initialized successfully")
-        
+        self.current_port = self.plc_worker.port_name
+
+    def _connect_worker_signals(self):
+        self.plc_worker.data_received.connect(self.onDataReceived)
+        self.plc_worker.error_occurred.connect(self.onError)
+        self.plc_worker.connectionStatusChanged.connect(self.onConnectionChanged)
+
+    # ------------------------------------------------------------------
+    # Connection helpers
+    # ------------------------------------------------------------------
     def connect(self, port_name="COM3"):
-        """
-        Kết nối đến PLC
-        
-        Args:
-            port_name (str): Tên COM port
-            
-        Returns:
-            bool: True nếu kết nối thành công
-        """
-        self.show_info(f"Đang kết nối PLC qua {port_name}...")
-        
-        # TODO: Implement PLC connection
-        # success = self.plc_worker.connect(port_name)
-        
-        # Placeholder
-        self.show_warning("PLC connection chưa được implement")
-        return False
-    
+        """Kết nối đến PLC"""
+        self.show_info(f"Connecting PLC on {port_name}...")
+        QMetaObject.invokeMethod(
+            self.plc_worker,
+            "connect",
+            Qt.BlockingQueuedConnection,
+            Q_ARG(str, port_name),
+        )
+        if self.plc_worker.is_connected:
+            self.is_connected = True
+            self.current_port = port_name
+            self.show_success(f"PLC connected on {port_name}")
+        else:
+            self.show_error(f"Failed to connect PLC on {port_name}")
+        return self.plc_worker.is_connected
+
     def disconnect(self):
         """Ngắt kết nối PLC"""
-        self.show_info("Ngắt kết nối PLC")
-        
-        # TODO: Implement PLC disconnection
-        pass
-    
-    def send_command(self, command):
-        """
-        Gửi lệnh đến PLC
-        
-        Args:
-            command (str): Lệnh gửi đến PLC
-            
-        Returns:
-            bool: True nếu gửi thành công
-        """
-        if not self.is_connected:
-            self.show_error("Chưa kết nối PLC")
-            return False
-        
-        self.show_info(f"Gửi lệnh đến PLC: {command}")
-        
-        # TODO: Implement send command
-        return False
-    
-    def wait_for_signal(self, expected_signal, timeout_ms=5000):
-        """
-        Chờ tín hiệu từ PLC
-        
-        Args:
-            expected_signal (str): Tín hiệu mong đợi (START1, CHE_READY, etc.)
-            timeout_ms (int): Timeout (milliseconds)
-            
-        Returns:
-            str: Tín hiệu nhận được, hoặc None nếu timeout
-        """
-        self.show_info(f"Đang chờ tín hiệu từ PLC: {expected_signal}")
-        
-        # TODO: Implement wait for signal
-        return None
-    
-    def send_laser_ok(self):
-        """Gửi tín hiệu L_OK đến PLC"""
-        return self.send_command("L_OK")
-    
-    def send_laser_ng(self):
-        """Gửi tín hiệu L_NG đến PLC"""
-        return self.send_command("L_NG")
-    
-    def send_check_ok(self):
-        """Gửi tín hiệu CHE_OK đến PLC"""
-        return self.send_command("CHE_OK")
-    
-    def send_check_ng(self):
-        """Gửi tín hiệu CHE_NG đến PLC"""
-        return self.send_command("CHE_NG")
-    
-    def cleanup(self):
-        """Dọn dẹp tài nguyên"""
-        if self.is_connected:
-            self.disconnect()
+        QMetaObject.invokeMethod(
+            self.plc_worker,
+            "disconnect",
+            Qt.BlockingQueuedConnection,
+        )
+        self.is_connected = False
+        self.current_port = ""
+        return True
 
+    # ------------------------------------------------------------------
+    # Commands
+    # ------------------------------------------------------------------
+    def send_command(self, label: str, payload: str = ""):
+        command = self.plc_model.build_command(label, payload)
+        if not command:
+            return False
+        self.show_info(f"PLC command: {command}")
+        return QMetaObject.invokeMethod(
+            self.plc_worker,
+            "send_command",
+            Qt.BlockingQueuedConnection,
+            Q_ARG(str, command),
+        )
+
+    def wait_for_signal(self, expected_signal: str, timeout_ms=3000):
+        self.show_info(f"Waiting PLC signal: {expected_signal}")
+        return QMetaObject.invokeMethod(
+            self.plc_worker,
+            "wait_for_signal",
+            Qt.BlockingQueuedConnection,
+            Q_ARG(str, expected_signal),
+            Q_ARG(int, timeout_ms),
+        )
+
+    def send_laser_ok(self):
+        return self.send_command("L_OK")
+
+    def send_laser_ng(self):
+        return self.send_command("L_NG")
+
+    def send_check_ok(self):
+        return self.send_command("CHE_OK")
+
+    def send_check_ng(self):
+        return self.send_command("CHE_NG")
+
+    # ------------------------------------------------------------------
+    # Worker callbacks
+    # ------------------------------------------------------------------
+    def onDataReceived(self, data):
+        self.show_info(f"[PLC] Received: {data}")
+        self.plc_model.parse_response(data)
+
+    def onError(self, errorMsg):
+        self.show_error(f"[PLC] Error: {errorMsg}")
+        log.error(f"[PLC] {errorMsg}")
+
+    def onConnectionChanged(self, isConnected):
+        self.is_connected = isConnected
+        status = "Connected" if isConnected else "Disconnected"
+        self.show_info(f"[PLC] {status}")
+
+    # ------------------------------------------------------------------
+    # Cleanup
+    # ------------------------------------------------------------------
+    def cleanup(self):
+        self.disconnect()
+        self.plc_thread.quit()
+        self.plc_thread.wait()

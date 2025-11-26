@@ -1,22 +1,22 @@
 """
 Top Control Panel - Chứa ALL PARTS SN, MO, SFIS, CCD inputs
 """
-from PySide6.QtWidgets import (QWidget, QHBoxLayout, QLabel, QLineEdit, 
-                               QCheckBox, QGroupBox, QVBoxLayout, QComboBox, 
+from PySide6.QtWidgets import (QWidget, QHBoxLayout, 
+                               QGroupBox, QComboBox, 
                                QPushButton)
-from PySide6.QtCore import Signal, Qt
+from PySide6.QtCore import Signal
 
 
 class TopControlPanel(QWidget):
     """Panel điều khiển phía trên"""
     
     # Signals
-    allPartsSnChanged = Signal(str)
-    moChanged = Signal(str)
+    # allPartsSnChanged = Signal(str)
+    # moChanged = Signal(str)
     sfisChanged = Signal(str)
     sfisConnectRequested = Signal(bool, str)  # (connect, port_name)
-    ccdChanged = Signal(str)
-    
+    plcChanged = Signal(str)
+    plcConnectRequested = Signal(bool, str)  # (connect, port_name)
     def __init__(self):
         super().__init__()
         self._init_ui()
@@ -70,7 +70,8 @@ class TopControlPanel(QWidget):
 
         # SFIS COM port
         self.combo_sfis_com = QComboBox()
-        self.combo_sfis_com.addItems(["COM2", "COM1", "COM3", "COM4", "COM5","COM6", "COM7", "COM8", "COM9", "COM10","COM11", "COM12"])
+        self.combo_sfis_com.addItems(["COM1", "COM2", "COM3", "COM4", "COM5","COM6", "COM7", "COM8", "COM9", "COM10","COM11", "COM12"])
+        self.combo_sfis_com.setCurrentText("COM8")
         self.combo_sfis_com.currentTextChanged.connect(self.sfisChanged.emit)
         sfis_layout.addWidget(self.combo_sfis_com)
     
@@ -78,9 +79,44 @@ class TopControlPanel(QWidget):
         sfis_group.setLayout(sfis_layout)
         layout.addWidget(sfis_group)
 
+        #PLC COM Button
+        plc_group = QGroupBox()
+        plc_layout = QHBoxLayout()
+        plc_layout.setContentsMargins(5, 5, 5, 5)
+        plc_layout.setSpacing(10)
+
+        # SFIS button
+        self.btn_plc = QPushButton("PLC OFF")
+        self.btn_plc.setCheckable(True)
+        self.btn_plc.setChecked(False)
+        self.btn_plc.setStyleSheet("""
+            QPushButton { 
+                background-color: #ffc0cb; 
+                font-weight: bold;
+                padding: 5px;
+            }
+            QPushButton:checked { 
+                background-color: #9fff9f; 
+            }
+        """)
+        self.btn_plc.toggled.connect(self._onPlcButtonToggled)
+        plc_layout.addWidget(self.btn_plc)
+
+        # SFIS COM port
+        self.combo_plc_com = QComboBox()
+        self.combo_plc_com.addItems(["COM1", "COM2", "COM3", "COM4", "COM5","COM6", "COM7", "COM8", "COM9", "COM10","COM11", "COM12"])
+        self.combo_plc_com.setCurrentText("COM3")
+        self.combo_plc_com.currentTextChanged.connect(self.plcChanged.emit)
+        plc_layout.addWidget(self.combo_plc_com)
+    
+        # plc_layout.addStretch()
+        plc_group.setLayout(plc_layout)
+        layout.addWidget(plc_group)
+        
+
+
         # Stretch để các group không bị kéo dãn quá mức
         layout.addStretch()
-        
         self.setMaximumHeight(80)
 
 
@@ -102,13 +138,6 @@ class TopControlPanel(QWidget):
             self.sfisConnectRequested.emit(False, port_name)
     
     def setSFISConnectionStatus(self, connected, message=""):
-        """
-        Cập nhật trạng thái kết nối SFIS từ Presenter
-        
-        Args:
-            connected (bool): True nếu đã kết nối
-            message (str): Thông báo (optional)
-        """
         self.btn_sfis.setEnabled(True)
         self.combo_sfis_com.setEnabled(not connected)
         
@@ -119,48 +148,31 @@ class TopControlPanel(QWidget):
             self.btn_sfis.setChecked(False)
             self.btn_sfis.setText("SFIS OFF")
     
-    # Getter methods
-    def getAllPartsSN(self):
-        """Lấy giá trị ALL PARTS SN"""
-        return self.input_all_parts_sn.text()
-    
-    def getMO(self):
-        """Lấy giá trị MO"""
-        return self.input_mo.text()
-    
-    def getSFIS(self):
-        """Lấy giá trị SFIS COM port"""
-        return self.combo_sfis_com.currentText()
-    
-    def getCCD(self):
-        """Lấy giá trị CCD COM port"""
-        return self.combo_ccd_com.currentText()
-    
-    def isAllPartsChecked(self):
-        """Kiểm tra xem checkbox ALL PARTS có được check không"""
-        return self.chk_all_parts.isChecked()
-    
-    # Setter methods
-    def setAllPartsSN(self, text):
-        """Set giá trị ALL PARTS SN"""
-        self.input_all_parts_sn.setText(text)
-    
-    def setMO(self, text):
-        """Set giá trị MO"""
-        self.input_mo.setText(text)
-    
-    def setSFIS(self, com_port):
-        """Set giá trị SFIS COM port"""
-        index = self.combo_sfis_com.findText(com_port)
-        if index >= 0:
-            self.combo_sfis_com.setCurrentIndex(index)
-    
-    def setCCD(self, com_port):
-        """Set giá trị CCD COM port"""
-        index = self.combo_ccd_com.findText(com_port)
-        if index >= 0:
-            self.combo_ccd_com.setCurrentIndex(index)
 
 
+    def _onPlcButtonToggled(self, checked):
+        """Xử lý khi toggle nút PLC ON/OFF"""
+        port_name = self.combo_plc_com.currentText()
+        
+        if checked:
+            # kết nối
+            self.btn_plc.setText("Connecting...")
+            self.btn_plc.setEnabled(False)
+            self.combo_plc_com.setEnabled(False)
+            self.plcConnectRequested.emit(True, port_name)
+        else:
+            # ngắt kết nối
+            self.btn_plc.setText("Disconnecting...")
+            self.btn_plc.setEnabled(False)
+            self.plcConnectRequested.emit(False, port_name)
 
-
+    def setPLCConnectionStatus(self, connected, message=""):
+        self.btn_plc.setEnabled(True)
+        self.combo_plc_com.setEnabled(not connected)
+        
+        if connected:
+            self.btn_plc.setChecked(True)
+            self.btn_plc.setText("PLC ON")
+        else:
+            self.btn_plc.setChecked(False)
+            self.btn_plc.setText("PLC OFF")

@@ -2,20 +2,13 @@ import serial
 import time
 from PySide6.QtCore import QObject, Signal, QThread, Slot
 from utils.Logging import getLogger
-
+# from presenter.base_presenter import BasePresenter
 # Khởi tạo logger
 log = getLogger()
 
 
 class SFISWorker(QObject):
-    """
-    Worker xử lý giao tiếp serial với SFIS
-    - Kết nối/ngắt kết nối COM port
-    - Gửi dữ liệu dạng text ASCII
-    - Nhận dữ liệu dạng text ASCII
-    """
-    
-    # Signals
+    logMessage = Signal(str, str)  # (message, level) = (message, INFO/WARNING/ERROR)
     data_received = Signal(str)  # Dữ liệu nhận được từ SFIS (text ASCII)
     error_occurred = Signal(str)  # Lỗi xảy ra
     connectionStatusChanged = Signal(bool)  # Trạng thái kết nối
@@ -27,7 +20,7 @@ class SFISWorker(QObject):
         self.is_connected = False
         
         # Cấu hình COM port mặc định
-        self.port_name = "COM2"
+        self.port_name = "COM8"
         self.baudrate = 9600
         self.bytesize = serial.EIGHTBITS
         self.parity = serial.PARITY_NONE
@@ -47,10 +40,8 @@ class SFISWorker(QObject):
             if baudrate:
                 self.baudrate = baudrate
             
-            log.info(f"Connecting to {self.port_name}...")
-            log.info(f"Config: baudrate={self.baudrate}, bytesize=8, parity=N, stopbits=1")
-            
-            # Close existing connection if any
+            log.info(f"[SFIS] Connecting {self.port_name} baudrate: {self.baudrate}")
+                        # Close existing connection if any
             if self.serial_port and self.serial_port.is_open:
                 log.info("Closing existing connection...")
                 self.serial_port.close()
@@ -73,13 +64,13 @@ class SFISWorker(QObject):
             self.serial_port.reset_output_buffer()
             
             self.is_connected = True
-            log.info(f"Connected successfully to {self.port_name}")
+            log.info(f"[SFIS] Connected successfully to {self.port_name}")
             self.connectionStatusChanged.emit(True)
             return True
             
         except serial.SerialException as e:
             self.is_connected = False
-            error_msg = f"Serial port error: {str(e)}"
+            error_msg = f"[SFIS] Serial port error: {str(e)}"
             log.error(f"{error_msg}")
             self.connectionStatusChanged.emit(False)
             self.error_occurred.emit(error_msg)
@@ -334,11 +325,9 @@ class SFISWorker(QObject):
             # Chuyển bytes sang text string (ASCII decoding)
             data_str = data_bytes.decode('ascii', errors='ignore')
             
-            log.info(f"✓ Data received successfully")
+            log.info(f"  Data received successfully")
             log.info(f"  Total bytes: {len(data_bytes)}")
-            log.info(f"  Data (text): '{data_str}'")
-            log.info(f"  Data (HEX): {data_bytes.hex()}")
-            log.info("=" * 70)
+            log.info(f"  Data (text): {data_str}")
             
             # Emit signal
             self.data_received.emit(data_str)
@@ -346,20 +335,20 @@ class SFISWorker(QObject):
                 
         except UnicodeDecodeError as e:
             error_msg = f"ASCII decoding error: {str(e)} - Data contains non-ASCII bytes"
-            log.error(f"✗ {error_msg}")
+            log.error(f"{error_msg}")
             log.error(f"  Raw bytes (HEX): {data_bytes.hex()}")
             self.error_occurred.emit(error_msg)
             return None
             
         except serial.SerialException as e:
             error_msg = f"Serial port error: {str(e)}"
-            log.error(f"✗ {error_msg}")
+            log.error(f" {error_msg}")
             self.error_occurred.emit(error_msg)
             return None
             
         except Exception as e:
             error_msg = f"Read data error: {str(e)}"
-            log.error(f"✗ {error_msg}")
+            log.error(f" {error_msg}")
             log.debug("Exception details:", exc_info=True)
             self.error_occurred.emit(error_msg)
             return None
@@ -387,7 +376,7 @@ class SFISWorker(QObject):
                 return False
         except Exception as e:
             error_msg = f"Clear buffer error: {str(e)}"
-            log.error(f"✗ {error_msg}")
+            log.error(f" {error_msg}")
             self.error_occurred.emit(error_msg)
             return False
     

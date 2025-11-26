@@ -1,7 +1,7 @@
 """
 Main Presenter - Điều phối giữa View (GUI) và các Presenter con
 """
-from PySide6.QtCore import QObject, Signal
+from PySide6.QtCore import Signal
 from presenter.sfis_presenter import SFISPresenter
 from presenter.plc_presenter import PLCPresenter
 from presenter.laser_presenter import LaserPresenter
@@ -42,12 +42,16 @@ class MainPresenter(BasePresenter):
         left_panel.startClicked.connect(self.onStartClicked)
         
         # Menu actions
-        self.main_window.send_laser_psn20_clicked.connect(self.onSendLaserPsn20)
-        self.main_window.send_laser_psn16_clicked.connect(self.onSendLaserPsn16)
+        self.main_window.sendLaserPsn20_clicked.connect(self.onSendLaserPsn20)
+        self.main_window.sendLaserPsn16_clicked.connect(self.onSendLaserPsn16)
+        # self.main_window.sendPLCPOK_clicked.connect(self.onSendPLCPOK)
+        # self.main_window.sendPLCNG_clicked.connect(self.onSendPLCNG)
         # View signals - Top Panel
         top_panel = self.main_window.getTopPanel()
         top_panel.sfisChanged.connect(self.onSfisPortChanged)
         top_panel.sfisConnectRequested.connect(self.onSfisConnectRequested)
+        top_panel.plcChanged.connect(self.onPlcPortChanged)
+        top_panel.plcConnectRequested.connect(self.onPlcConnectRequested)
         
         # SFIS Presenter signals
         self.sfis_presenter.logMessage.connect(self.forwardLog)
@@ -143,7 +147,7 @@ class MainPresenter(BasePresenter):
         log.info("START signal sent successfully - waiting for response...")
         self.show_info("START signal sent successfully - waiting for response...")
     
-    def startTestProcess(self, mo, allPartsSn):
+    def startTestProcess(self, mo, panelNo):
         """Bắt đầu quy trình test trong QThread"""
         # Step 1: Request data from SFIS (running in QThread of sfis_presenter)
         response = self.sfis_presenter.requestData()
@@ -220,17 +224,36 @@ class MainPresenter(BasePresenter):
         if self.sfis_presenter.isConnected:
             self.show_warning("Warning: SFIS is connected. Disconnect before changing port.")
             log.warning("Warning: SFIS is connected. Disconnect before changing port.")
+
+    def onPlcConnectRequested(self, shouldConnect, portName):
+        """Xử lý yêu cầu kết nối/ngắt kết nối PLC"""
+        topPanel = self.main_window.getTopPanel()
+
+        if shouldConnect:
+            success = self.plc_presenter.connect(portName)
+            log.info(f"PLC connect request on {portName}: {success}")
+            topPanel.setPLCConnectionStatus(success, "Connected" if success else "Failed")
+        else:
+            success = self.plc_presenter.disconnect()
+            log.info(f"PLC disconnect request on {portName}: {success}")
+            topPanel.setPLCConnectionStatus(False, "Disconnected" if success else "Error")
+
+    def onPlcPortChanged(self, portName):
+        """Xử lý khi thay đổi COM port PLC"""
+        self.show_info(f"PLC port selected: {portName}")
+        log.info(f"PLC port selected: {portName}")
+        if self.plc_presenter.is_connected:
+            self.show_warning("Warning: PLC is connected. Disconnect before changing port.")
+            log.warning("Warning: PLC is connected. Disconnect before changing port.")
     
     
     def cleanup(self):
         """Dọn dẹp tài nguyên khi đóng ứng dụng"""
-        self.show_info("Đang dọn dẹp tài nguyên...")
-        log.info("Cleaning up sub-presenters...")
         self.sfis_presenter.cleanup()
         self.plc_presenter.cleanup()
         self.laser_presenter.cleanup()
-        self.show_info("Dọn dẹp hoàn tất")
-        log.info("MainPresenter cleanup completed")
+        self.show_info("Cleanup sub-presenters completed")
+        log.info("Cleanup sub-presenters completed")
 
     def onSendLaserPsn20(self):
         """Handle menu 'Send PSN20 to LASER'"""
@@ -250,6 +273,8 @@ class MainPresenter(BasePresenter):
         else:
             self.show_error("Failed to send PSN20 command to laser")
 
+
+
     def onSendLaserPsn16(self):
         """Handle menu 'Send PSN20 to LASER'"""
         fixed_command = (
@@ -268,4 +293,15 @@ class MainPresenter(BasePresenter):
         else:
             self.show_error("Failed to send PSN16 command to laser")
 
+def onSendPLCPOK(self):
+    """Handle menu 'Send OK to PLC'"""
+    success = self.plc_presenter.send_check_ok()
+    if success:
+        self.show_success("OK command sent to PLC successfully")
+    else:
+        self.show_error("Failed to send OK command to PLC")
+
+def onSendPLCNG(self):
+    """Handle menu 'Send NG to PLC'"""
+    self.plc_presenter.send_check_ng()
 

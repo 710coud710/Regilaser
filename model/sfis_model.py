@@ -5,7 +5,8 @@ from dataclasses import dataclass
 from typing import Optional, List
 from PySide6.QtCore import QObject, Signal
 from config import ConfigManager
-
+from utils.Logging import getLogger
+log = getLogger()
 
 @dataclass
 class SFISData:
@@ -47,9 +48,9 @@ class SFISModel(QObject):
     PANEL_NO_LENGTH = 20
     ALL_PARTS_NO_LENGTH = 12
     PSN_LENGTH = 20
-    PSN_COUNT = 10
+    PSN_COUNT = ConfigManager().get().PANEL_NUM
     NEED_KEYWORD = "NEED"
-    PSN10_KEYWORD = "PSN10"
+
     END_KEYWORD = "END"
     
     def __init__(self):
@@ -59,31 +60,7 @@ class SFISModel(QObject):
         self.config_manager = ConfigManager()
         # Lưu số lượng PSN đã request (để parse response)
         self.expected_psn_count = 0
-    
-    def createRequestPsn(self, mo, all_parts_no, panel_no):
-        """ MO(20) + AllPar_NO(12) + PANEL_NO(20) + NEEDPSN10(9)
-        Total: 61 bytes    
-        """
-        try:
-            # Padding fields to correct length
-            mo_padded = mo.ljust(self.MO_LENGTH)[:self.MO_LENGTH]
-            all_parts_padded = all_parts_no.ljust(self.ALL_PARTS_NO_LENGTH)[:self.ALL_PARTS_NO_LENGTH]
-            panel_padded = panel_no.ljust(self.PANEL_NO_LENGTH)[:self.PANEL_NO_LENGTH]
-            
-            # Tạo request string        
-            request = f"{mo_padded}{all_parts_padded}{panel_padded}{self.NEED_KEYWORD}{self.PSN10_KEYWORD}"
-            
-            # Lưu vào current_data
-            self.current_data.mo = mo
-            self.current_data.all_parts_no = all_parts_no
-            self.current_data.panel_no = panel_no
-            
-            return request
-            
-        except Exception as e:
-            self.validation_error.emit(f"Lỗi tạo request: {str(e)}")
-            return None
-    
+
     def parseResponsePsn(self, response):
         """Parse response PSN from SFIS (dynamic based on expected PSN count)"""
         try:
@@ -97,23 +74,23 @@ class SFISModel(QObject):
             pos = 0
             mo = response[pos:pos + self.MO_LENGTH].strip()
             pos += self.MO_LENGTH
-            
+            log.info(f"MO: {mo}")
             panel_no = response[pos:pos + self.PANEL_NO_LENGTH].strip()
             pos += self.PANEL_NO_LENGTH
-            
+            log.info(f"Panel No: {panel_no}")
             # Parse 10 PSN
             psn_list = []
             for i in range(self.PSN_COUNT):
                 psn = response[pos:pos + self.PSN_LENGTH].strip()
                 psn_list.append(psn)
                 pos += self.PSN_LENGTH
-            
+                log.info(f"PSN{i}: {psn}")
             # Kiểm tra PASS
             pass_keyword = response[pos:pos + 4]
             if pass_keyword != self.PASS_KEYWORD:
                 self.validation_error.emit(f"Không tìm thấy PASS keyword: {pass_keyword}")
                 return None
-            
+            log.info(f"PASS Keyword: {pass_keyword}")
             # Cập nhật current_data
             self.current_data.mo = mo
             self.current_data.panel_no = panel_no
@@ -127,20 +104,6 @@ class SFISModel(QObject):
             return None
     
     def parseResponseNewFormat(self, response):
-        """
-        Parse phản hồi SFIS định dạng mới
-        
-        Format: LaserSN(25) + SecurityCode(25) + Status(20) + PASS(4)
-        Total: 74 bytes
-        
-        Example: "GR93J80034260001         52-005353                00S0PASS"
-        
-        Args:
-            response (str): Response string từ SFIS
-            
-        Returns:
-            SFISData: Dữ liệu đã parse, hoặc None nếu lỗi
-        """
         try:
             # Kiểm tra độ dài và PASS keyword
             if len(response) < self.NEW_FORMAT_LENGTH:
@@ -173,7 +136,7 @@ class SFISModel(QObject):
             self.validation_error.emit(f"Lỗi parse response: {str(e)}")
             return None
     
-    def createStartSignal(self, mo=None, all_parts_no=None, panel_no=None):
+    def createStartSignal(self, mo=None, panel_no=None):
         """ 
         Format: MO(20) + Panel_Number(20) + NEEDPSNxx(9) = 49 bytes
         - MO: Lấy từ config.yaml nếu không truyền vào
@@ -191,9 +154,9 @@ class SFISModel(QObject):
             # Nếu không truyền MO, lấy từ config
             if not mo:
                 mo = str(config.MO)
-            
+                
             # Lấy Panel_Num từ config để tạo NEEDPSNxx
-            panel_num = config.Panel_Num
+            panel_num = config.PANEL_NUM
             
             # Tạo NEEDPSNxx: "NEEDPSN" + 2 số cuối của Panel_Num
             need_keyword = f"NEEDPSN{panel_num:02d}"  # Format 2 chữ số, thêm 0 phía trước nếu cần
@@ -219,7 +182,7 @@ class SFISModel(QObject):
             return start_signal
             
         except AttributeError as e:
-            error_msg = f"Lỗi đọc config: {str(e)} - Kiểm tra Panel_Num trong config.yaml"
+            error_msg = f"Lỗi đọc config: {str(e)} - Kiểm tra PANEL_NUM trong config.yaml"
             self.validation_error.emit(error_msg)
             return None
         except Exception as e:
