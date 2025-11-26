@@ -16,6 +16,10 @@ class Config(BaseModel):
     MO: StrictInt
     SECURITY_CODE: StrictStr
     Panel_Num: StrictInt  # Panel Number để tạo NEEDPSNxx
+    LASER_IP: StrictStr
+    LASER_PORT: StrictInt
+    LASER_SCRIPT: StrictStr
+    LASER_TIMEOUT_MS: StrictInt
 
 
 # === CONFIG MANAGER (singleton + hot reload + thread-safe) ===

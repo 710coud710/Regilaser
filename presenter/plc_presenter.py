@@ -2,7 +2,9 @@
 PLC Presenter - Xử lý logic giao tiếp PLC (Programmable Logic Controller)
 """
 from presenter.base_presenter import BasePresenter
-
+from utils.Logging import getLogger
+# Khởi tạo logger
+log = getLogger()
 
 class PLCPresenter(BasePresenter):
     """Presenter xử lý PLC communication"""
@@ -11,7 +13,9 @@ class PLCPresenter(BasePresenter):
         super().__init__()                
         self.is_connected = False
         self.current_port = "COM3"
-    
+        
+        log.info("PLCPresenter initialized successfully")
+        
     def connect(self, port_name="COM3"):
         """
         Kết nối đến PLC
@@ -22,18 +26,18 @@ class PLCPresenter(BasePresenter):
         Returns:
             bool: True nếu kết nối thành công
         """
-        self.log_info(f"Đang kết nối PLC qua {port_name}...")
+        self.show_info(f"Đang kết nối PLC qua {port_name}...")
         
         # TODO: Implement PLC connection
         # success = self.plc_worker.connect(port_name)
         
         # Placeholder
-        self.log_warning("PLC connection chưa được implement")
+        self.show_warning("PLC connection chưa được implement")
         return False
     
     def disconnect(self):
         """Ngắt kết nối PLC"""
-        self.log_info("Ngắt kết nối PLC")
+        self.show_info("Ngắt kết nối PLC")
         
         # TODO: Implement PLC disconnection
         pass
@@ -49,10 +53,10 @@ class PLCPresenter(BasePresenter):
             bool: True nếu gửi thành công
         """
         if not self.is_connected:
-            self.log_error("Chưa kết nối PLC")
+            self.show_error("Chưa kết nối PLC")
             return False
         
-        self.log_info(f"Gửi lệnh đến PLC: {command}")
+        self.show_info(f"Gửi lệnh đến PLC: {command}")
         
         # TODO: Implement send command
         return False
@@ -68,7 +72,7 @@ class PLCPresenter(BasePresenter):
         Returns:
             str: Tín hiệu nhận được, hoặc None nếu timeout
         """
-        self.log_info(f"Đang chờ tín hiệu từ PLC: {expected_signal}")
+        self.show_info(f"Đang chờ tín hiệu từ PLC: {expected_signal}")
         
         # TODO: Implement wait for signal
         return None

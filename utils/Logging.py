@@ -112,10 +112,10 @@ class ThreadLogger:
                     logger.addHandler(file_handler)
                     
                     # Log khởi động
+                    logger.info("--------------------------------- Starting Logger ---------------------------------")
                     logger.info(f"Logger initialized: {log_name}")
                     logger.info(f"Log file: {log_filename}")
-                    logger.info("=" * 10)
-
+       
                 cls._instance.logger = logger
 
             return cls._instance

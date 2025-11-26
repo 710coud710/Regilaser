@@ -13,11 +13,8 @@ log = getLogger()
 
 
 def main():
-    """Khởi động ứng dụng"""
-    log.info("=" * 70)
-    log.info("Khởi động ứng dụng Regilazi Laser Marking System...")
-    log.info("=" * 70)
-    
+    log.info("--------------------------------- Regilazi Laser Marking System started ---------------------------------")
+
     app = QApplication(sys.argv)
     log.info("QApplication initialized")
     
@@ -46,13 +43,8 @@ def main():
     # Dọn dẹp tài nguyên trước khi thoát
     log.info("Application closing...")
     presenter.cleanup()
-    log.info("Cleanup completed")
-    log.info("=" * 70)
-    log.info("Application exited successfully")
-    log.info("=" * 70)
-    
+    log.info("--------------------------------- Application exited successfully ---------------------------------")
     sys.exit(exit_code)
-
 
 if __name__ == "__main__":
     main()

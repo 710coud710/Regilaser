@@ -14,23 +14,23 @@ class BasePresenter(QObject):
     def __init__(self):
         super().__init__()
     
-    def log_info(self, message):
+    def show_info(self, message):
         """Log thông tin"""
         self.logMessage.emit(message, "INFO")
     
-    def log_success(self, message):
+    def show_success(self, message):
         """Log thành công"""
         self.logMessage.emit(message, "SUCCESS")
     
-    def log_warning(self, message):
+    def show_warning(self, message):
         """Log cảnh báo"""
         self.logMessage.emit(message, "WARNING")
     
-    def log_error(self, message):
+    def show_error(self, message):
         """Log lỗi"""
         self.logMessage.emit(message, "ERROR")
     
-    def log_debug(self, message):
+    def show_debug(self, message):
         """Log debug"""
         self.logMessage.emit(message, "DEBUG")
     

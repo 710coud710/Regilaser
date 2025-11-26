@@ -25,52 +25,25 @@ class TopControlPanel(QWidget):
         layout = QHBoxLayout(self)
         layout.setContentsMargins(5, 5, 5, 5)
         layout.setSpacing(15)
+              
+        # # MO
+        # mo_group = QGroupBox()
+        # mo_layout = QVBoxLayout()
+        # mo_layout.setContentsMargins(5, 5, 5, 5)
+        # mo_layout.setSpacing(2)
         
-        # ALL PARTS SN
-        all_parts_group = QGroupBox()
-        all_parts_layout = QVBoxLayout()
-        all_parts_layout.setContentsMargins(5, 5, 5, 5)
-        all_parts_layout.setSpacing(2)
-
-        # Horizontal layout for checkbox and label
-        all_parts_top_row = QHBoxLayout()
-        self.chk_all_parts = QCheckBox()
-        self.chk_all_parts.setChecked(False)
-        self.chk_all_parts.stateChanged.connect(self._eventCheckboxChanged)
-        lbl_all_parts = QLabel("ALL PARTS SN:")
-        lbl_all_parts.setStyleSheet("font-weight: bold;")
-        all_parts_top_row.addWidget(lbl_all_parts)
-        all_parts_top_row.addWidget(self.chk_all_parts)
-        all_parts_top_row.addStretch()
-        all_parts_layout.addLayout(all_parts_top_row)
-
-        self.input_all_parts_sn = QLineEdit()
-        self.input_all_parts_sn.setPlaceholderText("Enter ALL PARTS SN...")
-        self.input_all_parts_sn.textChanged.connect(self.allPartsSnChanged.emit)
-        self.input_all_parts_sn.setVisible(False)
-        all_parts_layout.addWidget(self.input_all_parts_sn)
-
-        all_parts_group.setLayout(all_parts_layout)
-        layout.addWidget(all_parts_group)
+        # lbl_mo = QLabel("MO:")
+        # lbl_mo.setStyleSheet("font-weight: bold;")
+        # mo_layout.addWidget(lbl_mo)
         
-        # MO
-        mo_group = QGroupBox()
-        mo_layout = QVBoxLayout()
-        mo_layout.setContentsMargins(5, 5, 5, 5)
-        mo_layout.setSpacing(2)
+        # self.input_mo = QLineEdit()
+        # # self.input_mo.setReadOnly(True)
+        # self.input_mo.setPlaceholderText("1234567890")
+        # # self.input_mo.textChanged.connect(self.mo_changed.emit)
+        # mo_layout.addWidget(self.input_mo)
         
-        lbl_mo = QLabel("MO:")
-        lbl_mo.setStyleSheet("font-weight: bold;")
-        mo_layout.addWidget(lbl_mo)
-        
-        self.input_mo = QLineEdit()
-        self.input_mo.setReadOnly(True)
-        self.input_mo.setPlaceholderText("1234567890")
-        # self.input_mo.textChanged.connect(self.mo_changed.emit)
-        mo_layout.addWidget(self.input_mo)
-        
-        mo_group.setLayout(mo_layout)
-        layout.addWidget(mo_group)
+        # mo_group.setLayout(mo_layout)
+        # layout.addWidget(mo_group)
         
         # SFIS
         sfis_group = QGroupBox()
@@ -97,7 +70,7 @@ class TopControlPanel(QWidget):
 
         # SFIS COM port
         self.combo_sfis_com = QComboBox()
-        self.combo_sfis_com.addItems(["COM2", "COM1", "COM3", "COM4", "COM5"])
+        self.combo_sfis_com.addItems(["COM2", "COM1", "COM3", "COM4", "COM5","COM6", "COM7", "COM8", "COM9", "COM10","COM11", "COM12"])
         self.combo_sfis_com.currentTextChanged.connect(self.sfisChanged.emit)
         sfis_layout.addWidget(self.combo_sfis_com)
     
@@ -145,13 +118,6 @@ class TopControlPanel(QWidget):
         else:
             self.btn_sfis.setChecked(False)
             self.btn_sfis.setText("SFIS OFF")
-
-    def _eventCheckboxChanged(self, state):
-        """Xử lý sự kiện khi checkbox ALL PARTS thay đổi"""
-        is_checked = (state == Qt.CheckState.Checked.value)
-        self.input_all_parts_sn.setVisible(is_checked)
-        if is_checked:
-            self.input_all_parts_sn.setFocus()
     
     # Getter methods
     def getAllPartsSN(self):

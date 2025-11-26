@@ -107,7 +107,7 @@ class SFISWorker(QObject):
             
             if self.serial_port and self.serial_port.is_open:
                 self.serial_port.close()
-                log.info(f"✓ Disconnected from {self.port_name}")
+                log.info(f"Disconnected successfully from {self.port_name}")
             
             self.is_connected = False
             self.connectionStatusChanged.emit(False)
@@ -115,7 +115,7 @@ class SFISWorker(QObject):
             
         except Exception as e:
             error_msg = f"Disconnect error: {str(e)}"
-            log.error(f"✗ {error_msg}")
+            log.error(f" {error_msg}")
             self.error_occurred.emit(error_msg)
             return False
     
@@ -130,13 +130,11 @@ class SFISWorker(QObject):
                 return False
             
             # Log chi tiết trước khi gửi
-            log.info("=" * 70)
+
             log.info("Sending data to SFIS...")
             log.info(f"Port: {self.port_name}")
             log.info(f"Data length: {len(data)} bytes")
             log.info(f"Data (text): {data}")
-            log.info(f"Data (HEX): {data.encode('ascii').hex()}")
-            
             # Chuyển text string sang bytes (ASCII encoding)
             data_bytes = data.encode('ascii')
             
@@ -144,9 +142,9 @@ class SFISWorker(QObject):
             bytes_written = self.serial_port.write(data_bytes)
             self.serial_port.flush()  # Đảm bảo dữ liệu được gửi ngay
             
-            log.info(f"✓ Data sent successfully")
+            log.info(f"Data sent successfully to SFIS")
             log.info(f"  Bytes written: {bytes_written}/{len(data_bytes)}")
-            log.info("=" * 70)
+
             
             return True
             

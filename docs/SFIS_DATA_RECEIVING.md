@@ -322,3 +322,4 @@ mock_data = "TEST" * 50  # 200 bytes
 - Breakdown 20 bytes giúp dễ so sánh với format mong đợi
 - Parse là optional, không ảnh hưởng đến việc hiển thị raw data
 
+

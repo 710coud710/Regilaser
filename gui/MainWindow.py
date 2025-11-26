@@ -4,6 +4,7 @@ Main Window - Container chính cho toàn bộ giao diện
 from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QAction
+
 from gui import (
     TopControlPanel,
     LeftControlPanel,
@@ -13,7 +14,6 @@ from gui import (
     BottomStatusBar
 )
 
-
 class MainWindow(QMainWindow):
     """Main window của Sprite Auto Laser Marking Program"""
     
@@ -21,7 +21,8 @@ class MainWindow(QMainWindow):
     menu_clicked = Signal()
     reset_clicked = Signal()
     keyboard_clicked = Signal()
-    
+    send_laser_psn20_clicked = Signal()
+    send_laser_psn16_clicked = Signal()
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Regilazi - Version 1.0 Prenium")
@@ -70,8 +71,7 @@ class MainWindow(QMainWindow):
         # File menu
         file_menu = menubar.addMenu("&File")
         tools_menu = menubar.addMenu("&Tools")
-        reset_menu = menubar.addMenu("&Reset")
-        keyboard_menu = menubar.addMenu("&Keyboard")
+        check_menu = menubar.addMenu("&Check")
         ######File menu#####
         # Menu action
         menu_action = QAction("Menu", self)
@@ -93,24 +93,21 @@ class MainWindow(QMainWindow):
         reset_action.triggered.connect(self.reset_clicked.emit)
         tools_menu.addAction(reset_action)
         
-        # Keyboard action
-        keyboard_action = QAction("Keyboard", self)
-        keyboard_action.setShortcut("Ctrl+K")
-        keyboard_action.triggered.connect(self.keyboard_clicked.emit)
-        tools_menu.addAction(keyboard_action)
         
-        ######Reset menu#####
-        reset_action = QAction("Pass to Zero", self)
-        reset_action.setShortcut("F5")
-        reset_action.triggered.connect(self.reset_clicked.emit)
-        reset_menu.addAction(reset_action)
-       
-        reset_action = QAction("Fail to Zero", self)
-        reset_action.setShortcut("F6")
-        reset_action.triggered.connect(self.reset_clicked.emit)
-        reset_menu.addAction(reset_action)
+        ######Check menu#####
+        send_psn16_action = QAction("Send PSN16 to LASER", self)
+        send_psn16_action.setShortcut("Ctrl+P")
+        send_psn16_action.triggered.connect(self.send_laser_psn16_clicked.emit)
+        check_menu.addAction(send_psn16_action)
 
-        reset_menu.addSeparator()
+
+        send_psn_action = QAction("Send PSN20 to LASER", self)
+        send_psn_action.setShortcut("Ctrl+P")
+        send_psn_action.triggered.connect(self.send_laser_psn20_clicked.emit)
+        check_menu.addAction(send_psn_action)
+        
+
+        check_menu.addSeparator()
 
     def _connectSignals(self):
         """Kết nối các signals giữa các panel"""
@@ -135,4 +132,5 @@ class MainWindow(QMainWindow):
     
     def getBottomStatus(self):
         return self.bottom_status
+
 

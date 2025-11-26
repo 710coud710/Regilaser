@@ -5,14 +5,13 @@ from PySide6.QtCore import QObject, Signal
 from presenter.sfis_presenter import SFISPresenter
 from presenter.plc_presenter import PLCPresenter
 from presenter.laser_presenter import LaserPresenter
-from presenter.ccd_presenter import CCDPresenter
 from utils.Logging import getLogger
-
+from presenter.base_presenter import BasePresenter
 # Khởi tạo logger
 log = getLogger()
 
 
-class MainPresenter(QObject):
+class MainPresenter(BasePresenter):
     """Presenter chính - điều phối toàn bộ ứng dụng"""
     
     # Signals để cập nhật UI
@@ -21,17 +20,11 @@ class MainPresenter(QObject):
     testResult = Signal(bool, str)  # (success, message)
     
     def __init__(self, main_window):
-        super().__init__()
-        log.info("MainPresenter.__init__ started")
-        
+        super().__init__()        
         self.main_window = main_window
-        
-        # Khởi tạo các Presenter con
-        log.info("Initializing sub-presenters...")
         self.sfis_presenter = SFISPresenter()
         self.plc_presenter = PLCPresenter()
-        self.laser_presenter = LaserPresenter()
-        self.ccd_presenter = CCDPresenter()       
+        self.laser_presenter = LaserPresenter()      
         # Kết nối signals
         self.connectSignals()
         log.info("Signals connected")
@@ -48,6 +41,9 @@ class MainPresenter(QObject):
         left_panel = self.main_window.getLeftPanel()
         left_panel.startClicked.connect(self.onStartClicked)
         
+        # Menu actions
+        self.main_window.send_laser_psn20_clicked.connect(self.onSendLaserPsn20)
+        self.main_window.send_laser_psn16_clicked.connect(self.onSendLaserPsn16)
         # View signals - Top Panel
         top_panel = self.main_window.getTopPanel()
         top_panel.sfisChanged.connect(self.onSfisPortChanged)
@@ -64,9 +60,6 @@ class MainPresenter(QObject):
         
         # Laser Presenter signals
         self.laser_presenter.logMessage.connect(self.forwardLog)
-        
-        # CCD Presenter signals
-        self.ccd_presenter.logMessage.connect(self.forwardLog)
         
         # Presenter signals to View
         self.logMessage.connect(self.updateLog)
@@ -99,10 +92,8 @@ class MainPresenter(QObject):
     
     def initialize(self):
         """Khởi tạo kết nối và cấu hình ban đầu"""
-        log.info("MainPresenter.initialize() called")
-        self.logMessage.emit("Hệ thống đang khởi động...", "INFO")
-        log.info("System initialization completed")
-        self.logMessage.emit("Hệ thống đã sẵn sàng!", "INFO")
+        self.show_info("System is ready!")
+        log.info("System is ready!")
     
     def onSfisConnectRequested(self, shouldConnect, portName):
         """Xử lý yêu cầu kết nối/ngắt kết nối SFIS từ nút toggle"""
@@ -111,56 +102,54 @@ class MainPresenter(QObject):
         if shouldConnect:
             # Kết nối SFIS
             success = self.sfis_presenter.connect(portName)
+            log.info(f"SFIS connected on port: {portName}")
             topPanel.setSFISConnectionStatus(success, "Connected" if success else "Failed")
         else:
             # Ngắt kết nối SFIS
             success = self.sfis_presenter.disconnect()
+            log.info(f"SFIS disconnected on port: {portName}")
             topPanel.setSFISConnectionStatus(False, "Disconnected" if success else "Error")
     
     
     def onStartClicked(self):    
-        log.info("MainPresenter.onStartClicked() - START button clicked")
+        log.info("START button clicked")
         
-        # Kiểm tra hệ thống đang chạy
+        # Check if system is already running
         if self.isRunning:
             log.warning("System is already running")
-            self.logMessage.emit("System is already running, please wait...", "WARNING")
+            self.show_warning("System is already running, please wait...")
             return
-        self.logMessage.emit("== BUTTON START CLICKED ==", "INFO")
+        self.show_info("BUTTON START CLICKED")
         
-        # Kiểm tra kết nối SFIS
+        # Check if SFIS is connected
         if not self.sfis_presenter.isConnected:
             log.error("SFIS not connected - cannot send START signal")
-            self.logMessage.emit("SFIS not connected - please connect SFIS before starting", "ERROR")
+            self.show_error("SFIS not connected - please connect SFIS before starting")
             return
         
         log.info(f"SFIS connected on port: {self.sfis_presenter.currentPort}")
         
-        # Đánh dấu hệ thống đang chạy
+        # Mark system as running
         self.isRunning = True
-        
-        # Flow: MainPresenter → SFISPresenter → SFISModel → SFISWorker → COM Port
-        log.info("Routing to SFISPresenter.sendStartSignal()...")
-        self.logMessage.emit("Preparing to send START signal...", "INFO")
-        
+        # Flow: MainPresenter -> SFISPresenter -> SFISModel -> SFISWorker -> COM Port
         success = self.sfis_presenter.sendStartSignal()
         
         if not success:
             log.error("Failed to initiate START signal sending")
-            self.logMessage.emit("Cannot initiate START signal sending", "ERROR")
+            self.show_error("Cannot initiate START signal sending")
             self.isRunning = False
             return
         
-        log.info("START signal routing successful - waiting for worker callback")
-        self.logMessage.emit("Command sent to worker - waiting for response...", "INFO")
+        log.info("START signal sent successfully - waiting for response...")
+        self.show_info("START signal sent successfully - waiting for response...")
     
     def startTestProcess(self, mo, allPartsSn):
         """Bắt đầu quy trình test trong QThread"""
-        # Bước 1: Nhận dữ liệu từ SFIS (đã chạy trong QThread của sfis_presenter)
-        response = self.sfis_presenter.requestData(mo, allPartsSn)
+        # Step 1: Request data from SFIS (running in QThread of sfis_presenter)
+        response = self.sfis_presenter.requestData()
 
         if not response:
-            self.logMessage.emit("Cannot receive data from SFIS", "ERROR")
+            self.show_error("Cannot receive data from SFIS")
             log.error("Cannot receive data from SFIS")
             self.isRunning = False
             return
@@ -169,7 +158,7 @@ class MainPresenter(QObject):
         sfisData = self.sfis_presenter.parseResponse(response)
         
         if not sfisData:
-            self.logMessage.emit("Error parsing SFIS data", "ERROR")
+            self.show_error("Error parsing SFIS data")
             log.error("Error parsing SFIS data")
             self.isRunning = False
             return
@@ -179,84 +168,104 @@ class MainPresenter(QObject):
     
     def onSfisDataReady(self, sfisData):
         """Xử lý khi dữ liệu SFIS đã sẵn sàng"""
-        self.logMessage.emit("SFIS data is ready", "SUCCESS")
-        self.logMessage.emit(f"  Laser SN: {sfisData.laser_sn}", "INFO")
+        self.show_success("SFIS data is ready")
+        self.show_info(f"  Laser SN: {sfisData.laser_sn}")
         
         # Bước 2: Laser marking
         # TODO: Implement laser marking
         # success = self.laser_presenter.markPsn("1", sfisData.security_code)
         # if not success:
-        #     self.logMessage.emit("Lỗi laser marking", "ERROR")
+        #     self.show_error("Lỗi laser marking")
         #     self.sfis_presenter.sendTestError(sfisData.mo, sfisData.panel_no, "LMERR1")
         #     self.isRunning = False
         #     return
-        
-        # Bước 3: Verify bằng CCD
-        # TODO: Implement CCD verification
-        # success = self.ccd_presenter.verifyCode(sfisData.security_code)
-        # if not success:
-        #     self.logMessage.emit("Lỗi verify CCD", "ERROR")
-        #     self.sfis_presenter.sendTestError(sfisData.mo, sfisData.panel_no, "CCDERR")
-        #     self.plc_presenter.sendCheckNg()
-        #     self.isRunning = False
-        #     return
-        
+                
         # Bước 4: Gửi kết quả thành công
         # self.sfis_presenter.sendTestComplete(sfisData.mo, sfisData.panel_no)
         # self.plc_presenter.sendLaserOk()
         # self.plc_presenter.sendCheckOk()
         
         self.isRunning = False
-        self.logMessage.emit("=== KẾT THÚC QUY TRÌNH ===", "INFO")
+        self.show_info("=== KẾT THÚC QUY TRÌNH ===")
     
     def onSfisConnectionChanged(self, isConnected):
         """Xử lý khi trạng thái kết nối SFIS thay đổi"""
-        # Trạng thái đã được cập nhật trong sfis_presenter
         pass
     
     def onStartSignalSent(self, success, message):
         """Flow: SFISWorker → SFISPresenter → MainPresenter (callback này)"""
-        log.info("MainPresenter.onStartSignalSent() - Callback received")
+        log.info("START signal sent callback received")
         log.info(f"Success: {success}")
         log.info(f"Message: {message}")
         
         if success:
             log.info("START signal sent successfully via COM port")
-            self.logMessage.emit("START signal sent successfully via COM port", "SUCCESS")
-            self.logMessage.emit(f"  Port: {self.sfis_presenter.currentPort}", "INFO")
+            self.show_success("START signal sent successfully via COM port")
+            self.show_info(f"  Port: {self.sfis_presenter.currentPort}")
             
             # Có thể tiếp tục các bước tiếp theo ở đây
             # Ví dụ: Chờ nhận dữ liệu từ SFIS, hoặc bắt đầu laser marking, etc.
             log.info("Next steps: Wait for SFIS response or continue process...")
         else:
             log.error(f"Failed to send START signal: {message}")
-            self.logMessage.emit("=" * 70, "INFO")
-            self.logMessage.emit(f"✗ Gửi START signal thất bại", "ERROR")
-            self.logMessage.emit(f"  Lỗi: {message}", "ERROR")
-            self.logMessage.emit("=" * 70, "INFO")
-        
-        # Reset trạng thái running
+            self.show_error(f"Failed to send START signal: {message}")
+
         self.isRunning = False
-        log.info("System status reset - ready for next operation")
-        log.info("=" * 70)
     
     def onSfisPortChanged(self, portName):
         """Xử lý khi thay đổi COM port SFIS"""
-        self.logMessage.emit(f"SFIS port được chọn: {portName}", "INFO")
-        
-        # Nếu đang kết nối, cảnh báo user
+        self.show_info(f"SFIS port selected: {portName}")
+        log.info(f"SFIS port selected: {portName}")
+        # If connected, warn user
         if self.sfis_presenter.isConnected:
-            self.logMessage.emit("Cảnh báo: Đang kết nối SFIS. Ngắt kết nối trước khi đổi port.", "WARNING")
+            self.show_warning("Warning: SFIS is connected. Disconnect before changing port.")
+            log.warning("Warning: SFIS is connected. Disconnect before changing port.")
     
     
     def cleanup(self):
         """Dọn dẹp tài nguyên khi đóng ứng dụng"""
-        self.logMessage.emit("Đang dọn dẹp tài nguyên...", "INFO")
+        self.show_info("Đang dọn dẹp tài nguyên...")
         log.info("Cleaning up sub-presenters...")
         self.sfis_presenter.cleanup()
         self.plc_presenter.cleanup()
         self.laser_presenter.cleanup()
-        self.ccd_presenter.cleanup()
-        self.logMessage.emit("Dọn dẹp hoàn tất", "INFO")
+        self.show_info("Dọn dẹp hoàn tất")
         log.info("MainPresenter cleanup completed")
+
+    def onSendLaserPsn20(self):
+        """Handle menu 'Send PSN20 to LASER'"""
+        fixed_command = (
+            "C2,15,0,PX5BF03TI,2,2795001670,"
+            "6,PT53QG0754670375ABCD,10,PT53QG0754670376EFGH,"
+            "14,PT53QG0754670377IJKL,18,PT53QG0754670378MNOP,"
+            "22,PT53QG0754670379QRST"
+        )
+
+        self.show_info("Menu: Send PSN20 to LASER triggered")
+
+        success = self.laser_presenter.send_custom_command(fixed_command,expect_keyword="C2,0")
+
+        if success:
+            self.show_success("PSN20 command sent to laser successfully")
+        else:
+            self.show_error("Failed to send PSN20 command to laser")
+
+    def onSendLaserPsn16(self):
+        """Handle menu 'Send PSN20 to LASER'"""
+        fixed_command = (
+            "C2,15,0,PX5BF03TI,2,2795001670,"
+            "6,PT53QG0754670375,10,PT53QG0754670376,"
+            "14,PT53QG0754670377,18,PT53QG0754670378,"
+            "22,PT53QG0754670379"
+        )
+
+        self.show_info("Menu: Send PSN16 to LASER triggered")
+
+        success = self.laser_presenter.send_custom_command(fixed_command,expect_keyword="C2,0")
+
+        if success:
+            self.show_success("PSN16 command sent to laser successfully")
+        else:
+            self.show_error("Failed to send PSN16 command to laser")
+
 
