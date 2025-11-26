@@ -44,6 +44,8 @@ class MainPresenter(BasePresenter):
         # Menu actions
         self.main_window.sendLaserPsn20_clicked.connect(self.onSendLaserPsn20)
         self.main_window.sendLaserPsn16_clicked.connect(self.onSendLaserPsn16)
+        self.main_window.sendGA_clicked.connect(self.onSendGA)
+        self.main_window.sendNT_clicked.connect(self.onSendNT)
         # self.main_window.sendPLCPOK_clicked.connect(self.onSendPLCPOK)
         # self.main_window.sendPLCNG_clicked.connect(self.onSendPLCNG)
         # View signals - Top Panel
@@ -293,15 +295,30 @@ class MainPresenter(BasePresenter):
         else:
             self.show_error("Failed to send PSN16 command to laser")
 
-def onSendPLCPOK(self):
-    """Handle menu 'Send OK to PLC'"""
-    success = self.plc_presenter.send_check_ok()
-    if success:
-        self.show_success("OK command sent to PLC successfully")
-    else:
-        self.show_error("Failed to send OK command to PLC")
+    def onSendPLCPOK(self):
+        """Handle menu 'Send OK to PLC'"""
+        success = self.plc_presenter.send_check_ok()
+        if success:
+            self.show_success("OK command sent to PLC successfully")
+        else:
+            self.show_error("Failed to send OK command to PLC")
 
-def onSendPLCNG(self):
-    """Handle menu 'Send NG to PLC'"""
-    self.plc_presenter.send_check_ng()
+    def onSendPLCNG(self):
+        """Handle menu 'Send NG to PLC'"""
+        self.plc_presenter.send_check_ng()
 
+    def onSendGA(self):
+        """Handle menu 'Send GA,05 to LASER'"""
+        Script_Laser = "05"
+        try:
+            self.laser_presenter.sendGAtoLaser(Script_Laser)
+            self.show_success("Send GA,{Script_Laser} to laser successfully")
+            log.success(f"Send GA,{Script_Laser} to laser successfully")
+        except Exception as e:
+            self.show_error(f"Failed to send GA,{Script_Laser} to laser: {e}")
+            log.error(f"Failed to send GA,{Script_Laser} to laser: {e}")
+
+
+    def onSendNT(self):
+        """Handle menu 'Send NT to LASER'"""
+        success = self.laser_presenter.start_marking()

@@ -2,7 +2,7 @@ PANEL_NO: PANEL001
 MO: 2790004600
 SECURITY_CODE: 52-005353
 PANEL_NUM: 18   
-LASER_IP: 192.168.1.20                                                      
+LASER_IP: 10.153.227.38                                                    
 LASER_PORT: 50002
 LASER_SCRIPT: "15"
 LASER_TIMEOUT_MS: 3000

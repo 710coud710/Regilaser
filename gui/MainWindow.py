@@ -25,6 +25,10 @@ class MainWindow(QMainWindow):
     sendLaserPsn16_clicked = Signal()
     sendPLCPOK_clicked = Signal()
     sendPLCNG_clicked = Signal()
+    sendGA_clicked = Signal()
+    sendNT_clicked = Signal()
+
+    
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Regilazi - Version 1.0 Prenium")
@@ -74,8 +78,7 @@ class MainWindow(QMainWindow):
         file_menu = menubar.addMenu("&File")
         plc_menu = menubar.addMenu("&PLC")
         sfis_menu = menubar.addMenu("&SFIS")
-        laser_menu = menubar.addMenu("&Laser")
-        check_menu = menubar.addMenu("&Check")
+        laser_menu = menubar.addMenu("&Check")
         ######File menu#####
         # Menu action
         menu_action = QAction("Menu", self)
@@ -102,23 +105,25 @@ class MainWindow(QMainWindow):
         plc_menu.addAction(send_plc_ng_action)  
 
 
-        ######Check menu#####
+        ######Laser menu#####
+        send_ga_action = QAction("Send GA,0", self)
+        send_ga_action.setShortcut("Ctrl+A")
+        send_ga_action.triggered.connect(self.sendGA_clicked.emit)
+        laser_menu.addAction(send_ga_action)
 
-
-        
         send_psn16_action = QAction("Send PSN16 to LASER", self)
         send_psn16_action.setShortcut("Ctrl+1")
         send_psn16_action.triggered.connect(self.sendLaserPsn16_clicked.emit)
-        check_menu.addAction(send_psn16_action)
+        laser_menu.addAction(send_psn16_action)
 
 
         send_psn_action = QAction("Send PSN20 to LASER", self)
         send_psn_action.setShortcut("Ctrl+2")
         send_psn_action.triggered.connect(self.sendLaserPsn20_clicked.emit)
-        check_menu.addAction(send_psn_action)
+        laser_menu.addAction(send_psn_action)
         
 
-        check_menu.addSeparator()
+        laser_menu.addSeparator()
 
     def _connectSignals(self):
         """Kết nối các signals giữa các panel"""

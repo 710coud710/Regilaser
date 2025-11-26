@@ -165,6 +165,14 @@ class LaserPresenter(BasePresenter):
             log.error(f"Custom command error: {exc}")
             return False
 
+    def sendGAtoLaser(self, Script):
+        """Gửi lệnh GA,05"""
+        try:
+            return self.worker.send_ga(Script)
+        except Exception as e:
+            log.error(f"Failed to send GA,{Script} to laser: {e}")
+            raise Exception(f"Failed to send GA,{Script} to laser: {e}")
+           
     # ------------------------------------------------------------------
     # Helpers
     # ------------------------------------------------------------------
@@ -176,3 +184,4 @@ class LaserPresenter(BasePresenter):
     def cleanup(self):
         """Dọn dẹp tài nguyên"""
         self.disconnect()
+    

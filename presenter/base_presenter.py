@@ -4,7 +4,7 @@ Base Presenter - Class cơ sở cho các presenter
 from PySide6.QtCore import QObject, Signal 
 
 
-class BasePresenter(S):
+class BasePresenter(QObject):
     """Base class cho tất cả các presenter"""
     
     # Common signals
