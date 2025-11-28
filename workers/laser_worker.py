@@ -87,13 +87,25 @@ class LaserWorker:
         timeout_ms = timeout_ms or self.timeout_ms
 
         log.info(f"Sending command to laser: {payload.strip()}")
-        self._send_all(payload.encode("ascii"))
+        try:
+            self._send_all(payload.encode("ascii"))
+        except (OSError, RuntimeError, TimeoutError) as exc:
+            # Phát hiện mất kết nối khi gửi
+            self.is_connected = False
+            log.error(f"Connection lost while sending: {exc}")
+            raise RuntimeError(f"Connection lost while sending command: {exc}")
 
-        response = self._read_response(timeout_ms)
-        if response:
-            log.info(f"Laser response: {response}")
-        else:
-            log.warning("Laser returned empty response")
+        try:
+            response = self._read_response(timeout_ms)
+            if response:
+                log.info(f"Laser response: {response}")
+            else:
+                log.warning("Laser returned empty response")
+        except (OSError, RuntimeError, TimeoutError) as exc:
+            # Phát hiện mất kết nối khi nhận
+            self.is_connected = False
+            log.error(f"Connection lost while receiving: {exc}")
+            raise RuntimeError(f"Connection lost while receiving response: {exc}")
 
         if expect_keyword and response and expect_keyword not in response:
             raise RuntimeError(

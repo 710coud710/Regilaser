@@ -66,6 +66,7 @@ class MainPresenter(BasePresenter):
         
         # Laser Presenter signals
         self.laser_presenter.logMessage.connect(self.forwardLog)
+        self.laser_presenter.connectionStatusChanged.connect(self.onLaserConnectionChanged)
         
         # Presenter signals to View
         self.logMessage.connect(self.updateLog)
@@ -100,6 +101,14 @@ class MainPresenter(BasePresenter):
         """Khởi tạo kết nối và cấu hình ban đầu"""
         self.show_info("System is ready!")
         log.info("System is ready!")
+        
+        # Cập nhật trạng thái laser ban đầu (disconnected)
+        topPanel = self.main_window.getTopPanel()
+        topPanel.setLaserConnectionStatus(False, "Initializing...")
+        
+        # Tự động kết nối laser khi khởi động
+        self.laser_presenter.start_auto_connect()
+        log.info("Laser auto-connect started")
     
     def onSfisConnectRequested(self, shouldConnect, portName):
         """Xử lý yêu cầu kết nối/ngắt kết nối SFIS từ nút toggle"""
@@ -247,6 +256,13 @@ class MainPresenter(BasePresenter):
         if self.plc_presenter.is_connected:
             self.show_warning("Warning: PLC is connected. Disconnect before changing port.")
             log.warning("Warning: PLC is connected. Disconnect before changing port.")
+
+    def onLaserConnectionChanged(self, isConnected):
+        """Xử lý khi trạng thái kết nối laser thay đổi"""
+        topPanel = self.main_window.getTopPanel()
+        status_text = "Connected" if isConnected else "Disconnected"
+        topPanel.setLaserConnectionStatus(isConnected, status_text)
+        log.info(f"Laser connection status changed: {status_text}")
     
     
     def cleanup(self):

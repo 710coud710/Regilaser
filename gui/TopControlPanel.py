@@ -3,7 +3,7 @@ Top Control Panel - Chứa ALL PARTS SN, MO, SFIS, CCD inputs
 """
 from PySide6.QtWidgets import (QWidget, QHBoxLayout, 
                                QGroupBox, QComboBox, 
-                               QPushButton)
+                               QPushButton, QLabel)
 from PySide6.QtCore import Signal
 
 
@@ -24,28 +24,9 @@ class TopControlPanel(QWidget):
     def _init_ui(self):
         layout = QHBoxLayout(self)
         layout.setContentsMargins(5, 5, 5, 5)
-        layout.setSpacing(15)
-              
-        # # MO
-        # mo_group = QGroupBox()
-        # mo_layout = QVBoxLayout()
-        # mo_layout.setContentsMargins(5, 5, 5, 5)
-        # mo_layout.setSpacing(2)
+        layout.setSpacing(15)              
         
-        # lbl_mo = QLabel("MO:")
-        # lbl_mo.setStyleSheet("font-weight: bold;")
-        # mo_layout.addWidget(lbl_mo)
-        
-        # self.input_mo = QLineEdit()
-        # # self.input_mo.setReadOnly(True)
-        # self.input_mo.setPlaceholderText("1234567890")
-        # # self.input_mo.textChanged.connect(self.mo_changed.emit)
-        # mo_layout.addWidget(self.input_mo)
-        
-        # mo_group.setLayout(mo_layout)
-        # layout.addWidget(mo_group)
-        
-        # SFIS
+        #--------------------------------SFIS--------------------------------
         sfis_group = QGroupBox()
         sfis_layout = QHBoxLayout()
         sfis_layout.setContentsMargins(5, 5, 5, 5)
@@ -68,7 +49,7 @@ class TopControlPanel(QWidget):
         self.btn_sfis.toggled.connect(self._onSfisButtonToggled)
         sfis_layout.addWidget(self.btn_sfis)
 
-        # SFIS COM port
+        #SFIS COM port
         self.combo_sfis_com = QComboBox()
         self.combo_sfis_com.addItems(["COM1", "COM2", "COM3", "COM4", "COM5","COM6", "COM7", "COM8", "COM9", "COM10","COM11", "COM12"])
         self.combo_sfis_com.setCurrentText("COM8")
@@ -79,7 +60,7 @@ class TopControlPanel(QWidget):
         sfis_group.setLayout(sfis_layout)
         layout.addWidget(sfis_group)
 
-        #PLC COM Button
+        #--------------------------------PLC--------------------------------
         plc_group = QGroupBox()
         plc_layout = QHBoxLayout()
         plc_layout.setContentsMargins(5, 5, 5, 5)
@@ -114,8 +95,45 @@ class TopControlPanel(QWidget):
         layout.addWidget(plc_group)
         
 
+        
+        #--------------------------------Status dot Laser--------------------------------
+        status_group = QGroupBox()
+        status_layout = QHBoxLayout()
+        status_layout.setContentsMargins(5, 5, 5, 5)
+        status_layout.setSpacing(10)
 
-        # Stretch để các group không bị kéo dãn quá mức
+        laser_status = QHBoxLayout()
+        laser_status.setContentsMargins(0, 0, 0, 0)
+        laser_status.setSpacing(8)
+
+        # Dot indicator
+        self.dot_laser_status = QLabel()
+        self.dot_laser_status.setFixedSize(20, 20)
+        self.dot_laser_status.setStyleSheet(
+            """
+            background-color: red;
+            border-radius: 10px;
+            border: 1px solid #444;
+            """
+        )
+        laser_status.addWidget(self.dot_laser_status)
+
+        # Label text
+        self.lbl_laser_status = QLabel("Laser Machine")
+        self.lbl_laser_status.setStyleSheet("""
+            font-weight: bold;
+            font-size: 16px;
+            color: #313647;
+            padding-left: 5px;
+        """)        
+        laser_status.addWidget(self.lbl_laser_status)
+
+
+        status_layout.addLayout(laser_status)
+        status_group.setLayout(status_layout)
+        layout.addWidget(status_group)
+
+        # Stretch để
         layout.addStretch()
         self.setMaximumHeight(80)
 
@@ -176,3 +194,26 @@ class TopControlPanel(QWidget):
         else:
             self.btn_plc.setChecked(False)
             self.btn_plc.setText("PLC OFF")
+
+    def setLaserConnectionStatus(self, connected, message=""):
+        """Cập nhật trạng thái kết nối laser trên UI"""
+        if connected:
+            # Màu xanh khi đã kết nối
+            self.dot_laser_status.setStyleSheet(
+                """
+                background-color: green;
+                border-radius: 10px;
+                border: 1px solid #444;
+                """
+            )
+            self.lbl_laser_status.setText("Laser Machine (Connected)")
+        else:
+            # Màu đỏ khi chưa kết nối
+            self.dot_laser_status.setStyleSheet(
+                """
+                background-color: red;
+                border-radius: 10px;
+                border: 1px solid #444;
+                """
+            )
+            self.lbl_laser_status.setText("Laser Machine (Disconnected)")
