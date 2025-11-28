@@ -106,7 +106,7 @@ class MainWindow(QMainWindow):
 
 
         ######Laser menu#####
-        send_ga_action = QAction("Send GA,0", self)
+        send_ga_action = QAction("Send GA", self)
         send_ga_action.setShortcut("Ctrl+A")
         send_ga_action.triggered.connect(self.sendGA_clicked.emit)
         laser_menu.addAction(send_ga_action)
@@ -122,6 +122,10 @@ class MainWindow(QMainWindow):
         send_psn_action.triggered.connect(self.sendLaserPsn20_clicked.emit)
         laser_menu.addAction(send_psn_action)
         
+        send_nt_action = QAction("Send NT to LASER", self)
+        send_nt_action.setShortcut("Ctrl+N")
+        send_nt_action.triggered.connect(self.sendNT_clicked.emit)
+        laser_menu.addAction(send_nt_action)
 
         laser_menu.addSeparator()
 

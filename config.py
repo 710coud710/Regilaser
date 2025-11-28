@@ -4,22 +4,23 @@ import time
 import os
 from pydantic import BaseModel, StrictStr, StrictInt, ValidationError
 from utils.Logging import getLogger
-
+from utils.schema import LaserConnectMode
 # Khởi tạo logger
 log = getLogger()
 
-# === CONFIG SCHEMA (tối giản – bạn có thể mở rộng sau) ===
 class Config(BaseModel):
     model_config = {"extra": "allow"}  # cho phép thêm key khác (FrontPSN_Num, etc.)
 
-    PANEL_NO: StrictStr
     MO: StrictInt
     SECURITY_CODE: StrictStr
     PANEL_NUM: StrictInt  # Panel Number để tạo NEEDPSNxx
+    LASER_MODE: LaserConnectMode # 1: "TCP" or 2: "RS232"
     LASER_IP: StrictStr
     LASER_PORT: StrictInt
-    LASER_SCRIPT: StrictStr
+    LASER_SCRIPT: StrictInt
     LASER_TIMEOUT_MS: StrictInt
+    LASER_COM_PORT: StrictStr
+    LASER_BAUDRATE: StrictInt
 
 
 # === CONFIG MANAGER (singleton + hot reload + thread-safe) ===

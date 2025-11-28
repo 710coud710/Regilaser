@@ -5,6 +5,7 @@ from PySide6.QtCore import QTimer, Signal
 from presenter.base_presenter import BasePresenter
 from config import ConfigManager
 from workers.laser_worker import LaserWorker
+from utils.schema import LaserConnectMode
 from utils.Logging import getLogger
 
 # Khởi tạo logger
@@ -19,17 +20,27 @@ class LaserPresenter(BasePresenter):
     def __init__(self):
         super().__init__()
         config = ConfigManager().get()
+        self.laser_mode = config.LASER_MODE
         self.laser_ip = config.LASER_IP
         self.laser_port = config.LASER_PORT
+        self.laser_com_port = getattr(config, "LASER_COM_PORT", None)
+        self.laser_baudrate = getattr(config, "LASER_BAUDRATE", 9600)
         self.default_script = str(config.LASER_SCRIPT)
         self.command_timeout_ms = config.LASER_TIMEOUT_MS
 
-        self.worker = LaserWorker(self.laser_ip, self.laser_port, self.command_timeout_ms)
+        self.worker = LaserWorker(
+            mode=self.laser_mode,
+            ip=self.laser_ip,
+            port=self.laser_port,
+            timeout_ms=self.command_timeout_ms,
+            com_port=self.laser_com_port,
+            baudrate=self.laser_baudrate,
+        )
         self.is_connected = False
         
         # Auto-reconnect timer (check mỗi 5 giây)
         self.reconnect_timer = QTimer()
-        self.reconnect_timer.timeout.connect(self._check_and_reconnect)
+        self.reconnect_timer.timeout.connect(self._checkAndReconnect)
         self.reconnect_interval_ms = 5000  # 5 giây
         self.auto_reconnect_enabled = True
         
@@ -37,26 +48,52 @@ class LaserPresenter(BasePresenter):
     # ------------------------------------------------------------------
     # Connection
     # ------------------------------------------------------------------
-    def connect(self, ip_address=None, port=None):
+    def connect(self, ip_address=None, port=None, com_port=None, baudrate=None):
         """Kết nối đến Laser System"""
-        target_ip = ip_address or self.laser_ip
-        target_port = port or self.laser_port
-
-        self.show_info(f"Connecting to Laser Controller: {target_ip}:{target_port}")
-        log.info(f"Connecting to Laser Controller: {target_ip}:{target_port}")
+        description = ""
         try:
-            self.worker.connect(target_ip, target_port)
-            self.is_connected = True
-            self.connectionStatusChanged.emit(True)
-            self.show_success("Laser controller connected successfully")
-            log.info("Laser controller connected successfully")
-            return True
+            if self.laser_mode == LaserConnectMode.TCP:
+                target_ip = ip_address or self.laser_ip
+                target_port = port or self.laser_port
+                description = f"{target_ip}:{target_port}"
+                self.show_info(f"Connecting to Laser Controller (TCP): {description}")
+                log.info(f"Connecting to Laser Controller (TCP): {description}")
+                self.worker.connect(target_ip, target_port)
+            else:
+                target_com = com_port or self.laser_com_port
+                target_baud = baudrate or self.laser_baudrate
+                if not target_com:
+                    raise RuntimeError("Laser COM port is not configured")
+                description = f"{target_com} @ {target_baud}bps"
+                self.show_info(f"Connecting to Laser Controller (RS232): {description}")
+                log.info(f"Connecting to Laser Controller (RS232): {description}")
+                self.worker.connect(com_port=target_com, baudrate=target_baud)
         except Exception as exc:
             self.is_connected = False
             self.connectionStatusChanged.emit(False)
             self.show_error(f"Failed to connect to laser: {exc}")
             log.error(f"Failed to connect to laser: {exc}")
             return False
+        else:
+            self.is_connected = True
+            self.connectionStatusChanged.emit(True)
+            self.show_success(f"Laser controller connected successfully ({description})")
+            log.info(f"Laser controller connected successfully ({description})")
+            return True
+
+    def disconnect(self):
+        """Ngắt kết nối Laser System"""
+        self.auto_reconnect_enabled = False
+        self.reconnect_timer.stop()
+
+        if not self.is_connected:
+            return
+
+        self.worker.disconnect()
+        self.is_connected = False
+        self.connectionStatusChanged.emit(False)
+        self.show_info("Disconnected from laser controller")
+        log.info("Disconnected from laser controller")
 
     def disconnect(self):
         """Ngắt kết nối Laser System"""
@@ -75,7 +112,7 @@ class LaserPresenter(BasePresenter):
     # ------------------------------------------------------------------
     # GA / C2 / NT helpers
     # ------------------------------------------------------------------
-    def activate_script(self, script_number=None):
+    def activateScript(self, script_number=None):
         """Gửi lệnh GA để chọn script"""
         if not self._ensure_connection():
             return False
@@ -99,16 +136,16 @@ class LaserPresenter(BasePresenter):
             log.error(f"GA command error: {exc}")
             return False
 
-    def set_content(self, script=None, block="2", content=""):
+    def setContent(self, script=None, content=""):
         """Gửi lệnh C2 để nạp dữ liệu vào block"""
         if not self._ensure_connection():
             return False
 
         script_id = str(script or self.default_script)
-        self.show_info(f"Send C2 command (script={script_id}, block={block})")
-        log.info(f"Send C2 command (script={script_id}, block={block})")
+        self.show_info(f"Send C2 command (script={script_id}, content={content})")
+        log.info(f"Send C2 command (script={script_id}, content={content})")
         try:
-            self.worker.send_c2(script_id, block, content, timeout_ms=self.command_timeout_ms)
+            self.worker.send_c2(script_id, content, timeout_ms=self.command_timeout_ms)
             self.show_success("C2 command completed")
             log.info("C2 command completed")
             return True
@@ -123,7 +160,7 @@ class LaserPresenter(BasePresenter):
             log.error(f"C2 command error: {exc}")
             return False
 
-    def start_marking(self):
+    def startMarking(self):
         """Gửi lệnh NT để bắt đầu khắc"""
         if not self._ensure_connection():
             return False
@@ -149,13 +186,7 @@ class LaserPresenter(BasePresenter):
     # High-level flows
     # ------------------------------------------------------------------
     def mark_psn(self, security_code, script=None):
-        """
-        Thực hiện laser marking với flow GA -> C2 -> NT
-
-        Args:
-            security_code (str): chuỗi Security Code cần nạp
-            script (str|None): script override, None = lấy từ config
-        """
+        """Thực hiện laser marking với flow GA -> C2 -> NT"""
         if not security_code:
             self.show_error("Security code is not valid")
             log.error("Security code is not valid")
@@ -167,27 +198,27 @@ class LaserPresenter(BasePresenter):
         log.info("=== START LASER MARKING ===")
         self.show_debug(f"Script={script_id}, SecurityCode={security_code}")
 
-        if not self.activate_script(script_id):
+        if not self.activateScript(script_id):
             return False
 
-        if not self.set_content(script_id, "2", security_code):
+        if not self.setContent(script_id, security_code):
             return False
 
-        if not self.start_marking():
+        if not self.startMarking():
             return False
 
         self.show_success("Laser marking completed")
-        log.success("Laser marking completed")
+        log.info("Laser marking completed")
         return True
 
-    def send_custom_command(self, command, expect_keyword=None):
+    def sendCustomCommand(self, command, expect_keyword=None):
         if not self._ensure_connection():
             return False
 
         self.show_info(f"Send custom command Manual: {command.strip()}")
         log.info(f"Send custom command Manual: {command.strip()}")
         try:
-            response = self.worker.send_raw_command(
+            response = self.worker.sendRawCommand(
                 command,
                 expect_keyword=expect_keyword,
                 timeout_ms=self.command_timeout_ms,
@@ -206,29 +237,54 @@ class LaserPresenter(BasePresenter):
             log.error(f"Custom command error: {exc}")
             return False
 
-    def sendGAtoLaser(self, Script):
-        """Gửi lệnh GA,05"""
+    def sendGAtoLaser(self):
+        """Gửi lệnh GA với script mặc định"""
+        if not self._ensure_connection():
+            raise RuntimeError("Laser is not connected")
+
+        script = str(self.default_script)
         try:
-            return self.worker.send_ga(Script)
-        except Exception as e:
-            log.error(f"Failed to send GA,{Script} to laser: {e}")
-            raise Exception(f"Failed to send GA,{Script} to laser: {e}")
-           
+            self.worker.send_ga(script, timeout_ms=self.command_timeout_ms)
+            self.show_success(f"Send GA,{script} to laser successfully")
+            log.info(f"Send GA,{script} to laser successfully")
+        except Exception as exc:
+            self._handle_connection_lost()
+            self.show_error(f"Failed to send GA,{script} to laser: {exc}")
+            log.error(f"Failed to send GA,{script} to laser: {exc}")
+            raise
+
+    def sendNTtoLaser(self):
+        """Gửi lệnh NT"""
+        if not self._ensure_connection():
+            raise RuntimeError("Laser is not connected")
+
+        try:
+            response = self.worker.send_nt(timeout_ms=self.command_timeout_ms)
+            self.show_success("Send NT to laser successfully")
+            log.info(f"Send NT to laser successfully: {response or '(empty)'}")
+            return response
+        except Exception as exc:
+            self._handle_connection_lost()
+            self.show_error(f"Failed to send NT to laser: {exc}")
+            log.error(f"Failed to send NT to laser: {exc}")
+            raise
+
     # ------------------------------------------------------------------
     # Helpers
     # ------------------------------------------------------------------
     def _ensure_connection(self):
         if self.is_connected:
-            # Kiểm tra xem connection còn valid không
-            if not self.worker.is_connected:
+            if not self.worker.checkConnectionAlive():
+                self.worker.is_connected = False
                 self._handle_connection_lost()
                 return False
             return True
-        return self.connect(self.laser_ip, self.laser_port)
+        return self.connect()
     
     def _handle_connection_lost(self):
         """Xử lý khi phát hiện mất kết nối - cập nhật UI ngay lập tức"""
         if self.is_connected:
+            self.worker.disconnect()
             self.is_connected = False
             self.connectionStatusChanged.emit(False)
             log.warning("Laser connection lost - updating UI immediately")
@@ -247,7 +303,7 @@ class LaserPresenter(BasePresenter):
         self.reconnect_timer.start(self.reconnect_interval_ms)
         log.info(f"Auto-reconnect timer started (interval: {self.reconnect_interval_ms}ms)")
 
-    def stop_auto_connect(self):
+    def stopAutoConnect(self):
         """Dừng tự động kết nối"""
         self.auto_reconnect_enabled = False
         self.reconnect_timer.stop()
@@ -260,10 +316,15 @@ class LaserPresenter(BasePresenter):
         
         try:
             if not self.is_connected:
-                self.worker.connect(self.laser_ip, self.laser_port)
+                if self.laser_mode == LaserConnectMode.TCP:
+                    self.worker.connect(self.laser_ip, self.laser_port)
+                    description = f"{self.laser_ip}:{self.laser_port}"
+                else:
+                    self.worker.connect(com_port=self.laser_com_port, baudrate=self.laser_baudrate)
+                    description = f"{self.laser_com_port}@{self.laser_baudrate}"
                 self.is_connected = True
                 self.connectionStatusChanged.emit(True)
-                log.info(f"Laser auto-connected: {self.laser_ip}:{self.laser_port}")
+                log.info(f"Laser auto-connected: {description}")
         except Exception as exc:
             # Chỉ log khi lần đầu fail hoặc khi reconnect thành công sau khi fail
             if self.is_connected:
@@ -273,24 +334,12 @@ class LaserPresenter(BasePresenter):
                 log.warning(f"Laser connection lost: {exc}")
             # Không log mỗi lần fail để tránh spam log
 
-    def _check_and_reconnect(self):
+    def _checkAndReconnect(self):
         """Kiểm tra và tự động kết nối lại nếu bị ngắt"""
         if not self.auto_reconnect_enabled:
             return
         
-        # Đồng bộ trạng thái với worker
-        worker_connected = self.worker.is_connected
-        
-        # Kiểm tra socket state nếu worker báo là connected
-        if worker_connected and self.worker._socket:
-            try:
-                # Thử kiểm tra socket state
-                self.worker._socket.getpeername()
-            except (OSError, AttributeError):
-                # Socket không còn valid
-                log.warning("Laser socket invalid, marking as disconnected")
-                self.worker.is_connected = False
-                worker_connected = False
+        worker_connected = self.worker.checkConnectionAlive()
         
         # Nếu trạng thái không khớp, cập nhật ngay lập tức
         if self.is_connected != worker_connected:
@@ -306,6 +355,6 @@ class LaserPresenter(BasePresenter):
 
     def cleanup(self):
         """Dọn dẹp tài nguyên"""
-        self.stop_auto_connect()
+        self.stopAutoConnect()
         self.disconnect()
     

@@ -7,8 +7,13 @@ from presenter.plc_presenter import PLCPresenter
 from presenter.laser_presenter import LaserPresenter
 from utils.Logging import getLogger
 from presenter.base_presenter import BasePresenter
+from config import ConfigManager
+
 # Khởi tạo logger
 log = getLogger()
+
+config = ConfigManager().get()
+
 
 
 class MainPresenter(BasePresenter):
@@ -284,7 +289,7 @@ class MainPresenter(BasePresenter):
 
         self.show_info("Menu: Send PSN20 to LASER triggered")
 
-        success = self.laser_presenter.send_custom_command(fixed_command,expect_keyword="C2,0")
+        success = self.laser_presenter.sendCustomCommand(fixed_command,expect_keyword="C2,0")
 
         if success:
             self.show_success("PSN20 command sent to laser successfully")
@@ -304,7 +309,7 @@ class MainPresenter(BasePresenter):
 
         self.show_info("Menu: Send PSN16 to LASER triggered")
 
-        success = self.laser_presenter.send_custom_command(fixed_command,expect_keyword="C2,0")
+        success = self.laser_presenter.sendCustomCommand(fixed_command,expect_keyword="C2,0")
 
         if success:
             self.show_success("PSN16 command sent to laser successfully")
@@ -324,17 +329,21 @@ class MainPresenter(BasePresenter):
         self.plc_presenter.send_check_ng()
 
     def onSendGA(self):
-        """Handle menu 'Send GA,05 to LASER'"""
-        Script_Laser = "05"
         try:
-            self.laser_presenter.sendGAtoLaser(Script_Laser)
-            self.show_success("Send GA,{Script_Laser} to laser successfully")
-            log.success(f"Send GA,{Script_Laser} to laser successfully")
+            self.laser_presenter.sendGAtoLaser()
+            self.show_success(f"Send GA to laser successfully")
+            log.info(f"Send GA to laser successfully")
         except Exception as e:
-            self.show_error(f"Failed to send GA,{Script_Laser} to laser: {e}")
-            log.error(f"Failed to send GA,{Script_Laser} to laser: {e}")
+            self.show_error(f"Failed to send GA to laser: {e}")
+            log.error(f"Failed to send GA to laser: {e}")
 
 
     def onSendNT(self):
         """Handle menu 'Send NT to LASER'"""
-        success = self.laser_presenter.start_marking()
+        try:
+            self.laser_presenter.sendNTtoLaser()
+            self.show_success(f"Send NT to laser successfully")
+            log.info(f"Send NT to laser successfully")
+        except Exception as e:
+            self.show_error(f"Failed to send NT to laser: {e}")
+            log.error(f"Failed to send NT to laser: {e}")
