@@ -21,7 +21,8 @@ class Config(BaseModel):
     LASER_TIMEOUT_MS: StrictInt
     LASER_COM_PORT: StrictStr
     LASER_BAUDRATE: StrictInt
-
+    PLC_COM: StrictStr
+    SFIS_COM: StrictStr
 
 # === CONFIG MANAGER (singleton + hot reload + thread-safe) ===
 class ConfigManager:

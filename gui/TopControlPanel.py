@@ -6,6 +6,8 @@ from PySide6.QtWidgets import (QWidget, QHBoxLayout,
                                QPushButton, QLabel)
 from PySide6.QtCore import Signal
 
+from config import ConfigManager
+config = ConfigManager().get()
 
 class TopControlPanel(QWidget):
     """Panel điều khiển phía trên"""
@@ -52,7 +54,7 @@ class TopControlPanel(QWidget):
         #SFIS COM port
         self.combo_sfis_com = QComboBox()
         self.combo_sfis_com.addItems(["COM1", "COM2", "COM3", "COM4", "COM5","COM6", "COM7", "COM8", "COM9", "COM10","COM11", "COM12"])
-        self.combo_sfis_com.setCurrentText("COM8")
+        self.combo_sfis_com.setCurrentText(config.SFIS_COM)
         self.combo_sfis_com.currentTextChanged.connect(self.sfisChanged.emit)
         sfis_layout.addWidget(self.combo_sfis_com)
     
@@ -86,7 +88,7 @@ class TopControlPanel(QWidget):
         # SFIS COM port
         self.combo_plc_com = QComboBox()
         self.combo_plc_com.addItems(["COM1", "COM2", "COM3", "COM4", "COM5","COM6", "COM7", "COM8", "COM9", "COM10","COM11", "COM12"])
-        self.combo_plc_com.setCurrentText("COM3")
+        self.combo_plc_com.setCurrentText(config.PLC_COM)
         self.combo_plc_com.currentTextChanged.connect(self.plcChanged.emit)
         plc_layout.addWidget(self.combo_plc_com)
     
