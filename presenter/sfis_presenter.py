@@ -120,39 +120,29 @@ class SFISPresenter(BasePresenter):
     
     def sendStartSignal(self, mo=None, panel_no=None):
         """
-        Gửi tín hiệu START đến SFIS qua COM port (fire and forget)
-        Flow:
-        1. SFISModel tạo START message (49 bytes)
-        2. SFISWorker gửi qua COM port trong thread riêng
-        3. Không chờ phản hồi từ SFIS       
+        Gửi tín hiệu START đến SFIS qua COM port (fire and forget)  
         """
-        log.info("=" * 20)
-        log.info("SFISPresenter.sendStartSignal() called")
-        
-        # Kiểm tra kết nối
         if not self.isConnected:
-            self.show_error("SFIS not connected")
+            self.show_error("SFIS is not connected")
             log.error("SFIS not connected")
             return False
         
         # Lấy config để hiển thị PANEL_NUM
         from config import ConfigManager
         config = ConfigManager().get()
-        panel_num = config.PANEL_NUM if config else "??"
+        panel_num = config.PANEL_NUM
         
         # Bước 1: SFISModel tạo START message
-        log.info("Step 1: Creating START message via SFISModel...")
         start_message = self.sfis_model.createStartSignal(mo, panel_no)
-        
+
         if not start_message:
-            self.show_error("Lỗi tạo START signal")
+            self.show_error("Failed to create START message")
             log.error("Failed to create START message")
             return False
         # LOG detailed message
         log.info("START Message created successfully:")
         log.info(f"  Data sent: {start_message}")
         log.info(f"  Length: {len(start_message)} bytes (expected: 49)")
-        log.info("=" * 20)
         
         # UI Log
         self.show_info("GỬI START SIGNAL:")
@@ -310,7 +300,6 @@ class SFISPresenter(BasePresenter):
         """Xử lý khi dữ liệu đã được parse thành công"""
         self.show_info("Parse SFIS data successfully")
         self.show_info(f"  Laser SN: {sfisData.laser_sn}")
-        self.show_info(f"  Security Code: {sfisData.security_code}")
         self.show_info(f"  Status: {sfisData.status}")
         
         # Emit signal để MainPresenter xử lý tiếp

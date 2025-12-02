@@ -150,7 +150,6 @@ void __fastcall TForm1::SFIS_COMReceiveData(TObject *Sender, Pointer Buffer, WOR
     // Kiểm tra định dạng mới: LaserSN(25) + SecurityCode(25) + Status(20) + PASS
     if(!IsRunStatus && (temp.Length() == (25+25+20) && temp.Pos("PASS"))) {
         LaserSN = sfc_recvBuffer.SubString(1,25).Trim();
-        Securitycode_sfis = sfc_recvBuffer.SubString(26,25).Trim();
         // Bắt đầu quá trình laser marking
         Auto_test();
     }

@@ -18,7 +18,6 @@ class SFISData:
     
     # Response data
     laser_sn: str = ""  # Laser Serial Number (25 bytes)
-    security_code: str = ""  # Security Code (25 bytes)
     status: str = ""  # Status (20 bytes)
     
     # PSN data (if using old format)
@@ -38,7 +37,6 @@ class SFISModel(QObject):
     
     # Constants - Định dạng mới
     LASER_SN_LENGTH = 25
-    SECURITY_CODE_LENGTH = 25
     STATUS_LENGTH = 20
     PASS_KEYWORD = "PASS"
     NEW_FORMAT_LENGTH = 70  # 25 + 25 + 20 (không tính PASS vì nó nằm trong status)
@@ -119,14 +117,10 @@ class SFISModel(QObject):
             laser_sn = response[pos:pos + self.LASER_SN_LENGTH].strip()
             pos += self.LASER_SN_LENGTH
             
-            security_code = response[pos:pos + self.SECURITY_CODE_LENGTH].strip()
-            pos += self.SECURITY_CODE_LENGTH
-            
             status = response[pos:pos + self.STATUS_LENGTH].strip()
             
             # Cập nhật current_data
             self.current_data.laser_sn = laser_sn
-            self.current_data.security_code = security_code
             self.current_data.status = status
             
             self.data_parsed.emit(self.current_data)
@@ -137,12 +131,7 @@ class SFISModel(QObject):
             return None
     
     def createStartSignal(self, mo=None, panel_no=None):
-        """ 
-        Format: MO(20) + Panel_Number(20) + NEEDPSNxx(9) = 49 bytes
-        - MO: Lấy từ config.yaml nếu không truyền vào
-        - Panel_Number: Để trống (20 spaces)
-        - NEEDPSNxx: Động theo Panel_Num từ config (ex: Panel_Num=5 → NEEDPSN05)       
-        """
+        """Format: MO(20) + Panel_Number(20) + NEEDPSNxx(9) = 49 bytes"""
         try:
             # Lấy config từ ConfigManager
             config = self.config_manager.get()
@@ -159,18 +148,16 @@ class SFISModel(QObject):
             panel_num = config.PANEL_NUM
             
             # Tạo NEEDPSNxx: "NEEDPSN" + 2 số cuối của Panel_Num
-            need_keyword = f"NEEDPSN{panel_num:02d}"  # Format 2 chữ số, thêm 0 phía trước nếu cần
-            
+            # need_keyword = f"NEEDPSN{panel_num:02d}"  # Format 2 chữ số, thêm 0 phía trước nếu cần
+            need_keyword = f"NEEDPSN{panel_num}"  # Format theo số panel_num
+
             # Kiểm tra độ dài keyword (phải là 9 bytes)
-            if len(need_keyword) != 9:
-                self.validation_error.emit(f"NEEDPSN keyword is not the correct length: {len(need_keyword)} (expected: 9)")
-                return None
+            # if len(need_keyword) != 9:
+            #     self.validation_error.emit(f"NEEDPSN keyword is not the correct length: {len(need_keyword)} (expected: 9)")
+            #     return None
             
-            # MO: 20 bytes
-            mo_padded = str(mo).ljust(20)[:20]
-            
-            # Panel Number: 20 bytes (để trống)
-            panel_padded = "".ljust(20)
+            mo_padded = str(mo).ljust(20)[:20] #MO: 20 bytes
+            panel_padded = "".ljust(20) # Panel Number: 20 bytes (để trống)
             
             # Tạo START signal: 20 + 20 + 9 = 49 bytes
             start_signal = f"{mo_padded}{panel_padded}{need_keyword}"
@@ -182,27 +169,15 @@ class SFISModel(QObject):
             return start_signal
             
         except AttributeError as e:
-            error_msg = f"Lỗi đọc config: {str(e)} - Kiểm tra PANEL_NUM trong config.yaml"
+            error_msg = f"Read config error: {str(e)} - Check PANEL_NUM in config.yaml"
             self.validation_error.emit(error_msg)
             return None
         except Exception as e:
-            self.validation_error.emit(f"Lỗi tạo START signal: {str(e)}")
+            self.validation_error.emit(f"Create START signal error: {str(e)}")
             return None
     
     def createTestComplete(self, mo, panel_no):
-        """
-        Tạo message báo hoàn thành test
-        
-        Format: MO(20) + PANEL_NO(20) + END(3)
-        Total: 43 bytes
-        
-        Args:
-            mo (str): Manufacturing Order
-            panel_no (str): Panel Number
-            
-        Returns:
-            str: Message string (43 bytes)
-        """
+        """Tạo message báo hoàn thành test"""
         try:
             mo_padded = mo.ljust(self.MO_LENGTH)[:self.MO_LENGTH]
             panel_padded = panel_no.ljust(self.PANEL_NO_LENGTH)[:self.PANEL_NO_LENGTH]

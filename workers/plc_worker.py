@@ -106,7 +106,9 @@ class PLCWorker(QObject):
             log.error(f"[PLC] Send command error: {exc}")
             self.error_occurred.emit(str(exc))
             return False
+    
 
+    
     @Slot(str, int)
     def wait_for_signal(self, expected_signal, timeout_ms=3000):
         """

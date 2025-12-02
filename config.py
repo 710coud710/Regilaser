@@ -12,7 +12,7 @@ class Config(BaseModel):
     model_config = {"extra": "allow"}  # cho phép thêm key khác (FrontPSN_Num, etc.)
 
     MO: StrictInt
-    SECURITY_CODE: StrictStr
+    OP_NUM: StrictStr
     PANEL_NUM: StrictInt  # Panel Number để tạo NEEDPSNxx
     LASER_MODE: LaserConnectMode # 1: "TCP" or 2: "RS232"
     LASER_IP: StrictStr

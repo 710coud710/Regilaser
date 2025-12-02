@@ -104,8 +104,10 @@ class MainWindow(QMainWindow):
         send_plc_ng_action.triggered.connect(self.sendPLCNG_clicked.emit)
         plc_menu.addAction(send_plc_ng_action)  
 
+        #--------------------------------SFIS menu--------------------------------
 
-        ######Laser menu#####
+
+       #--------------------------------Laser menu--------------------------------
         send_ga_action = QAction("Send GA", self)
         send_ga_action.setShortcut("Ctrl+A")
         send_ga_action.triggered.connect(self.sendGA_clicked.emit)

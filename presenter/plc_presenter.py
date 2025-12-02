@@ -13,9 +13,9 @@ log = getLogger()
 
 
 class PLCPresenter(BasePresenter):
-    """Presenter xử lý PLC communication thông qua PLCModel/PLCWorker"""
-
+    """Presenter xử lý PLC communication"""
     logMessage = Signal(str, str)
+    readyReceived = Signal(str)
 
     def __init__(self):
         super().__init__()
@@ -106,8 +106,14 @@ class PLCPresenter(BasePresenter):
     # Worker callbacks
     # ------------------------------------------------------------------
     def onDataReceived(self, data):
+        # In toàn bộ dữ liệu nhận từ COM ra log + UI
+        log.info(f"[PLC] data_received from COM: {data}")
         self.show_info(f"[PLC] Received: {data}")
-        self.plc_model.parse_response(data)
+        parsed = self.plc_model.parse_response(data)
+        # Nếu PLC gửi READY / Ready / ready... thì phát tín hiệu để MainPresenter xử lý start test
+        if parsed and "ready" or "READY" or "Ready" in parsed.lower():
+            self.show_info("[PLC] READY signal detected -> request start test")
+            self.readyReceived.emit(parsed)
 
     def onError(self, errorMsg):
         self.show_error(f"[PLC] Error: {errorMsg}")

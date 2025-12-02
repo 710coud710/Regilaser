@@ -68,6 +68,8 @@ class MainPresenter(BasePresenter):
         
         # PLC Presenter signals
         self.plc_presenter.logMessage.connect(self.forwardLog)
+        # Khi PLC gửi tín hiệu READY thì tự động bắt đầu quy trình test (giống như bấm START)
+        self.plc_presenter.readyReceived.connect(self.onPlcReady)
         
         # Laser Presenter signals
         self.laser_presenter.logMessage.connect(self.forwardLog)
@@ -191,20 +193,6 @@ class MainPresenter(BasePresenter):
         self.show_success("SFIS data is ready")
         self.show_info(f"  Laser SN: {sfisData.laser_sn}")
         
-        # Bước 2: Laser marking
-        # TODO: Implement laser marking
-        # success = self.laser_presenter.markPsn("1", sfisData.security_code)
-        # if not success:
-        #     self.show_error("Lỗi laser marking")
-        #     self.sfis_presenter.sendTestError(sfisData.mo, sfisData.panel_no, "LMERR1")
-        #     self.isRunning = False
-        #     return
-                
-        # Bước 4: Gửi kết quả thành công
-        # self.sfis_presenter.sendTestComplete(sfisData.mo, sfisData.panel_no)
-        # self.plc_presenter.sendLaserOk()
-        # self.plc_presenter.sendCheckOk()
-        
         self.isRunning = False
         self.show_info("=== KẾT THÚC QUY TRÌNH ===")
     
@@ -261,6 +249,12 @@ class MainPresenter(BasePresenter):
         if self.plc_presenter.is_connected:
             self.show_warning("Warning: PLC is connected. Disconnect before changing port.")
             log.warning("Warning: PLC is connected. Disconnect before changing port.")
+
+    def onPlcReady(self, message: str):
+        """Xử lý khi nhận được tín hiệu READY từ PLC"""
+        log.info(f"PLC READY received: {message}")
+        self.show_info("PLC READY received - auto start test")
+        self.onStartClicked()
 
     def onLaserConnectionChanged(self, isConnected):
         """Xử lý khi trạng thái kết nối laser thay đổi"""
@@ -330,7 +324,7 @@ class MainPresenter(BasePresenter):
 
     def onSendGA(self):
         try:
-            self.laser_presenter.sendGAtoLaser()
+            self.laser_presenter.activateScript()
             self.show_success(f"Send GA to laser successfully")
             log.info(f"Send GA to laser successfully")
         except Exception as e:
@@ -341,7 +335,7 @@ class MainPresenter(BasePresenter):
     def onSendNT(self):
         """Handle menu 'Send NT to LASER'"""
         try:
-            self.laser_presenter.sendNTtoLaser()
+            self.laser_presenter.startMarking()
             self.show_success(f"Send NT to laser successfully")
             log.info(f"Send NT to laser successfully")
         except Exception as e:

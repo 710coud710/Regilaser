@@ -11,10 +11,6 @@ config = ConfigManager().get()
 
 class TopControlPanel(QWidget):
     """Panel điều khiển phía trên"""
-    
-    # Signals
-    # allPartsSnChanged = Signal(str)
-    # moChanged = Signal(str)
     sfisChanged = Signal(str)
     sfisConnectRequested = Signal(bool, str)  # (connect, port_name)
     plcChanged = Signal(str)
@@ -22,8 +18,10 @@ class TopControlPanel(QWidget):
     def __init__(self):
         super().__init__()
         self._init_ui()
-    
+     
     def _init_ui(self):
+        self.sfis_com = getattr(config, "SFIS_COM", None) if getattr(config, "SFIS_COM", None) else "COM8"
+        self.plc_com = getattr(config, "PLC_COM", None) if getattr(config, "PLC_COM", None) else "COM3" 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(5, 5, 5, 5)
         layout.setSpacing(15)              
@@ -54,7 +52,7 @@ class TopControlPanel(QWidget):
         #SFIS COM port
         self.combo_sfis_com = QComboBox()
         self.combo_sfis_com.addItems(["COM1", "COM2", "COM3", "COM4", "COM5","COM6", "COM7", "COM8", "COM9", "COM10","COM11", "COM12"])
-        self.combo_sfis_com.setCurrentText(config.SFIS_COM)
+        self.combo_sfis_com.setCurrentText(self.sfis_com)
         self.combo_sfis_com.currentTextChanged.connect(self.sfisChanged.emit)
         sfis_layout.addWidget(self.combo_sfis_com)
     

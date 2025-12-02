@@ -1,4 +1,3 @@
-Tôi sẽ tìm kiếm thông tin về kết nối với MarkingBuilder và các tín hiệu gửi đến chương trình đó.
 
 [4 tools called]
 

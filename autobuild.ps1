@@ -5,17 +5,16 @@ Write-Host "Building... please wait!" -ForegroundColor Yellow
 
 # Tạo thư mục dist nếu chưa có
 if (!(Test-Path "dist")) { New-Item -ItemType Directory -Path "dist" | Out-Null }
-
+# --mingw64 ` 
+# --lto=yes `
 # Lệnh build Nuitka
 & python -m nuitka `
   --standalone `
-#   --onefile ` #thu muc
+  --onefile `
   --enable-plugin=pyside6 `
   --windows-disable-console `
   --windows-icon-from-ico=icon.ico `
   --assume-yes-for-downloads `
-#   --mingw64 ` #nghe noi nhah hon
-#   --lto=yes `
   --jobs=0 `
   --windows-product-name="Regilazi" `
   --windows-file-description="Regilazi - Laser Control Software" `

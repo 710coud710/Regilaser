@@ -11,6 +11,7 @@ from utils.Logging import getLogger
 # Khởi tạo logger
 log = getLogger()
 
+
 class LaserPresenter(BasePresenter):
     """Presenter xử lý Laser Marking communication (TCP)"""
     
@@ -136,9 +137,11 @@ class LaserPresenter(BasePresenter):
             log.error(f"GA command error: {exc}")
             return False
 
-    def setContent(self, script=None, content=""):
+    def setContent(self, script=None, content=None):
         """Gửi lệnh C2 để nạp dữ liệu vào block"""
         if not self._ensure_connection():
+            self.show_error("Failed to connect to laser")
+            log.error("Failed to connect to laser")
             return False
 
         script_id = str(script or self.default_script)
@@ -185,30 +188,23 @@ class LaserPresenter(BasePresenter):
     # ------------------------------------------------------------------
     # High-level flows
     # ------------------------------------------------------------------
-    def mark_psn(self, security_code, script=None):
-        """Thực hiện laser marking với flow GA -> C2 -> NT"""
-        if not security_code:
-            self.show_error("Security code is not valid")
-            log.error("Security code is not valid")
-            return False
-
+    def startLaserMarkingProcess(self, script=None, content=None):
+        """Bắt đầu quy trình laser marking"""
         script_id = script or self.default_script
 
         self.show_info("=== START LASER MARKING ===")
         log.info("=== START LASER MARKING ===")
-        self.show_debug(f"Script={script_id}, SecurityCode={security_code}")
-
         if not self.activateScript(script_id):
             return False
 
-        if not self.setContent(script_id, security_code):
+        if not self.setContent(script_id, content):
             return False
 
         if not self.startMarking():
             return False
 
-        self.show_success("Laser marking completed")
-        log.info("Laser marking completed")
+        self.show_success("===LASER MARKING COMPLETED===")
+        log.info("===LASER MARKING COMPLETED===")
         return True
 
     def sendCustomCommand(self, command, expect_keyword=None):

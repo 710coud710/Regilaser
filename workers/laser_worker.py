@@ -122,19 +122,30 @@ class LaserWorker:
     # ------------------------------------------------------------------
     def send_ga(self, script: str, timeout_ms: Optional[int] = None):
         """Gửi lệnh GA,<script>"""
-        self._ensure_connection()
-        return self.sendRawCommand(f"GA,{script}", expect_keyword="GA,0", timeout_ms=timeout_ms)
-
+        try:
+            self._ensure_connection()
+            return self.sendRawCommand(f"GA,{script}", expect_keyword="GA,0", timeout_ms=timeout_ms)
+        except Exception as exc:
+            log.error(f"Failed to send GA,{script}: {exc}")
+            raise
     def send_c2(self, script: str, content: str, timeout_ms: Optional[int] = None):
         """Gửi lệnh C2,<script>,<block>,<content>"""
-        self._ensure_connection()
-        command = f"C2,{script},{content}"
-        return self.sendRawCommand(command, expect_keyword="C2,0", timeout_ms=timeout_ms)
+        try:
+            self._ensure_connection()
+            command = f"C2,{script},{content}"
+            return self.sendRawCommand(command, expect_keyword="C2,0", timeout_ms=timeout_ms)
+        except Exception as exc:
+            log.error(f"Failed to send C2,{script},{content}: {exc}")
+            raise
 
     def send_nt(self, timeout_ms: Optional[int] = None):
         """Gửi lệnh NT"""
-        self._ensure_connection()
-        return self.sendRawCommand("NT", expect_keyword="NT,0", timeout_ms=timeout_ms)
+        try:        
+            self._ensure_connection()
+            return self.sendRawCommand("NT", expect_keyword="NT,0", timeout_ms=timeout_ms)
+        except Exception as exc:
+            log.error(f"Failed to send NT: {exc}")
+            raise
 
 
     def sendRawCommand(
