@@ -23,6 +23,7 @@ class Config(BaseModel):
     LASER_BAUDRATE: StrictInt
     PLC_COM: StrictStr
     SFIS_COM: StrictStr
+    RAW_CONTENT: StrictStr
 
 # === CONFIG MANAGER (singleton + hot reload + thread-safe) ===
 class ConfigManager:

@@ -19,14 +19,17 @@ class MainWindow(QMainWindow):
     
     # Signals cho menu actions
     menu_clicked = Signal()
-    reset_clicked = Signal()
-    keyboard_clicked = Signal()
-    sendLaserPsn20_clicked = Signal()
-    sendLaserPsn16_clicked = Signal()
-    sendPLCPOK_clicked = Signal()
-    sendPLCNG_clicked = Signal()
+    #Laser menu
+    sendC2_clicked = Signal()
     sendGA_clicked = Signal()
     sendNT_clicked = Signal()
+    #PLC menu
+    sendPLCPOK_clicked = Signal()
+    sendPLCNG_clicked = Signal()
+    #SFIS menu
+    sendNeedPSN_clicked = Signal()
+    sendActivateSFIS_clicked = Signal()
+  
 
     
     def __init__(self):
@@ -78,8 +81,9 @@ class MainWindow(QMainWindow):
         file_menu = menubar.addMenu("&File")
         plc_menu = menubar.addMenu("&PLC")
         sfis_menu = menubar.addMenu("&SFIS")
-        laser_menu = menubar.addMenu("&Check")
-        ######File menu#####
+        laser_menu = menubar.addMenu("&Laser")
+
+        #------------------------------File menu------------------------------
         # Menu action
         menu_action = QAction("Menu", self)
         menu_action.setShortcut("Ctrl+M")
@@ -89,11 +93,11 @@ class MainWindow(QMainWindow):
         
         # Exit action
         exit_action = QAction("Exit", self)
-        exit_action.setShortcut("Ctrl+Q")
+        exit_action.setShortcut("Ctrl+C")
         exit_action.triggered.connect(self.close)
         file_menu.addAction(exit_action)
         
-        #--------------------------------PLC menu--------------------------------
+        #------------------------------PLC menu------------------------------
         send_plc_ok_action = QAction("Send OK to PLC", self)
         send_plc_ok_action.setShortcut("Ctrl+P")
         send_plc_ok_action.triggered.connect(self.sendPLCPOK_clicked.emit)
@@ -104,28 +108,30 @@ class MainWindow(QMainWindow):
         send_plc_ng_action.triggered.connect(self.sendPLCNG_clicked.emit)
         plc_menu.addAction(send_plc_ng_action)  
 
-        #--------------------------------SFIS menu--------------------------------
+        #------------------------------SFIS menu------------------------------
+        Send_Activate_Action = QAction("Activate SFIS", self)
+        Send_Activate_Action.setShortcut("Ctrl+8")
+        Send_Activate_Action.triggered.connect(self.sendActivateSFIS_clicked.emit)
+        sfis_menu.addAction(Send_Activate_Action)
 
+        Send_needPSN_Action = QAction("Send NEEDPSN", self)
+        Send_needPSN_Action.setShortcut("Ctrl+9")
+        Send_needPSN_Action.triggered.connect(self.sendNeedPSN_clicked.emit)
+        sfis_menu.addAction(Send_needPSN_Action)
 
        #--------------------------------Laser menu--------------------------------
-        send_ga_action = QAction("Send GA", self)
-        send_ga_action.setShortcut("Ctrl+A")
+        send_ga_action = QAction("Activate Job", self)
+        send_ga_action.setShortcut("Ctrl+1")
         send_ga_action.triggered.connect(self.sendGA_clicked.emit)
         laser_menu.addAction(send_ga_action)
 
-        send_psn16_action = QAction("Send PSN16 to LASER", self)
-        send_psn16_action.setShortcut("Ctrl+1")
-        send_psn16_action.triggered.connect(self.sendLaserPsn16_clicked.emit)
-        laser_menu.addAction(send_psn16_action)
-
-
-        send_psn_action = QAction("Send PSN20 to LASER", self)
-        send_psn_action.setShortcut("Ctrl+2")
-        send_psn_action.triggered.connect(self.sendLaserPsn20_clicked.emit)
-        laser_menu.addAction(send_psn_action)
+        send_c2_action = QAction("Set Content", self)
+        send_c2_action.setShortcut("Ctrl+2")
+        send_c2_action.triggered.connect(self.sendC2_clicked.emit)
+        laser_menu.addAction(send_c2_action)
         
-        send_nt_action = QAction("Send NT to LASER", self)
-        send_nt_action.setShortcut("Ctrl+N")
+        send_nt_action = QAction("Start Marking", self)
+        send_nt_action.setShortcut("Ctrl+3")
         send_nt_action.triggered.connect(self.sendNT_clicked.emit)
         laser_menu.addAction(send_nt_action)
 

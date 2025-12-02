@@ -127,11 +127,6 @@ class SFISPresenter(BasePresenter):
             log.error("SFIS not connected")
             return False
         
-        # Lấy config để hiển thị PANEL_NUM
-        from config import ConfigManager
-        config = ConfigManager().get()
-        panel_num = config.PANEL_NUM
-        
         # Bước 1: SFISModel tạo START message
         start_message = self.sfis_model.createStartSignal(mo, panel_no)
 
@@ -143,7 +138,7 @@ class SFISPresenter(BasePresenter):
         log.info("START Message created successfully:")
         log.info(f"  Data sent: {start_message}")
         log.info(f"  Length: {len(start_message)} bytes (expected: 49)")
-        
+
         # UI Log
         self.show_info("GỬI START SIGNAL:")
         self.show_info(f"  DATA: {start_message}")
@@ -151,7 +146,7 @@ class SFISPresenter(BasePresenter):
         self.show_info(f"  COM Port: {self.currentPort}")
         
         # Bước 2: Gửi qua SFISWorker trong thread riêng
-        log.info("Step 2: Invoking SFISWorker to send via COM port...")
+        log.info("Invoking SFISWorker to send via COM port...")
         self.show_info("Sending START signal via COM port...")
         
         # Invoke worker method trong thread của nó (fire and forget)
@@ -166,17 +161,8 @@ class SFISPresenter(BasePresenter):
         log.info("Waiting for signal_sent callback...")
         return True
     
-    def sendTestComplete(self, mo, panelNo):
-        """
-        Gửi thông báo hoàn thành test
-        
-        Args:
-            mo (str): Manufacturing Order
-            panelNo (str): Panel Number
-            
-        Returns:
-            bool: True nếu gửi thành công
-        """
+    def sendComplete(self, mo, panelNo):
+        """   thông báo hoàn thành test"""
         if not self.isConnected:
             self.show_info("Chưa kết nối SFIS", "ERROR")
             return False
@@ -197,17 +183,7 @@ class SFISPresenter(BasePresenter):
         return False
     
     def sendTestError(self, mo, panelNo, errorCode):
-        """
-        Gửi thông báo lỗi test
-        
-        Args:
-            mo (str): Manufacturing Order
-            panelNo (str): Panel Number
-            errorCode (str): Mã lỗi
-            
-        Returns:
-            bool: True nếu gửi thành công
-        """
+        """  Gửi thông báo lỗi test"""
         if not self.isConnected:
             self.show_info("Chưa kết nối SFIS", "ERROR")
             return False
@@ -228,15 +204,7 @@ class SFISPresenter(BasePresenter):
         return False
     
     def parseResponse(self, response):
-        """
-        Parse response từ SFIS
-        
-        Args:
-            response (str): Response string
-            
-        Returns:
-            SFISData: Dữ liệu đã parse, hoặc None nếu lỗi
-        """
+        """  Parse response từ SFIS"""
         return self.sfis_model.parse_response_new_format(response)
     
     def getCurrentData(self):
@@ -279,7 +247,7 @@ class SFISPresenter(BasePresenter):
                 log.info(" Successfully parsed as PSN response:")
                 log.info(f"  MO: {parsedData.mo}")
                 log.info(f"  Panel Number: {parsedData.panel_no}")
-                log.info(f"  PSN count: {len(parsedData.psn_list)}")
+                # log.info(f"  PSN count: {len(parsedData.psn_list)}")
                 for i, psn in enumerate(parsedData.psn_list, 1):
                     log.info(f"  PSN{i}: {psn}")
                 

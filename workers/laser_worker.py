@@ -126,7 +126,7 @@ class LaserWorker:
             self._ensure_connection()
             return self.sendRawCommand(f"GA,{script}", expect_keyword="GA,0", timeout_ms=timeout_ms)
         except Exception as exc:
-            log.error(f"Failed to send GA,{script}: {exc}")
+            log.error(f"Error: {exc}")
             raise
     def send_c2(self, script: str, content: str, timeout_ms: Optional[int] = None):
         """Gửi lệnh C2,<script>,<block>,<content>"""
@@ -135,7 +135,7 @@ class LaserWorker:
             command = f"C2,{script},{content}"
             return self.sendRawCommand(command, expect_keyword="C2,0", timeout_ms=timeout_ms)
         except Exception as exc:
-            log.error(f"Failed to send C2,{script},{content}: {exc}")
+            log.error(f"Error: {exc}")
             raise
 
     def send_nt(self, timeout_ms: Optional[int] = None):
@@ -144,7 +144,7 @@ class LaserWorker:
             self._ensure_connection()
             return self.sendRawCommand("NT", expect_keyword="NT,0", timeout_ms=timeout_ms)
         except Exception as exc:
-            log.error(f"Failed to send NT: {exc}")
+            log.error(f"Error: {exc}")
             raise
 
 
@@ -156,7 +156,6 @@ class LaserWorker:
     ):
         """Gửi lệnh ASCII bất kỳ tới laser"""
         self._ensure_connection()
-
         payload = command if command.endswith("\r\n") else f"{command}\r\n"
         timeout_ms = timeout_ms or self.timeout_ms
 
@@ -170,7 +169,6 @@ class LaserWorker:
             log.info(f"Laser response: {response}")
         else:
             log.warning("Laser returned empty response")
-
         if expect_keyword and response and expect_keyword not in response:
             raise RuntimeError(
                 f"Unexpected response for '{command.strip()}': '{response}' "
@@ -188,14 +186,13 @@ class LaserWorker:
     def _send_tcp_command(self, payload: str, timeout_ms: int) -> str:
         if not self._socket:
             raise RuntimeError("TCP socket is not available")
-
         data = payload.encode("ascii")
         total_sent = 0
         deadline = time.time() + (self.timeout_ms / 1000)
 
         while total_sent < len(data):
             try:
-                sent = self._socket.send(data[total_sent:])  # type: ignore[arg-type]
+                sent = self._socket.send(data[total_sent:]) 
                 if sent == 0:
                     raise RuntimeError("Socket connection broken while sending data")
                 total_sent += sent
@@ -214,7 +211,7 @@ class LaserWorker:
         if not self.serial_port or not self.serial_port.is_open:
             self.is_connected = False
             raise RuntimeError("Serial port is not available")
-
+    
         try:
             self.serial_port.write(payload.encode("ascii"))
             self.serial_port.flush()

@@ -47,12 +47,13 @@ class MainPresenter(BasePresenter):
         left_panel.startClicked.connect(self.onStartClicked)
         
         # Menu actions
-        self.main_window.sendLaserPsn20_clicked.connect(self.onSendLaserPsn20)
-        self.main_window.sendLaserPsn16_clicked.connect(self.onSendLaserPsn16)
+        self.main_window.sendC2_clicked.connect(self.onSendC2)
         self.main_window.sendGA_clicked.connect(self.onSendGA)
         self.main_window.sendNT_clicked.connect(self.onSendNT)
         # self.main_window.sendPLCPOK_clicked.connect(self.onSendPLCPOK)
         # self.main_window.sendPLCNG_clicked.connect(self.onSendPLCNG)
+
+        self.main_window.sendActivateSFIS_clicked.connect(self.onSendActivateSFIS)
         # View signals - Top Panel
         top_panel = self.main_window.getTopPanel()
         top_panel.sfisChanged.connect(self.onSfisPortChanged)
@@ -113,8 +114,10 @@ class MainPresenter(BasePresenter):
         topPanel = self.main_window.getTopPanel()
         topPanel.setLaserConnectionStatus(False, "Initializing...")
         
-        # Tự động kết nối laser khi khởi động
-        self.laser_presenter.start_auto_connect()
+        # Tự động kết nối laser
+        self.laser_presenter.startAutoConnectLaser()
+        self.sfis_presenter.startAutoConnectSFIS()
+        self.plc_presenter.startAutoConnectPLC()
         log.info("Laser auto-connect started")
     
     def onSfisConnectRequested(self, shouldConnect, portName):
@@ -272,55 +275,15 @@ class MainPresenter(BasePresenter):
         self.show_info("Cleanup sub-presenters completed")
         log.info("Cleanup sub-presenters completed")
 
-    def onSendLaserPsn20(self):
-        """Handle menu 'Send PSN20 to LASER'"""
-        fixed_command = (
-            "C2,15,0,PX5BF03TI,2,2795001670,"
-            "6,PT53QG0754670375ABCD,10,PT53QG0754670376EFGH,"
-            "14,PT53QG0754670377IJKL,18,PT53QG0754670378MNOP,"
-            "22,PT53QG0754670379QRST"
-        )
-
-        self.show_info("Menu: Send PSN20 to LASER triggered")
-
-        success = self.laser_presenter.sendCustomCommand(fixed_command,expect_keyword="C2,0")
+    def onSendC2(self):
+        """Handle menu 'Send C2 to LASER'"""
+        fixed_command = config.RAW_CONTENT
+        success = self.laser_presenter.setContent(script=config.LASER_SCRIPT, content=fixed_command) 
 
         if success:
-            self.show_success("PSN20 command sent to laser successfully")
+            self.show_success("C2 command sent to laser successfully")
         else:
-            self.show_error("Failed to send PSN20 command to laser")
-
-
-
-    def onSendLaserPsn16(self):
-        """Handle menu 'Send PSN20 to LASER'"""
-        fixed_command = (
-            "C2,15,0,PX5BF03TI,2,2795001670,"
-            "6,PT53QG0754670375,10,PT53QG0754670376,"
-            "14,PT53QG0754670377,18,PT53QG0754670378,"
-            "22,PT53QG0754670379"
-        )
-
-        self.show_info("Menu: Send PSN16 to LASER triggered")
-
-        success = self.laser_presenter.sendCustomCommand(fixed_command,expect_keyword="C2,0")
-
-        if success:
-            self.show_success("PSN16 command sent to laser successfully")
-        else:
-            self.show_error("Failed to send PSN16 command to laser")
-
-    def onSendPLCPOK(self):
-        """Handle menu 'Send OK to PLC'"""
-        success = self.plc_presenter.send_check_ok()
-        if success:
-            self.show_success("OK command sent to PLC successfully")
-        else:
-            self.show_error("Failed to send OK command to PLC")
-
-    def onSendPLCNG(self):
-        """Handle menu 'Send NG to PLC'"""
-        self.plc_presenter.send_check_ng()
+            self.show_error("Failed to send C2 command to laser")
 
     def onSendGA(self):
         try:
@@ -341,3 +304,36 @@ class MainPresenter(BasePresenter):
         except Exception as e:
             self.show_error(f"Failed to send NT to laser: {e}")
             log.error(f"Failed to send NT to laser: {e}")
+
+    def onSendPLCPOK(self):
+        """Handle menu 'Send OK to PLC'"""
+        try:
+            success = self.plc_presenter.send_check_ok()
+            if success:
+                self.show_success("OK command sent to PLC successfully")
+            else:
+                self.show_error("Failed to send OK command to PLC")
+        except Exception as e:
+            self.show_error(f"Failed to send OK command to PLC: {e}")
+            log.error(f"Failed to send OK command to PLC: {e}")
+            return False
+
+    def onSendPLCNG(self):
+        """Handle menu 'Send NG to PLC'"""
+        try:
+            self.plc_presenter.send_check_ng()
+            self.show_success("NG command sent to PLC successfully")
+            log.info("NG command sent to PLC successfully")
+        except Exception as e:
+            self.show_error(f"Failed to send NG command to PLC: {e}")
+            log.error(f"Failed to send NG command to PLC: {e}")
+
+    def onSendActivateSFIS(self):
+        """Handle menu 'Activate SFIS'"""
+        try:
+            self.sfis_presenter.activate()
+            self.show_success("Activate SFIS successfully")
+            log.info("Activate SFIS successfully")
+        except Exception as e:
+            self.show_error(f"Failed to activate SFIS: {e}")
+            log.error(f"Failed to activate SFIS: {e}")
