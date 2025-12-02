@@ -69,6 +69,7 @@ class MainPresenter(BasePresenter):
         
         # PLC Presenter signals
         self.plc_presenter.logMessage.connect(self.forwardLog)
+        self.plc_presenter.connectionStatusChanged.connect(self.onPlcConnectionChanged)
         # Khi PLC gửi tín hiệu READY thì tự động bắt đầu quy trình test (giống như bấm START)
         self.plc_presenter.readyReceived.connect(self.onPlcReady)
         
@@ -200,8 +201,10 @@ class MainPresenter(BasePresenter):
         self.show_info("=== KẾT THÚC QUY TRÌNH ===")
     
     def onSfisConnectionChanged(self, isConnected):
-        """Xử lý khi trạng thái kết nối SFIS thay đổi"""
-        pass
+        """Xử lý khi trạng thái kết nối SFIS thay đổi (cập nhật UI như bấm nút Connect)."""
+        topPanel = self.main_window.getTopPanel()
+        status_text = "Connected" if isConnected else "Disconnected"
+        topPanel.setSFISConnectionStatus(isConnected, status_text)
     
     def onStartSignalSent(self, success, message):
         """Flow: SFISWorker → SFISPresenter → MainPresenter (callback này)"""
@@ -252,6 +255,12 @@ class MainPresenter(BasePresenter):
         if self.plc_presenter.is_connected:
             self.show_warning("Warning: PLC is connected. Disconnect before changing port.")
             log.warning("Warning: PLC is connected. Disconnect before changing port.")
+
+    def onPlcConnectionChanged(self, isConnected):
+        """Xử lý khi trạng thái kết nối PLC thay đổi (cập nhật UI như bấm nút Connect)."""
+        topPanel = self.main_window.getTopPanel()
+        status_text = "Connected" if isConnected else "Disconnected"
+        topPanel.setPLCConnectionStatus(isConnected, status_text)
 
     def onPlcReady(self, message: str):
         """Xử lý khi nhận được tín hiệu READY từ PLC"""

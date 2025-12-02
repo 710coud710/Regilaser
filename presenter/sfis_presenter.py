@@ -1,7 +1,7 @@
 """
 SFIS Presenter - Xử lý logic giao tiếp SFIS
 """
-from PySide6.QtCore import QThread, Signal, QMetaObject, Qt, Q_ARG
+from PySide6.QtCore import QThread, Signal, QMetaObject, Qt, Q_ARG, QTimer
 from model.sfis_model import SFISModel
 from workers.sfis_worker import SFISWorker
 from utils.Logging import getLogger
@@ -34,6 +34,13 @@ class SFISPresenter(BasePresenter):
         # Trạng thái
         self.isConnected = False
         self.currentPort = None
+
+        # Auto-reconnect timer
+        self.reconnect_timer = QTimer()
+        self.reconnect_timer.timeout.connect(self._checkAndReconnect)
+        self.reconnect_ms = 5000  # 5 giây
+        self.auto_reconnect_enabled = False
+
         log.info("SFISPresenter initialized successfully")
     
     def connectSignals(self):
@@ -96,6 +103,35 @@ class SFISPresenter(BasePresenter):
             log.error("Lỗi ngắt kết nối SFIS")
         
         return success
+
+    # ------------------------------------------------------------------
+    # Auto connect / reconnect
+    # ------------------------------------------------------------------
+    def startAutoConnectSFIS(self, portName: str | None = None):
+        """
+        Bắt đầu tự động kết nối SFIS.
+        - Nếu portName None: dùng currentPort hoặc cấu hình mặc định trong worker.
+        """
+        self.auto_reconnect_enabled = True
+        if portName:
+            self.currentPort = portName
+        elif not self.currentPort:
+            # Nếu chưa có port cụ thể thì dùng port mặc định của worker
+            self.currentPort = self.sfis_worker.port_name
+
+        self.show_info(f"[SFIS] Auto-connect enabled on {self.currentPort}")
+        log.info(f"[SFIS] Auto-connect enabled on {self.currentPort}")
+
+        # Thử kết nối ngay một lần
+        self._try_connect()
+        # Bắt đầu timer định kỳ
+        self.reconnect_timer.start(self.reconnect_ms)
+
+    def stopAutoConnectSFIS(self):
+        """Dừng tự động kết nối SFIS."""
+        self.auto_reconnect_enabled = False
+        self.reconnect_timer.stop()
+        log.info("[SFIS] Auto-connect stopped")
     
     def requestData(self, mo=None, panelNo=None):
         """Yêu cầu dữ liệu từ SFIS - Dữ liệu nhận được, hoặc None nếu lỗi"""
@@ -290,6 +326,44 @@ class SFISPresenter(BasePresenter):
         
         # Emit signal để MainPresenter cập nhật UI
         self.connectionStatusChanged.emit(isConnected)
+
+    # ------------------------------------------------------------------
+    # Auto-reconnect helpers
+    # ------------------------------------------------------------------
+    def _try_connect(self):
+        """Thử kết nối SFIS (không log nhiều để tránh spam)."""
+        if not self.auto_reconnect_enabled:
+            return
+        if self.isConnected:
+            return
+
+        try:
+            # Gọi connect trên worker (trong thread của worker)
+            QMetaObject.invokeMethod(
+                self.sfis_worker,
+                "connect",
+                Qt.BlockingQueuedConnection,
+                Q_ARG(str, self.currentPort),
+            )
+            if self.sfis_worker.is_connected:
+                self.isConnected = True
+                self.show_success(f"[SFIS] Auto-connected on {self.currentPort}")
+                log.info(f"[SFIS] Auto-connected on {self.currentPort}")
+        except Exception as exc:
+            log.warning(f"[SFIS] Auto-connect failed: {exc}")
+
+    def _checkAndReconnect(self):
+        """Kiểm tra và tự động kết nối lại nếu SFIS bị ngắt."""
+        if not self.auto_reconnect_enabled:
+            return
+
+        worker_connected = self.sfis_worker.checkConnectionAlive()
+        if self.isConnected != worker_connected:
+            self.isConnected = worker_connected
+            self.connectionStatusChanged.emit(worker_connected)
+
+        if not self.isConnected:
+            self._try_connect()
     
     def onStartSignalSent(self, success, message):
         """Xử lý khi START signal đã được gửi"""

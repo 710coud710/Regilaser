@@ -134,3 +134,10 @@ class PLCWorker(QObject):
             self.error_occurred.emit(str(exc))
             return ""
 
+    # ------------------------------------------------------------------
+    # Connection health check (dùng cho auto-reconnect)
+    # ------------------------------------------------------------------
+    def checkConnectionAlive(self) -> bool:
+        """Kiểm tra kết nối serial còn mở không."""
+        return bool(self.serial_port and self.serial_port.is_open)
+

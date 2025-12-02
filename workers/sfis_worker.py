@@ -379,6 +379,11 @@ class SFISWorker(QObject):
             log.error(f" {error_msg}")
             self.error_occurred.emit(error_msg)
             return False
+
+
+    def checkConnectionAlive(self) -> bool:
+        """Kiểm tra kết nối serial SFIS còn mở không."""
+        return bool(self.serial_port and self.serial_port.is_open)
     
     def is_port_available(self, port_name):
         """Kiểm tra COM port có khả dụng """
