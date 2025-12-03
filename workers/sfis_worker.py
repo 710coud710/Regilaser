@@ -110,7 +110,7 @@ class SFISWorker(QObject):
             self.error_occurred.emit(error_msg)
             return False
     
-    def send_data(self, data):
+    def send_data(self, data) -> bool:
         """Gửi dữ liệu text ASCII đến SFIS qua COM port"""
         try:
             # Check connection
@@ -119,41 +119,28 @@ class SFISWorker(QObject):
                 log.error(error_msg)
                 self.error_occurred.emit(error_msg)
                 return False
-            
-            # Log chi tiết trước khi gửi
-
-            log.info("Sending data to SFIS...")
-            log.info(f"Port: {self.port_name}")
-            log.info(f"Data length: {len(data)} bytes")
-            log.info(f"Data (text): {data}")
-            # Chuyển text string sang bytes (ASCII encoding)
+            log.info(f"Sent to SFIS: {data.strip()}")
             data_bytes = data.encode('ascii')
-            
             # Gửi qua COM port
             bytes_written = self.serial_port.write(data_bytes)
-            self.serial_port.flush()  # Đảm bảo dữ liệu được gửi ngay
-            
-            log.info(f"Data sent successfully to SFIS")
-            log.info(f"  Bytes written: {bytes_written}/{len(data_bytes)}")
-
-            
+            self.serial_port.flush()  # 
+            log.info(f"Data sent successfully SFIS: {bytes_written} / {len(data_bytes)} bytes")            
             return True
             
         except UnicodeEncodeError as e:
-            error_msg = f"ASCII encoding error: {str(e)} - Data contains non-ASCII characters"
-            log.error(f"✗ {error_msg}")
+            error_msg = f"ASCII encoding error: {str(e)}"
+            log.error(f"{error_msg}")
             self.error_occurred.emit(error_msg)
             return False
             
         except serial.SerialException as e:
             error_msg = f"Serial port error: {str(e)}"
-            log.error(f"✗ {error_msg}")
+            log.error(f"{error_msg}")
             self.error_occurred.emit(error_msg)
             return False
-            
         except Exception as e:
             error_msg = f"Send data error: {str(e)}"
-            log.error(f"✗ {error_msg}")
+            log.error(f"{error_msg}")
             log.debug("Exception details:", exc_info=True)
             self.error_occurred.emit(error_msg)
             return False

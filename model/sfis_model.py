@@ -130,8 +130,7 @@ class SFISModel(QObject):
             self.validation_error.emit(f"Lỗi parse response: {str(e)}")
             return None
     
-    def createStartSignal(self, mo=None, panel_no=None):
-        """Format: MO(20) + Panel_Number(20) + NEEDPSNxx(9) = 49 bytes"""
+    def createStartSignal(self, mo=None,):
         try:
             # Lấy config từ ConfigManager
             config = self.config_manager.get()
@@ -144,11 +143,7 @@ class SFISModel(QObject):
             if not mo:
                 mo = str(config.MO)
                 
-            # Lấy Panel_Num từ config để tạo NEEDPSNxx
             panel_num = config.PANEL_NUM
-            
-            # Tạo NEEDPSNxx: "NEEDPSN" + 2 số cuối của Panel_Num
-            # need_keyword = f"NEEDPSN{panel_num:02d}"  # Format 2 chữ số, thêm 0 phía trước nếu cần
             need_keyword = f"NEEDPSN{panel_num}"  # Format theo số panel_num
 
             # Kiểm tra độ dài keyword (phải là 9 bytes)
@@ -160,7 +155,7 @@ class SFISModel(QObject):
             panel_padded = "".ljust(20) # Panel Number: 20 bytes (để trống)
             
             # Tạo START signal: 20 + 20 + 9 = 49 bytes
-            start_signal = f"{mo_padded}{panel_padded}{need_keyword}"
+            start_signal = f"{mo_padded}{panel_padded}{need_keyword}\r\n"
             
             # Lưu vào current_data
             self.current_data.mo = mo

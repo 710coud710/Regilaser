@@ -2,13 +2,14 @@
 SFIS Presenter - Xử lý logic giao tiếp SFIS
 """
 from PySide6.QtCore import QThread, Signal, QMetaObject, Qt, Q_ARG, QTimer
+from config import ConfigManager
 from model.sfis_model import SFISModel
 from workers.sfis_worker import SFISWorker
 from utils.Logging import getLogger
 from presenter.base_presenter import BasePresenter
 # Khởi tạo logger
 log = getLogger()
-
+config = ConfigManager().get()
 
 class SFISPresenter(BasePresenter):
     """Presenter xử lý SFIS communication"""
@@ -104,7 +105,32 @@ class SFISPresenter(BasePresenter):
         
         return success
 
-    # ------------------------------------------------------------------
+
+
+    def activateSFIS(self, op_number=None):
+        """Gửi tín hiệu ACTIVATE (UNDO + OP Number) đến SFIS để bắt đầu quy trình EMP"""
+        if not self.isConnected:
+            self.show_error("SFIS is not connected")
+            log.error("SFIS is not connected")
+            return False
+        #Reset SFIS
+        message_undo = "UNDO\r\n"
+        if not self.sfis_worker.send_data(message_undo):
+            self.show_error("Failed to send UNDO to SFIS")
+            log.error("Failed to send UNDO to SFIS")
+            return False
+
+        import time
+        time.sleep(0.2)
+
+        # Send OP Number
+        if op_number is None:
+            op_number = getattr(config, 'OP_NUM', '')  # Lấy OP_Number từ instance 
+        formatted_op = "{:<20}END\r\n".format(op_number if op_number else "")
+        if not self.sfis_worker.send_data(formatted_op):
+            self.show_error("Failed to send OP number to SFIS")
+            log.error("Failed to send OP number to SFIS")
+            return False
     # Auto connect / reconnect
     # ------------------------------------------------------------------
     def startAutoConnectSFIS(self, portName: str | None = None):
@@ -154,17 +180,14 @@ class SFISPresenter(BasePresenter):
             log.error("Timeout hoặc không nhận được dữ liệu từ SFIS")
             return None
     
-    def sendStartSignal(self, mo=None, panel_no=None):
-        """
-        Gửi tín hiệu START đến SFIS qua COM port (fire and forget)  
-        """
+    def sendStartSignal(self, mo=None):
         if not self.isConnected:
             self.show_error("SFIS is not connected")
             log.error("SFIS not connected")
             return False
         
         # Bước 1: SFISModel tạo START message
-        start_message = self.sfis_model.createStartSignal(mo, panel_no)
+        start_message = self.sfis_model.createStartSignal(mo)
 
         if not start_message:
             self.show_error("Failed to create START message")
@@ -176,11 +199,8 @@ class SFISPresenter(BasePresenter):
         log.info(f"  Length: {len(start_message)} bytes (expected: 49)")
 
         # UI Log
-        self.show_info("GỬI START SIGNAL:")
-        self.show_info(f"  DATA: {start_message}")
-        self.show_info(f"  Length: {len(start_message)} bytes")
-        self.show_info(f"  COM Port: {self.currentPort}")
-        
+        self.show_info(f"  DATA: {start_message} Length: {len(start_message)} bytes" )
+    
         # Bước 2: Gửi qua SFISWorker trong thread riêng
         log.info("Invoking SFISWorker to send via COM port...")
         self.show_info("Sending START signal via COM port...")
@@ -323,7 +343,15 @@ class SFISPresenter(BasePresenter):
         self.isConnected = isConnected
         status = "Connected" if isConnected else "Disconnected"
         self.show_info(f"SFIS: {status}")
-        
+        if isConnected:
+            try:
+                self.show_info("SFIS connected - auto ACTIVATE (UNDO + OP)")
+                log.info("SFIS connected - auto calling activateSFIS()")
+                self.activateSFIS()
+            except Exception as exc:
+                log.error(f"Auto activateSFIS failed: {exc}")
+                self.show_error(f"Auto activateSFIS failed: {exc}")
+
         # Emit signal để MainPresenter cập nhật UI
         self.connectionStatusChanged.emit(isConnected)
 
@@ -420,3 +448,4 @@ class SFISPresenter(BasePresenter):
         
         log.info("SFISPresenter cleanup completed")
 
+   

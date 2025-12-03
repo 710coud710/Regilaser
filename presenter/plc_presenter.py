@@ -44,7 +44,7 @@ class PLCPresenter(BasePresenter):
     # ------------------------------------------------------------------
     # Connection helpers
     # ------------------------------------------------------------------
-    def connect(self, port_name="COM3"):
+    def connect(self, port_name):
         """Kết nối đến PLC"""
         self.show_info(f"Connecting PLC on {port_name}...")
         QMetaObject.invokeMethod(

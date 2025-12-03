@@ -340,7 +340,7 @@ class MainPresenter(BasePresenter):
     def onSendActivateSFIS(self):
         """Handle menu 'Activate SFIS'"""
         try:
-            self.sfis_presenter.activate()
+            self.sfis_presenter.activateSFIS()
             self.show_success("Activate SFIS successfully")
             log.info("Activate SFIS successfully")
         except Exception as e:
