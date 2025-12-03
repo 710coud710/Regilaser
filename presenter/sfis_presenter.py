@@ -105,8 +105,6 @@ class SFISPresenter(BasePresenter):
         
         return success
 
-
-
     def activateSFIS(self, op_number=None):
         """Gửi tín hiệu ACTIVATE (UNDO + OP Number) đến SFIS để bắt đầu quy trình EMP"""
         if not self.isConnected:
@@ -115,7 +113,7 @@ class SFISPresenter(BasePresenter):
             return False
         #Reset SFIS
         message_undo = "UNDO\r\n"
-        if not self.sfis_worker.send_data(message_undo):
+        if not self.sfis_worker.sendData_SFIS(message_undo):
             self.show_error("Failed to send UNDO to SFIS")
             log.error("Failed to send UNDO to SFIS")
             return False
@@ -127,7 +125,7 @@ class SFISPresenter(BasePresenter):
         if op_number is None:
             op_number = getattr(config, 'OP_NUM', '')  # Lấy OP_Number từ instance 
         formatted_op = "{:<20}END\r\n".format(op_number if op_number else "")
-        if not self.sfis_worker.send_data(formatted_op):
+        if not self.sfis_worker.sendData_SFIS(formatted_op):
             self.show_error("Failed to send OP number to SFIS")
             log.error("Failed to send OP number to SFIS")
             return False
@@ -159,17 +157,16 @@ class SFISPresenter(BasePresenter):
         self.reconnect_timer.stop()
         log.info("[SFIS] Auto-connect stopped")
     
-    def requestData(self, mo=None, panelNo=None):
-        """Yêu cầu dữ liệu từ SFIS - Dữ liệu nhận được, hoặc None nếu lỗi"""
+    def requestDataSFIS(self, mo=None, panelNo=None):
         if not self.isConnected:
-            self.show_error("SFIS not connected")
-            log.error("SFIS not connected")
+            self.show_error("[SFIS] not connected")
+            log.error("[SFIS] not connected")
             return None
         
-        self.show_info("Waiting for data from SFIS...")
-        log.info("Waiting for data from SFIS...")
+        self.show_info("[SFIS] Waiting for data from SFIS...")
+        log.info("[SFIS] Waiting for data from SFIS...")
         # Đọc dữ liệu với timeout 5s
-        response = self.sfis_worker.read_data(expected_length=70, timeout_ms=5000, mo=mo, panelNo=panelNo)
+        response = self.sfis_worker.readData_PLC(expected_length=70, timeout_ms=5000, mo=mo, panelNo=panelNo)
         
         if response:
             self.show_info(f"Received data from SFIS: {response}")
@@ -180,14 +177,17 @@ class SFISPresenter(BasePresenter):
             log.error("Timeout hoặc không nhận được dữ liệu từ SFIS")
             return None
     
-    def sendStartSignal(self, mo=None):
+    def sendNEEDPSN(self, mo=None,panel_num=None):
         if not self.isConnected:
             self.show_error("SFIS is not connected")
             log.error("SFIS not connected")
             return False
         
+        if panel_num is None:
+            panel_num = getattr(config, 'PANEL_NUM', '')  # Lấy PANEL_NUM từ instance 
+            
         # Bước 1: SFISModel tạo START message
-        start_message = self.sfis_model.createStartSignal(mo)
+        start_message = self.sfis_model.createStartSignal(mo, panel_num)
 
         if not start_message:
             self.show_error("Failed to create START message")
@@ -200,7 +200,6 @@ class SFISPresenter(BasePresenter):
 
         # UI Log
         self.show_info(f"  DATA: {start_message} Length: {len(start_message)} bytes" )
-    
         # Bước 2: Gửi qua SFISWorker trong thread riêng
         log.info("Invoking SFISWorker to send via COM port...")
         self.show_info("Sending START signal via COM port...")
@@ -227,7 +226,7 @@ class SFISPresenter(BasePresenter):
         
         if message:
             self.show_info("Gửi test complete đến SFIS...", "INFO")
-            success = self.sfis_worker.send_data(message)
+            success = self.sfis_worker.sendData_SFIS(message)
             
             if success:
                 self.show_info("Gửi test complete thành công", "SUCCESS")
@@ -248,7 +247,7 @@ class SFISPresenter(BasePresenter):
         
         if message:
             self.show_info(f"Gửi test error ({errorCode}) đến SFIS...", "INFO")
-            success = self.sfis_worker.send_data(message)
+            success = self.sfis_worker.sendData_SFIS(message)
             
             if success:
                 self.show_info("Gửi test error thành công", "SUCCESS")
@@ -419,10 +418,9 @@ class SFISPresenter(BasePresenter):
             log.info("Reading ALL available data (no format restriction)")
             self.show_info("Waiting for data from SFIS...")
             
-            # Gọi read_data_all để đọc tất cả (không giới hạn độ dài)
             QMetaObject.invokeMethod(
                 self.sfis_worker,
-                "read_data_all",
+                "readData_SFIS",
                 Qt.QueuedConnection,
                 Q_ARG(int, 10000)  # 10 seconds timeout
             )

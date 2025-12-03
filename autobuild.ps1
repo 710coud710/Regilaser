@@ -17,7 +17,8 @@ if (!(Test-Path "dist")) { New-Item -ItemType Directory -Path "dist" | Out-Null 
   --assume-yes-for-downloads `
   --jobs=0 `
   --windows-product-name="Regilazi" `
-  --windows-file-description="Regilazi - Laser Control Software" `
+  --windows-file-description="Regilazi - Laser Control Software by SWE Team - Ryder" `
+  --windows-company-name="SWE Team - Ryder" `
   --windows-product-version=1.0.0 `
   --output-dir=dist `
   --output-filename=Regilazi.exe `

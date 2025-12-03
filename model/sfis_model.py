@@ -130,7 +130,7 @@ class SFISModel(QObject):
             self.validation_error.emit(f"Lỗi parse response: {str(e)}")
             return None
     
-    def createStartSignal(self, mo=None,):
+    def createStartSignal(self, mo=None, panel_num=None):
         try:
             # Lấy config từ ConfigManager
             config = self.config_manager.get()
@@ -142,8 +142,6 @@ class SFISModel(QObject):
             # Nếu không truyền MO, lấy từ config
             if not mo:
                 mo = str(config.MO)
-                
-            panel_num = config.PANEL_NUM
             need_keyword = f"NEEDPSN{panel_num}"  # Format theo số panel_num
 
             # Kiểm tra độ dài keyword (phải là 9 bytes)

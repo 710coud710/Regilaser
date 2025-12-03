@@ -67,8 +67,8 @@ def input_listener(send_func):
                 break
             if ch_lower == 's':
                 send_ready_event.set()
-                send_func(b"READY\r\n")
-                print("[PLC] >>> Sent READY")
+                send_func(b"Ready\r\n")
+                print("[PLC] >>> Sent Ready")
         except (KeyboardInterrupt, EOFError):
             break
 

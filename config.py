@@ -10,7 +10,7 @@ log = getLogger()
 
 class Config(BaseModel):
     model_config = {"extra": "allow"}  # cho phép thêm key khác (FrontPSN_Num, etc.)
-
+    STATION_NAME: StrictStr
     MO: StrictInt
     OP_NUM: StrictStr
     PANEL_NUM: StrictInt  # Panel Number để tạo NEEDPSNxx

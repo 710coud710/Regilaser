@@ -4,7 +4,6 @@ PLC Presenter - Xử lý logic giao tiếp PLC (Programmable Logic Controller)
 from PySide6.QtCore import QThread, QMetaObject, Qt, Q_ARG, Signal, QTimer
 
 from presenter.base_presenter import BasePresenter
-from model.plc_model import PLCModel
 from workers.plc_worker import PLCWorker
 from utils.Logging import getLogger
 
@@ -20,7 +19,6 @@ class PLCPresenter(BasePresenter):
 
     def __init__(self):
         super().__init__()
-        self.plc_model = PLCModel()
         self.plc_worker = PLCWorker()
         self.plc_thread = QThread()
         self.plc_worker.moveToThread(self.plc_thread)
@@ -37,8 +35,7 @@ class PLCPresenter(BasePresenter):
         self.auto_reconnect_enabled = False
 
     def _connect_worker_signals(self):
-        self.plc_worker.data_received.connect(self.onDataReceived)
-        self.plc_worker.error_occurred.connect(self.onError)
+        self.plc_worker.error_occurred.connect(self.onPLCError)
         self.plc_worker.connectionStatusChanged.connect(self.onConnectionChanged)
 
     # ------------------------------------------------------------------
@@ -99,54 +96,32 @@ class PLCPresenter(BasePresenter):
     # ------------------------------------------------------------------
     # Commands
     # ------------------------------------------------------------------
-    def send_command(self, label: str, payload: str = ""):
+    def sendData_PLC(self, label: str, payload: str = ""):
         command = self.plc_model.build_command(label, payload)
         if not command:
             return False
         self.show_info(f"PLC command: {command}")
         return QMetaObject.invokeMethod(
             self.plc_worker,
-            "send_command",
+            "sendData_PLC",
             Qt.BlockingQueuedConnection,
             Q_ARG(str, command),
         )
 
-    def wait_for_signal(self, expected_signal: str, timeout_ms=3000):
-        self.show_info(f"Waiting PLC signal: {expected_signal}")
-        return QMetaObject.invokeMethod(
-            self.plc_worker,
-            "wait_for_signal",
-            Qt.BlockingQueuedConnection,
-            Q_ARG(str, expected_signal),
-            Q_ARG(int, timeout_ms),
-        )
+    def sendLaserOK(self):
+        return self.sendData_PLC("L_OK")
 
-    def send_laser_ok(self):
-        return self.send_command("L_OK")
+    def sendLaserNG(self):
+        return self.sendData_PLC("L_NG")
 
-    def send_laser_ng(self):
-        return self.send_command("L_NG")
+    def sendCheckOK(self):
+        return self.sendData_PLC("CHE_OK")
 
-    def send_check_ok(self):
-        return self.send_command("CHE_OK")
+    def sendCheckNG(self):
+        return self.sendData_PLC("CHE_NG")
 
-    def send_check_ng(self):
-        return self.send_command("CHE_NG")
 
-    # ------------------------------------------------------------------
-    # Worker callbacks
-    # ------------------------------------------------------------------
-    def onDataReceived(self, data):
-        # In toàn bộ dữ liệu nhận từ COM ra log + UI
-        log.info(f"[PLC] data_received from COM: {data}")
-        self.show_info(f"[PLC] Received: {data}")
-        parsed = self.plc_model.parse_response(data)
-        # Nếu PLC gửi READY / Ready / ready... thì phát tín hiệu để MainPresenter xử lý start test
-        if parsed and "ready" in parsed.lower():
-            self.show_info("[PLC] READY signal detected -> request start test")
-            self.readyReceived.emit(parsed)
-
-    def onError(self, errorMsg):
+    def onPLCError(self, errorMsg):
         self.show_error(f"[PLC] Error: {errorMsg}")
         log.error(f"[PLC] {errorMsg}")
 

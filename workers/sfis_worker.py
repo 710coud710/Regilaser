@@ -87,44 +87,37 @@ class SFISWorker(QObject):
     
     @Slot()
     def disconnect(self):
-        """
-        Ngắt kết nối SFIS
-        
-        Returns:
-            bool: True nếu ngắt kết nối thành công
-        """
-        try:
-            log.info(f"Disconnecting from {self.port_name}...")
-            
+        try:            
             if self.serial_port and self.serial_port.is_open:
                 self.serial_port.close()
-                log.info(f"Disconnected successfully from {self.port_name}")
-            
             self.is_connected = False
+            log.info("[SFIS] Disconnected")
             self.connectionStatusChanged.emit(False)
             return True
-            
         except Exception as e:
             error_msg = f"Disconnect error: {str(e)}"
             log.error(f" {error_msg}")
             self.error_occurred.emit(error_msg)
             return False
-    
-    def send_data(self, data) -> bool:
+
+    def _ensure_connection(self) -> bool:
+        if not self.is_connected or not self.serial_port:
+            error_msg = "Not connected to SFIS"
+            log.error(error_msg)
+            self.error_occurred.emit(error_msg)
+            return False
+        return True
+
+    def sendData_SFIS(self, data) -> bool:
         """Gửi dữ liệu text ASCII đến SFIS qua COM port"""
         try:
-            # Check connection
-            if not self.is_connected or not self.serial_port:
-                error_msg = "Not connected to SFIS"
-                log.error(error_msg)
-                self.error_occurred.emit(error_msg)
+            if not self._ensure_connection():
                 return False
-            log.info(f"Sent to SFIS: {data.strip()}")
-            data_bytes = data.encode('ascii')
-            # Gửi qua COM port
-            bytes_written = self.serial_port.write(data_bytes)
-            self.serial_port.flush()  # 
-            log.info(f"Data sent successfully SFIS: {bytes_written} / {len(data_bytes)} bytes")            
+            payload = data if data.endswith("\r\n") else f"{data}\r\n"
+            log.info(f"[SFIS] Sent: {payload.strip()}")
+            bytes_written = self.serial_port.write(payload.encode('ascii'))
+            self.serial_port.flush()  
+            log.info(f"[SFIS] Data sent successfully: {bytes_written} bytes")            
             return True
             
         except UnicodeEncodeError as e:
@@ -147,33 +140,24 @@ class SFISWorker(QObject):
     
     @Slot(str)
     def send_start_signal(self, start_message):
-        """Gửi tín hiệu START text đến SFIS (fire and forget - không chờ phản hồi)
-        Slot method để được gọi từ QMetaObject.invokeMethod trong thread"""
-        log.info("=" * 70)
-        log.info("send_start_signal() called")
-        log.info(f"Message: {start_message}")
-        log.info(f"Length: {len(start_message)} bytes")
-        log.info("=" * 70)
-        
+        log.info(f"[SFIS] Sending START signal: {start_message}")
         try:
-            # Gửi dữ liệu text qua COM port
-            success = self.send_data(start_message)
+            success = self.sendData_SFIS(start_message)
             
             if success:
-                log.info("✓ START signal sent successfully")
+                log.info("[SFIS] START signal sent successfully")
                 self.signal_sent.emit(True, "START signal sent successfully")
             else:
-                log.error("✗ Failed to send START signal")
+                log.error("[SFIS] Failed to send START signal")
                 self.signal_sent.emit(False, "Failed to send START signal")
                 
         except Exception as e:
             error_msg = f"Exception in send_start_signal: {str(e)}"
-            log.error(f"✗ {error_msg}")
+            log.error(f"[SFIS] {error_msg}")
             log.debug("Exception details:", exc_info=True)
             self.signal_sent.emit(False, error_msg)
     
-    def read_data(self, expected_length=None, timeout_ms=5000):
-        """Đọc dữ liệu text ASCII từ SFIS qua COM port """
+    def readDataLength_SFIS (self, expected_length=None, timeout_ms=5000):
         try:
             # Check connection
             if not self.is_connected or not self.serial_port:
@@ -184,7 +168,6 @@ class SFISWorker(QObject):
 
             log.info("Reading data from SFIS via COM port...")
             log.info(f"Port: {self.port_name}")
-            log.info(f"Expected length: {expected_length if expected_length else 'all available'} bytes")
             log.info(f"Timeout: {timeout_ms}ms")
             
             # Đợi dữ liệu
@@ -211,23 +194,7 @@ class SFISWorker(QObject):
                         data_bytes += chunk
                         log.debug(f"Received {len(chunk)} bytes, total: {len(data_bytes)}/{expected_length}")
                     else:
-                        time.sleep(0.01)  # Chờ 10ms trước khi check lại
-            else:
-                # Đọc tất cả dữ liệu có sẵn
-                log.info("Waiting for data...")
-                
-                while time.time() - start_time < timeout_sec:
-                    if self.serial_port.in_waiting > 0:
-                        data_bytes = self.serial_port.read(self.serial_port.in_waiting)
-                        log.debug(f"Received {len(data_bytes)} bytes")
-                        break
-                    time.sleep(0.01)
-                else:
-                    error_msg = "Timeout: No data received"
-                    log.error(f"{error_msg}")
-                    self.error_occurred.emit(error_msg)
-                    return None
-            
+                        time.sleep(0.01)             
             # Check data
             if not data_bytes:
                 log.warning("No data received")
@@ -262,20 +229,13 @@ class SFISWorker(QObject):
             return None
     
     @Slot(int)
-    def read_data_all(self, timeout_ms=10000):
-        """Read ALL available data from SFIS via COM port"""
+    def readData_SFIS(self, timeout_ms=10000):
         try:
-            # Kiểm tra kết nối
-            if not self.is_connected or not self.serial_port:
-                error_msg = "Not connected to SFIS"
-                log.error(error_msg)
-                self.error_occurred.emit(error_msg)
-                return None
-            
-            log.info("Reading ALL available data from SFIS...")
-            log.info(f"Port: {self.port_name}")
-            log.info(f"Timeout: {timeout_ms}ms")
-            log.info("No length restriction - reading until no more data")
+            if not self._ensure_connection():
+                return False
+            # log.info(f"[SFIS] Reading ALL available data from SFIS...")
+            # log.info(f"[SFIS] Port: {self.port_name}")
+            # log.info(f"[SFIS] Timeout: {timeout_ms}ms")
             
             # Đợi và đọc tất cả dữ liệu
             start_time = time.time()
@@ -311,7 +271,6 @@ class SFISWorker(QObject):
             
             # Chuyển bytes sang text string (ASCII decoding)
             data_str = data_bytes.decode('ascii', errors='ignore')
-            
             log.info(f"  Data received successfully")
             log.info(f"  Total bytes: {len(data_bytes)}")
             log.info(f"  Data (text): {data_str}")
@@ -344,8 +303,8 @@ class SFISWorker(QObject):
         """Gửi dữ liệu text và chờ phản hồi text từ SFIS"""
         log.info("Send and wait for response...")
         
-        if self.send_data(data):
-            return self.read_data(expected_length, timeout_ms)
+        if self.sendData_SFIS(data):
+            return self.readDataLength_SFIS(expected_length,timeout_ms)
         else:
             log.error("Failed to send data, skipping read")
             return None
