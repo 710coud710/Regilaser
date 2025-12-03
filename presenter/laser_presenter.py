@@ -107,9 +107,8 @@ class LaserPresenter(BasePresenter):
         self.show_info("Disconnected from laser controller")
         log.info("Disconnected from laser controller")
 
-    # ------------------------------------------------------------------
-    # GA / C2 / NT helpers
-    # ------------------------------------------------------------------
+    #-------------------------- GA / C2 / NT -----------------------------
+
     def activateScript(self, script_number=None):
         """Gửi lệnh GA để chọn script"""
         if not self._ensure_connection():
@@ -283,11 +282,11 @@ class LaserPresenter(BasePresenter):
     def startAutoConnectLaser(self):
         """Bắt đầu tự động kết nối và duy trì kết nối"""
         self.auto_reconnect_enabled = True
-        log.info("Starting auto-connect for laser controller...")
-        self.show_info("Auto-connecting to laser controller...")
-        self._try_connect()
+        # log.info("Starting auto-connect for laser controller...")
+        # self.show_info("Auto-connecting to laser controller...")
+        self._tryConnect()
         self.reconnect_timer.start(self.reconnect_ms)
-        log.info(f"Auto-reconnect timer started (interval: {self.reconnect_ms}ms)")
+        log.info(f"Laser auto-connect started ({self.reconnect_ms}ms)")
 
     def stopAutoConnect(self):
         """Dừng tự động kết nối"""
@@ -295,7 +294,7 @@ class LaserPresenter(BasePresenter):
         self.reconnect_timer.stop()
         log.info("Auto-reconnect stopped")
 
-    def _try_connect(self):
+    def _tryConnect(self):
         """Thử kết nối đến laser (không log nhiều để tránh spam)"""
         if not self.auto_reconnect_enabled:
             return
@@ -307,9 +306,10 @@ class LaserPresenter(BasePresenter):
                     description = f"{self.laser_ip}:{self.laser_port}"
                 else:
                     self.worker.connect(com_port=self.laser_com_port, baudrate=self.laser_baudrate)
-                    description = f"{self.laser_com_port}@{self.laser_baudrate}"
+                    description = f"{self.laser_com_port} baudrate: {self.laser_baudrate}bps"
                 self.is_connected = True
                 self.connectionStatusChanged.emit(True)
+                self.show_success(f"Laser auto-connected: {description}")
                 log.info(f"Laser auto-connected: {description}")
         except Exception as exc:
             # Chỉ log khi lần đầu fail hoặc khi reconnect thành công sau khi fail
@@ -335,7 +335,7 @@ class LaserPresenter(BasePresenter):
         
         # Nếu chưa kết nối, thử kết nối lại
         if not self.is_connected:
-            self._try_connect()
+            self._tryConnect()
 
     def cleanup(self):
         """Dọn dẹp tài nguyên"""

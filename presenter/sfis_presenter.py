@@ -29,7 +29,7 @@ class SFISPresenter(BasePresenter):
         self.sfis_thread = QThread()
         self.sfis_worker.moveToThread(self.sfis_thread)
         # Kết nối signals
-        self.connectSignals()
+        self._connectSignals()
         # Khởi động thread
         self.sfis_thread.start()
         # Trạng thái
@@ -44,7 +44,7 @@ class SFISPresenter(BasePresenter):
 
         log.info("SFISPresenter initialized successfully")
     
-    def connectSignals(self):
+    def _connectSignals(self):
         """Kết nối signals giữa Worker và Model"""
         # SFIS Worker signals
         self.sfis_worker.data_received.connect(self.onDataReceived)
@@ -132,25 +132,17 @@ class SFISPresenter(BasePresenter):
     # Auto connect / reconnect
     # ------------------------------------------------------------------
     def startAutoConnectSFIS(self, portName: str | None = None):
-        """
-        Bắt đầu tự động kết nối SFIS.
-        - Nếu portName None: dùng currentPort hoặc cấu hình mặc định trong worker.
-        """
+        """Bắt đầu tự động kết nối SFIS"""
         self.auto_reconnect_enabled = True
         if portName:
             self.currentPort = portName
         elif not self.currentPort:
-            # Nếu chưa có port cụ thể thì dùng port mặc định của worker
             self.currentPort = self.sfis_worker.port_name
-
-        self.show_info(f"[SFIS] Auto-connect enabled on {self.currentPort}")
-        log.info(f"[SFIS] Auto-connect enabled on {self.currentPort}")
-
-        # Thử kết nối ngay một lần
-        self._try_connect()
-        # Bắt đầu timer định kỳ
+        # self.show_info(f"[SFIS] Auto-connect enabled on {self.currentPort}")
+        # log.info(f"[SFIS] Auto-connect enabled on {self.currentPort}")
+        self._tryConnect()
         self.reconnect_timer.start(self.reconnect_ms)
-
+        log.info(f"SFIS auto-connect started ({self.reconnect_ms}ms)")
     def stopAutoConnectSFIS(self):
         """Dừng tự động kết nối SFIS."""
         self.auto_reconnect_enabled = False
@@ -267,10 +259,6 @@ class SFISPresenter(BasePresenter):
         return self.sfis_model.get_current_data()
     
     def onDataReceived(self, data):
-        """
-        Xử lý khi nhận được dữ liệu từ SFIS Worker
-        Hiển thị TẤT CẢ dữ liệu nhận được lên log để phân tích
-        """
         log.info("DATA RECEIVED FROM SFIS")
         log.info(f"Length: {len(data)} bytes")
         log.info(f"Data (text): '{data}'")
@@ -357,7 +345,7 @@ class SFISPresenter(BasePresenter):
     # ------------------------------------------------------------------
     # Auto-reconnect helpers
     # ------------------------------------------------------------------
-    def _try_connect(self):
+    def _tryConnect(self):
         """Thử kết nối SFIS (không log nhiều để tránh spam)."""
         if not self.auto_reconnect_enabled:
             return
@@ -390,7 +378,7 @@ class SFISPresenter(BasePresenter):
             self.connectionStatusChanged.emit(worker_connected)
 
         if not self.isConnected:
-            self._try_connect()
+            self._tryConnect()
     
     def onStartSignalSent(self, success, message):
         """Xử lý khi START signal đã được gửi"""

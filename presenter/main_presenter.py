@@ -32,11 +32,8 @@ class MainPresenter(BasePresenter):
         self.laser_presenter = LaserPresenter()      
         # Kết nối signals
         self.connectSignals()
-        log.info("Signals connected")
-        
         # Trạng thái
         self.isRunning = False
-        
         log.info("MainPresenter initialized successfully")
         
     def connectSignals(self):
@@ -107,20 +104,19 @@ class MainPresenter(BasePresenter):
         pass
     
     def initialize(self):
-        """Khởi tạo kết nối và cấu hình ban đầu"""
-        self.show_info("System is ready!")
-        log.info("System is ready!")
-        
+        """Khởi tạo kết nối và cấu hình ban đầu""" 
         # Cập nhật trạng thái laser ban đầu (disconnected)
         topPanel = self.main_window.getTopPanel()
         topPanel.setLaserConnectionStatus(False, "Initializing...")
-        
-        # Tự động kết nối laser
+        # Tự động kết nối SFIS, PLC và laser
         self.laser_presenter.startAutoConnectLaser()
         self.sfis_presenter.startAutoConnectSFIS()
         self.plc_presenter.startAutoConnectPLC()
-        log.info("Laser auto-connect started")
-    
+        self.plc_presenter.startReceiverPLC()
+
+        self.show_info(f"[_______SYSTEM IS READY!_______]")
+        log.info("[_______SYSTEM IS READY!_______]")
+
     def onSfisConnectRequested(self, shouldConnect, portName):
         """Xử lý yêu cầu kết nối/ngắt kết nối SFIS từ nút toggle"""
         topPanel = self.main_window.getTopPanel()
@@ -258,7 +254,7 @@ class MainPresenter(BasePresenter):
         topPanel = self.main_window.getTopPanel()
         status_text = "Connected" if isConnected else "Disconnected"
         topPanel.setLaserConnectionStatus(isConnected, status_text)
-        log.info(f"Laser connection status changed: {status_text}")
+        log.info(f"Laser status: {status_text}")
     
     
     def cleanup(self):
@@ -299,7 +295,7 @@ class MainPresenter(BasePresenter):
         except Exception as e:
             self.show_error(f"Failed to send NT to laser: {e}")
             log.error(f"Failed to send NT to laser: {e}")
-            
+
     ###################PLC menu###################
     def onSendPLCPOK(self):
         """Handle menu 'Send OK to PLC'"""

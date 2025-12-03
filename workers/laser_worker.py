@@ -54,8 +54,6 @@ class LaserWorker:
         if self.mode == LaserConnectMode.TCP:
             target_ip = ip or self.ip
             target_port = port or self.port
-
-            log.info(f"[LaserWorker] Connecting via TCP {target_ip}:{target_port}...")
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.settimeout(self.timeout_ms / 1000)
             sock.connect((target_ip, target_port))
@@ -65,14 +63,13 @@ class LaserWorker:
             self.ip = target_ip
             self.port = target_port
             self.is_connected = True
-            log.info("[LaserWorker] TCP socket connected (non-blocking)")
+            log.info("Laser TCP socket connected (non-blocking)")
         else:
             target_port = com_port or self.com_port
             target_baud = baudrate or self.baudrate
             if not target_port:
                 raise RuntimeError("Laser COM port is not configured")
 
-            log.info(f"[LaserWorker] Connecting via RS232 {target_port}  {target_baud}bps...")
             try:
                 ser = serial.Serial(
                     port=target_port,
@@ -91,7 +88,7 @@ class LaserWorker:
                 self.com_port = target_port
                 self.baudrate = target_baud
                 self.is_connected = True
-                log.info("[LaserWorker] RS232 port connected")
+                log.info(f"Laser connected: {target_port} baudrate: {target_baud}bps")
             except SerialException as exc:
                 self.serial_port = None
                 self.is_connected = False
@@ -254,8 +251,10 @@ class LaserWorker:
                     data = self.serial_port.read(self.serial_port.in_waiting)
                     if data:
                         buffer.extend(data)
-                        if buffer.endswith(b"\n") or buffer.endswith(b"\r\n"):
-                            break
+                        break
+                        # Nếu nhận dữ liệu kết thúc bằng new line (\r\n)
+                        # if buffer.endswith(b"\n") or buffer.endswith(b"\r\n"):
+                        #     break
                 else:
                     time.sleep(0.01)
             except SerialException as exc:

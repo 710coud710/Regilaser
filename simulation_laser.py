@@ -20,7 +20,7 @@ HOST = "0.0.0.0"  # Hoặc IP cụ thể
 PORT = 50002
 
 # Cấu hình COM
-COM = "COM4"
+COM = "COM2"
 BAUDRATE = 9600
 TIMEOUT_S = 1.0
 

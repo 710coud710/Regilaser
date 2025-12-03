@@ -22,7 +22,7 @@ class PLCPresenter(BasePresenter):
         self.plc_worker = PLCWorker()
         self.plc_thread = QThread()
         self.plc_worker.moveToThread(self.plc_thread)
-        self._connect_worker_signals()
+        self._connectSignals()
         self.plc_thread.start()
 
         self.is_connected = False
@@ -34,13 +34,13 @@ class PLCPresenter(BasePresenter):
         self.reconnect_ms = 5000  # 5 giây
         self.auto_reconnect_enabled = False
 
-    def _connect_worker_signals(self):
+    def _connectSignals(self):
         self.plc_worker.error_occurred.connect(self.onPLCError)
         self.plc_worker.connectionStatusChanged.connect(self.onConnectionChanged)
+        self.plc_worker.data_received.connect(self.onDataReceived)
 
-    # ------------------------------------------------------------------
-    # Connection helpers
-    # ------------------------------------------------------------------
+    #-----------------------------Connection helpers-----------------------------
+
     def connect(self, port_name):
         """Kết nối đến PLC"""
         self.show_info(f"Connecting PLC on {port_name}...")
@@ -68,34 +68,39 @@ class PLCPresenter(BasePresenter):
         self.is_connected = False
         self.current_port = ""
         return True
+    def startReceiverPLC(self):
+        """Bật vòng lặp nhận dữ liệu PLC (background thread trong worker)."""
+        QMetaObject.invokeMethod(
+            self.plc_worker,
+            "startReceiver",
+            Qt.QueuedConnection,
+        )
 
-    # ------------------------------------------------------------------
-    # Auto connect / reconnect
-    # ------------------------------------------------------------------
+    def stopReceiverPLC(self):
+        """Tắt vòng lặp nhận dữ liệu PLC."""
+        QMetaObject.invokeMethod(
+            self.plc_worker,
+            "stopReceiver",
+            Qt.QueuedConnection,
+        )
+    # ------------------------------Auto connect / reconnect-------------------------------
     def startAutoConnectPLC(self, port_name: str | None = None):
-        """
-        Bắt đầu tự động kết nối PLC.
-        - Nếu port_name None: dùng current_port / cấu hình mặc định trong worker.
-        """
+        """Bắt đầu tự động kết nối PLC"""
         self.auto_reconnect_enabled = True
         if port_name:
             self.current_port = port_name
-        self.show_info(f"[PLC] Auto-connect enabled on {self.current_port}")
-        log.info(f"[PLC] Auto-connect enabled on {self.current_port}")
-        # Thử kết nối ngay một lần
-        self._try_connect()
-        # Bắt đầu timer định kỳ
+        # self.show_info(f"[PLC] Auto-connect enabled on {self.current_port}")
+        # log.info(f"[PLC] Auto-connect enabled on {self.current_port}")
+        self._tryConnect()
         self.reconnect_timer.start(self.reconnect_ms)
-
+        log.info(f"PLC auto-connect started ({self.reconnect_ms}ms)")
     def stopAutoConnectPLC(self):
         """Dừng tự động kết nối PLC."""
         self.auto_reconnect_enabled = False
         self.reconnect_timer.stop()
         log.info("[PLC] Auto-connect stopped")
 
-    # ------------------------------------------------------------------
-    # Commands
-    # ------------------------------------------------------------------
+    #-----------------------------send to PLC-----------------------------
     def sendData_PLC(self, label: str, payload: str = ""):
         command = self.plc_model.build_command(label, payload)
         if not command:
@@ -120,10 +125,22 @@ class PLCPresenter(BasePresenter):
     def sendCheckNG(self):
         return self.sendData_PLC("CHE_NG")
 
-
     def onPLCError(self, errorMsg):
         self.show_error(f"[PLC] Error: {errorMsg}")
         log.error(f"[PLC] {errorMsg}")
+
+    def onDataReceived(self, data: str):
+        """Nhận dữ liệu từ PLC và ghi log + phát hiện tín hiệu READY."""
+        cleaned = data.strip()
+        if not cleaned:
+            return
+
+        log.info(f"[PLC] << {cleaned}")
+        self.show_info(f"[PLC] Receive: {cleaned}")
+
+        if "READY" or "Ready" in cleaned.upper():
+            log.info("[PLC] READY signal detected")
+            self.readyReceived.emit(cleaned)
 
     def onConnectionChanged(self, isConnected):
         self.is_connected = isConnected
@@ -132,18 +149,15 @@ class PLCPresenter(BasePresenter):
         # Thông báo ra ngoài (MainPresenter / UI)
         self.connectionStatusChanged.emit(isConnected)
 
-    # ------------------------------------------------------------------
-    # Auto-reconnect helpers
-    # ------------------------------------------------------------------
-    def _try_connect(self):
-        """Thử kết nối PLC (không log nhiều để tránh spam)."""
+    #-----------------------------Auto-reconnect helpers-----------------------------
+    def _tryConnect(self):
         if not self.auto_reconnect_enabled:
             return
         if self.is_connected:
             return
 
         try:
-            # Gọi connect trên worker (trong thread của worker)
+            #connect to worker (in worker thread)
             QMetaObject.invokeMethod(
                 self.plc_worker,
                 "connect",
@@ -168,11 +182,9 @@ class PLCPresenter(BasePresenter):
             self.plc_worker.connectionStatusChanged.emit(worker_connected)
 
         if not self.is_connected:
-            self._try_connect()
+            self._tryConnect()
 
-    # ------------------------------------------------------------------
-    # Cleanup
-    # ------------------------------------------------------------------
+    #-----------------------------Cleanup-----------------------------
     def cleanup(self):
         self.disconnect()
         self.plc_thread.quit()

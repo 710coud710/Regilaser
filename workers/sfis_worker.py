@@ -27,7 +27,7 @@ class SFISWorker(QObject):
         self.stopbits = serial.STOPBITS_ONE
         self.timeout = 5.0
         
-        log.info("SFISWorker initialized")
+        log.info("SFISWorker initialized successfully")
     
     @Slot(str, int)
     @Slot(str)
@@ -39,9 +39,7 @@ class SFISWorker(QObject):
                 self.port_name = port_name
             if baudrate:
                 self.baudrate = baudrate
-            
-            log.info(f"[SFIS] Connecting {self.port_name} baudrate: {self.baudrate}")
-                        # Close existing connection if any
+            # Close existing connection if any
             if self.serial_port and self.serial_port.is_open:
                 log.info("Closing existing connection...")
                 self.serial_port.close()
@@ -58,19 +56,18 @@ class SFISWorker(QObject):
                 rtscts=False,   # No hardware (RTS/CTS) flow control
                 dsrdtr=False    # No hardware (DSR/DTR) flow control
             )
-            
             # Xóa buffer cũ
             self.serial_port.reset_input_buffer()
             self.serial_port.reset_output_buffer()
             
             self.is_connected = True
-            log.info(f"[SFIS] Connected successfully to {self.port_name}")
+            log.info(f"SFIS Connected to {self.port_name} baudrate: {self.baudrate}bps")
             self.connectionStatusChanged.emit(True)
             return True
             
         except serial.SerialException as e:
             self.is_connected = False
-            error_msg = f"[SFIS] Serial port error: {str(e)}"
+            error_msg = f"SFIS Serial port error: {str(e)}"
             log.error(f"{error_msg}")
             self.connectionStatusChanged.emit(False)
             self.error_occurred.emit(error_msg)

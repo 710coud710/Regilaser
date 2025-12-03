@@ -5,7 +5,7 @@ import time
 import serial
 from serial import SerialException
 
-from PySide6.QtCore import QObject, Signal, Slot
+from PySide6.QtCore import QObject, Signal, Slot, QTimer
 from utils.Logging import getLogger
 
 
@@ -26,10 +26,13 @@ class PLCWorker(QObject):
         self.port_name = "COM3"
         self.baudrate = 9600
         self.timeout = 1.0
+        self._runningPLC = False
 
-    # ------------------------------------------------------------------
+        # QTimer sẽ được tạo trong thread của PLCWorker (sau khi moveToThread)
+        # để tránh lỗi "QObject::startTimer: Timers cannot be started from another thread"
+        self._poll_timer: QTimer | None = None
+
     # Connection
-    # ------------------------------------------------------------------
     @Slot(str, int)
     @Slot(str)
     @Slot()
@@ -38,9 +41,7 @@ class PLCWorker(QObject):
             if port_name:
                 self.port_name = port_name
             if baudrate:
-                self.baudrate = baudrate
-
-            log.info(f"[PLC] Connecting {self.port_name} baudrate: {self.baudrate}")
+                self.baudrate = baudrate        
 
             if self.serial_port and self.serial_port.is_open:
                 self.serial_port.close()
@@ -60,7 +61,7 @@ class PLCWorker(QObject):
             self.serial_port.reset_output_buffer()
 
             self.is_connected = True
-            log.info("[PLC] Connected")
+            log.info(f"PLC connected: {self.port_name} baudrate: {self.baudrate}bps")
             self.connectionStatusChanged.emit(True)
             return True
         except SerialException as exc:
@@ -112,6 +113,53 @@ class PLCWorker(QObject):
             self.error_occurred.emit(str(exc))
             return False
         
+    @Slot()
+    def startReceiver(self):
+        try:
+            if not self._ensure_connection():
+                return False
+            if self._runningPLC: 
+                return
+            self._runningPLC = True
+
+            # Lazy-init QTimer trong đúng thread (thread hiện tại của PLCWorker)
+            if self._poll_timer is None:
+                self._poll_timer = QTimer(self)
+                self._poll_timer.setInterval(10)  # 10ms
+                self._poll_timer.timeout.connect(self._run)
+
+            self._poll_timer.start()
+            log.info("PLC receiver loop started (QTimer in PLC QThread)")
+        except Exception as exc:
+            msg = f"PLC start receiver error: {exc}"
+            log.error(msg)
+            self.error_occurred.emit(msg)
+            return False
+
+    @Slot()
+    def stopReceiver(self):
+        log.info("PLC receiver loop stop requested")
+        self._runningPLC = False
+        if self._poll_timer is not None:
+            self._poll_timer.stop()
+
+    def _run(self):
+        """Được gọi định kỳ trong QThread của worker để đọc dữ liệu PLC."""
+        if not self._runningPLC:
+            return 
+
+        try:
+            if self.is_connected and self.serial_port and self.serial_port.in_waiting > 0:
+                data = self.serial_port.read(self.serial_port.in_waiting)
+                if data:
+                    data_str = data.decode("ascii", errors="ignore")
+                    self.data_received.emit(data_str)
+                    log.info(f"PLC << {data_str}")
+        except Exception as exc:
+            msg = f"PLC receive error: {exc}"
+            log.error(msg)
+            self.error_occurred.emit(msg)
+
     def readData_PLC(self, timeout_ms=10000):
         try:
             if not self.is_connected or not self.serial_port:
@@ -151,7 +199,7 @@ class PLCWorker(QObject):
                 self.error_occurred.emit(error_msg)
                 return None
             
-            # Chuyển bytes sang text string (ASCII decoding)
+            # Chuyển bytes sang text string (ASCII)
             data_str = data_bytes.decode('ascii', errors='ignore')
             log.info(f"[PLC] Data received: {data_str}")
             self.data_received.emit(data_str)

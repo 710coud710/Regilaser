@@ -14,34 +14,15 @@ log = getLogger()
 
 def main():
     log.info("--------------------------------- Regilazi Laser Marking System started ---------------------------------")
-
-    app = QApplication(sys.argv)
-    log.info("QApplication initialized")
-    
-    # Tạo main window
-    window = MainWindow()
-    log.info("MainWindow created")
-    
-    # Tạo presenter và kết nối với view
-    presenter = MainPresenter(window)
-    log.info("MainPresenter initialized")
-    
-    # Khởi tạo hệ thống
-    presenter.initialize()
-    
-    # Hiển thị window
-    window.show()
-    log.info("Application window shown - Ready for user interaction")
-    
-    # Cho phép Ctrl+C tắt ứng dụng
-    signal.signal(signal.SIGINT, signal.SIG_DFL)
-    
-    # Chạy ứng dụng
-    log.info("Application event loop starting...")
+    app = QApplication(sys.argv) # Khởi tạo application
+    window = MainWindow() # Khởi tạo window
+    presenter = MainPresenter(window) # Khởi tạo presenter
+    presenter.initialize() # Khởi tạo kết nối và cấu hình ban đầu
+    window.show() # Hiển thị window
+    signal.signal(signal.SIGINT, signal.SIG_DFL) 
+    # Chạy ứng dụng và lấy exit code
     exit_code = app.exec()
-    
-    # Dọn dẹp tài nguyên trước khi thoát
-    log.info("Application closing...")
+    log.info("Application closing...............!!!")
     presenter.cleanup()
     log.info("--------------------------------- Application exited successfully ---------------------------------")
     sys.exit(exit_code)
