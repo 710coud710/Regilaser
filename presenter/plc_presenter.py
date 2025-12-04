@@ -129,18 +129,13 @@ class PLCPresenter(BasePresenter):
         self.show_error(f"[PLC] Error: {errorMsg}")
         log.error(f"[PLC] {errorMsg}")
 
-    def onDataReceived(self, data: str):
-        """Nhận dữ liệu từ PLC và ghi log + phát hiện tín hiệu READY."""
+    def onDataReceived(self, data: str): 
         cleaned = data.strip()
         if not cleaned:
             return
-
-        log.info(f"[PLC] << {cleaned}")
-        self.show_info(f"[PLC] Receive: {cleaned}")
-
-        if "READY" or "Ready" in cleaned.upper():
-            log.info("[PLC] READY signal detected")
-            self.readyReceived.emit(cleaned)
+        log.info(f"PLC received<< {cleaned}")
+        self.show_info(f"PLC received<< {cleaned}")
+        self.readyReceived.emit(cleaned)
 
     def onConnectionChanged(self, isConnected):
         self.is_connected = isConnected

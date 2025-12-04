@@ -22,7 +22,7 @@ class SFISData:
     
     # PSN data (if using old format)
     psn_list: List[str] = None  # List of PSN (10 items, 20 bytes each)
-    
+    keyword: str = ""  # Keyword (4 bytes)
     def __post_init__(self):
         if self.psn_list is None:
             self.psn_list = []
@@ -36,11 +36,8 @@ class SFISModel(QObject):
     validation_error = Signal(str)  # Lỗi validation
     
     # Constants - Định dạng mới
-    LASER_SN_LENGTH = 25
     STATUS_LENGTH = 20
-    PASS_KEYWORD = "PASS"
-    NEW_FORMAT_LENGTH = 70  # 25 + 25 + 20 (không tính PASS vì nó nằm trong status)
-    
+    PASS_KEYWORD = "PASS"   
     # Constants - Định dạng cũ
     MO_LENGTH = 20
     PANEL_NO_LENGTH = 20
@@ -93,7 +90,8 @@ class SFISModel(QObject):
             self.current_data.mo = mo
             self.current_data.panel_no = panel_no
             self.current_data.psn_list = psn_list
-            
+            self.current_data.keyword = pass_keyword
+
             self.data_parsed.emit(self.current_data)
             return self.current_data
             
@@ -101,47 +99,10 @@ class SFISModel(QObject):
             self.validation_error.emit(f"Lỗi parse response: {str(e)}")
             return None
     
-    def parseResponseNewFormat(self, response):
-        try:
-            # Kiểm tra độ dài và PASS keyword
-            if len(response) < self.NEW_FORMAT_LENGTH:
-                self.validation_error.emit(f"Response quá ngắn: {len(response)} < {self.NEW_FORMAT_LENGTH}")
-                return None
-            
-            if self.PASS_KEYWORD not in response:
-                self.validation_error.emit(f"Không tìm thấy PASS keyword trong response")
-                return None
-            
-            # Parse các field
-            pos = 0
-            laser_sn = response[pos:pos + self.LASER_SN_LENGTH].strip()
-            pos += self.LASER_SN_LENGTH
-            
-            status = response[pos:pos + self.STATUS_LENGTH].strip()
-            
-            # Cập nhật current_data
-            self.current_data.laser_sn = laser_sn
-            self.current_data.status = status
-            
-            self.data_parsed.emit(self.current_data)
-            return self.current_data
-            
-        except Exception as e:
-            self.validation_error.emit(f"Lỗi parse response: {str(e)}")
-            return None
     
-    def createStartSignal(self, mo=None, panel_num=None):
+    def createFormatNeedPSN(self, mo=None, panel_num=None):
         try:
             # Lấy config từ ConfigManager
-            config = self.config_manager.get()
-            
-            if not config:
-                self.validation_error.emit("Không thể đọc config")
-                return None
-            
-            # Nếu không truyền MO, lấy từ config
-            if not mo:
-                mo = str(config.MO)
             need_keyword = f"NEEDPSN{panel_num}"  # Format theo số panel_num
 
             # Kiểm tra độ dài keyword (phải là 9 bytes)
@@ -154,7 +115,7 @@ class SFISModel(QObject):
             
             # Tạo START signal: 20 + 20 + 9 = 49 bytes
             start_signal = f"{mo_padded}{panel_padded}{need_keyword}\r\n"
-            
+            log.info(f"START signal: {start_signal}")
             # Lưu vào current_data
             self.current_data.mo = mo
             self.current_data.panel_no = ""
@@ -184,17 +145,8 @@ class SFISModel(QObject):
     def createTestError(self, mo, panel_no, error_code):
         """
         Tạo message báo lỗi test
-        
-        Format: MO(20) + PANEL_NO(20) + END(3) + ErrorCode(6)
-        Total: 49 bytes
-        
-        Args:
-            mo (str): Manufacturing Order
-            panel_no (str): Panel Number
-            error_code (str): Error code (6 chars)
-            
-        Returns:
-            str: Message string (49 bytes)
+
+
         """
         try:
             mo_padded = mo.ljust(self.MO_LENGTH)[:self.MO_LENGTH]

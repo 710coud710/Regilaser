@@ -51,7 +51,7 @@ class MainPresenter(BasePresenter):
         # self.main_window.sendPLCNG_clicked.connect(self.onSendPLCNG)
 
         self.main_window.sendActivateSFIS_clicked.connect(self.onSendActivateSFIS)
-        self.main_window.sendNeedPSN_clicked.connect(self.onSendNEEDPSN)
+        self.main_window.sendNeedPSN_clicked.connect(self.onSendNEEDPSNManual)
         # View signals - Top Panel
         top_panel = self.main_window.getTopPanel()
         top_panel.sfisChanged.connect(self.onSfisPortChanged)
@@ -68,7 +68,7 @@ class MainPresenter(BasePresenter):
         self.plc_presenter.logMessage.connect(self.forwardLog)
         self.plc_presenter.connectionStatusChanged.connect(self.onPlcConnectionChanged)
         # Khi PLC gửi tín hiệu READY thì tự động bắt đầu quy trình test (giống như bấm START)
-        self.plc_presenter.readyReceived.connect(self.onPlcReady)
+        self.plc_presenter.readyReceived.connect(self.startAutomationMarkingLaser)
         
         # Laser Presenter signals
         self.laser_presenter.logMessage.connect(self.forwardLog)
@@ -165,47 +165,52 @@ class MainPresenter(BasePresenter):
         log.info("START signal sent successfully - waiting for response...")
         self.show_info("START signal sent successfully - waiting for response...")
     
-    def startMarkingLaserProcess(self, mo, panelNo=None):
-        """Bắt đầu khắc laser trong QThread"""
+    def startAutomationMarkingLaser(self,message):
+        try:
+            if message == "Ready" or "READY":
+                log.info(f"PLC received:[{message}] --> start marking process")
+                self.show_info(f"PLC received:[{message}] --> start marking process")
+                log.info(f"=========START AUTOMATION MARKING LASER=========")
+                self.show_info(f"=========START AUTOMATION MARKING LASER=========")
+                self.startMarkingLaserProcess()
+                
+            else:
+                log.info(f"PLC received:[{message}] --> Wrong signal cannot start")
+                self.show_info(f"PLC received:[{message}] --> Wrong signal cannot start")
+        except Exception as e:
+            log.error(f"Error starting automation marking laser: {e}")
+            self.show_error(f"Error starting automation marking laser: {e}")
 
-        response = self.sfis_presenter.requestDataSFIS(mo, panelNo)
+    def startMarkingLaserProcess(self):
+        """Bắt đầu khắc laser trong QThread"""
+        #Lấy dữ liệu từ SFIS
+        response = self.sfis_presenter.getDataPSNFromSFIS()
+
         if not response:
             self.show_error("Cannot receive data from SFIS")
             log.error("Cannot receive data from SFIS")
             self.isRunning = False
-            return
-        
+            return False
+        log.info(f"Received data from SFIS: {response}")
+        self.show_info(f"Received data from SFIS: {response}")
         # Parse dữ liệu
         sfisData = self.sfis_presenter.parseResponse(response)
-        
+        self.show_info(f"Parsed data from SFIS: {sfisData}")
         if not sfisData:
             self.show_error("Error parsing SFIS data")
             log.error("Error parsing SFIS data")
             self.isRunning = False
-            return
+            return False
     
     def onSfisConnectionChanged(self, isConnected):
         topPanel = self.main_window.getTopPanel()
         status_text = "Connected" if isConnected else "Disconnected"
         topPanel.setSFISConnectionStatus(isConnected, status_text)
     
-    def onStartSignalSent(self, success, message):
-        """Flow: SFISWorker → SFISPresenter → MainPresenter (callback này)"""
-        log.info("START signal sent callback received")
-        log.info(f"Success: {success}")
-        log.info(f"Message: {message}")
-        
-        if success:
-            log.info("START signal sent successfully via COM port")
-            self.show_success("START signal sent successfully via COM port")
-            self.show_info(f"  Port: {self.sfis_presenter.currentPort}")
-    
-            log.info("Next steps: Wait for SFIS response or continue process...")
-        else:
-            log.error(f"Failed to send START signal: {message}")
-            self.show_error(f"Failed to send START signal: {message}")
-
+    def onStartSignalSent(self):
+        """Flow: SFISWorker → SFISPresenter → MainPresenter (callback này)"""  
         self.isRunning = False
+        # self.log.info("START signal sent successfully")
     
     def onSfisPortChanged(self, portName):
         """Xử lý khi thay đổi COM port SFIS"""
@@ -242,12 +247,6 @@ class MainPresenter(BasePresenter):
         topPanel = self.main_window.getTopPanel()
         status_text = "Connected" if isConnected else "Disconnected"
         topPanel.setPLCConnectionStatus(isConnected, status_text)
-
-    def onPlcReady(self, message: str):
-        """Xử lý khi nhận được tín hiệu READY từ PLC"""
-        log.info(f"PLC READY received: {message}")
-        self.show_info("PLC READY received - auto start test")
-        self.onStartClicked()
 
     def onLaserConnectionChanged(self, isConnected):
         """Xử lý khi trạng thái kết nối laser thay đổi"""
@@ -331,12 +330,14 @@ class MainPresenter(BasePresenter):
             self.show_error(f"Failed to activate SFIS: {e}")
             log.error(f"Failed to activate SFIS: {e}")
 
-    def onSendNEEDPSN(self):
+    def onSendNEEDPSNManual(self):
         """Handle menu 'Send NEEDPSN to SFIS'"""
+        log.info("Send NEEDPSN to SFIS manual")
+        self.show_info("Send NEEDPSN to SFIS manual")
         try:
             self.sfis_presenter.sendNEEDPSN()
-            self.show_success("Send NEEDPSN to SFIS successfully")
-            log.info("Send NEEDPSN to SFIS successfully")
+            self.show_success("Send NEEDPSN SFIS Manual successfully")
+            log.info("Send NEEDPSN SFIS Manual successfully")
         except Exception as e:
             self.show_error(f"Failed to send NEEDPSN to SFIS: {e}")
             log.error(f"Failed to send NEEDPSN to SFIS: {e}")

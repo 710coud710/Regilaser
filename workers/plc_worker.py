@@ -154,11 +154,13 @@ class PLCWorker(QObject):
                 if data:
                     data_str = data.decode("ascii", errors="ignore")
                     self.data_received.emit(data_str)
-                    log.info(f"PLC << {data_str}")
+                    # log.info(f"PLC sent>> {data_str}")
         except Exception as exc:
             msg = f"PLC receive error: {exc}"
             log.error(msg)
             self.error_occurred.emit(msg)
+            return False
+
 
     def readData_PLC(self, timeout_ms=10000):
         try:
