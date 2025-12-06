@@ -171,16 +171,27 @@ class SFISPresenter(BasePresenter):
     def getDataPSNFromSFIS(self):
         mo = getattr(config, 'MO', '')
         panel_num = getattr(config, 'PANEL_NUM', '')
-        response = self.sendNEEDPSN(mo, panel_num)
-        log.info(f"Received data from SFIS: {response}")
-        if not response:
-            self.show_error("Cannot receive data from SFIS")
-            log.error("Cannot receive data from SFIS")
+        try:
+            needpsn_message = self.sfis_model.createFormatNeedPSN(mo, panel_num)
+            if not needpsn_message:
+                self.show_error("Failed to create NEEDPSN message")
+                log.error("Failed to create NEEDPSN message")
+                return False
+            if not self.sfis_worker.sendData_SFIS(needpsn_message):
+                self.show_error("Failed to send NEEDPSN message to SFIS")
+                log.error("Failed to send NEEDPSN message to SFIS")
+                return False
+            data_res = self.sfis_worker.readData_SFIS(timeout_ms=10000)
+            if not data_res:
+                self.show_error("Timeout or no data received from SFIS")
+                log.error("Timeout or no data received from SFIS")
+                return False
+            sfisData = self.sfis_model.parseResponsePsn(data_res)
+            return sfisData
+        except Exception as e:
+            self.show_error(f"Error in getDataPSNFromSFIS: {e}")
+            log.error(f"Error in getDataPSNFromSFIS: {e}")
             return False
-        data_res = None
-        data_res = self.sfis_worker.data_received.emit()
-        sfisData = self.sfis_model.parseResponsePsn(data_res)
-        return sfisData
 
     def sendNEEDPSN(self, mo=None,panel_num=None):
         if not self.isConnected:
@@ -252,8 +263,18 @@ class SFISPresenter(BasePresenter):
         return False
     
     def parseResponse(self, response):
-        """  Parse response từ SFIS"""
-        return self.sfis_model.parseResponsePsn(response)
+        try:
+            data = self.sfis_model.parseResponsePsn(response)
+            log.info(f"Parsed data: {data}")
+            if not data:
+                self.show_error("Failed to parse response from SFIS")
+                log.error("Failed to parse response from SFIS")
+                return False
+            return data
+        except Exception as e:
+            self.show_error(f"Error in parseResponse: {e}")
+            log.error(f"Error in parseResponse: {e}")
+            return False
     
     def getCurrentData(self):
         """Lấy dữ liệu SFIS hiện tại"""

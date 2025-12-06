@@ -172,8 +172,11 @@ class MainPresenter(BasePresenter):
                 self.show_info(f"PLC received:[{message}] --> start marking process")
                 log.info(f"=========START AUTOMATION MARKING LASER=========")
                 self.show_info(f"=========START AUTOMATION MARKING LASER=========")
-                self.startMarkingLaserProcess()
-                
+                if self.startMarkingLaserProcess():
+                    self.plc_presenter.sendPLC_OK()
+                    return True
+                else:
+                    return False                
             else:
                 log.info(f"PLC received:[{message}] --> Wrong signal cannot start")
                 self.show_info(f"PLC received:[{message}] --> Wrong signal cannot start")
@@ -181,24 +184,41 @@ class MainPresenter(BasePresenter):
             log.error(f"Error starting automation marking laser: {e}")
             self.show_error(f"Error starting automation marking laser: {e}")
 
-    def startMarkingLaserProcess(self):
+    def startMarkingLaserProcess(self) -> bool:
         """Bắt đầu khắc laser trong QThread"""
-        #Lấy dữ liệu từ SFIS
-        response = self.sfis_presenter.getDataPSNFromSFIS()
+        try:
+            response = self.sfis_presenter.getDataPSNFromSFIS()
+            if response:
+                self.show_error("Cannot receive data from SFIS")
+                log.error("Cannot receive data from SFIS")
+                self.isRunning = False
+                return False
+         
+            #Đã Format dữ liệu từ SFIS
+            content = self.laser_presenter.CreateFormatContent(response)
+            if not content:
+                self.show_error("Cannot create format content for laser")
+                log.error("Cannot create format content for laser")
+                self.isRunning = False
+                return False
+            # self.laser_presenter.setContent(script=config.LASER_SCRIPT, content=c
+            success = self.laser_presenter.startLaserMarkingProcess(script=config.LASER_SCRIPT, content=content)
+            if not success:
+                self.show_error("Cannot start laser marking process")
+                log.error("Cannot start laser marking process")
+                self.isRunning = False
+                return False
+            
+            #POST SFIS
 
-        if not response:
-            self.show_error("Cannot receive data from SFIS")
-            log.error("Cannot receive data from SFIS")
-            self.isRunning = False
-            return False
-        log.info(f"Received data from SFIS: {response}")
-        self.show_info(f"Received data from SFIS: {response}")
-        # Parse dữ liệu
-        sfisData = self.sfis_presenter.parseResponse(response)
-        self.show_info(f"Parsed data from SFIS: {sfisData}")
-        if not sfisData:
-            self.show_error("Error parsing SFIS data")
-            log.error("Error parsing SFIS data")
+
+
+
+            return True
+
+        except Exception as e:
+            log.error(f"Error starting automation marking laser: {e}")
+            self.show_error(f"Error starting automation marking laser: {e}")
             self.isRunning = False
             return False
     

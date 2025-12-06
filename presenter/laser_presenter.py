@@ -7,16 +7,16 @@ from config import ConfigManager
 from workers.laser_worker import LaserWorker
 from utils.schema import LaserConnectMode
 from utils.Logging import getLogger
-
+from model.laser_model import LaserModel
 # Khởi tạo logger
 log = getLogger()
 
 
 class LaserPresenter(BasePresenter):
     connectionStatusChanged = Signal(bool)
-
     def __init__(self):
         super().__init__()
+        self.laser_model = LaserModel()
         config = ConfigManager().get()
         self.laser_mode = config.LASER_MODE
         self.laser_ip = config.LASER_IP
@@ -183,22 +183,29 @@ class LaserPresenter(BasePresenter):
     # ------------------------------------------------------------------
     def startLaserMarkingProcess(self, script=None, content=None):
         """Bắt đầu quy trình laser marking"""
-        script_id = script or self.default_script
+        try:
+            if not self._ensure_connection():
+                return False
+            script_id = script or self.default_script
 
-        self.show_info("=== START LASER MARKING ===")
-        log.info("=== START LASER MARKING ===")
-        if not self.activateScript(script_id):
+            self.show_info("=== START LASER MARKING ===")
+            log.info("=== START LASER MARKING ===")
+            if not self.activateScript(script_id):
+                return False
+
+            if not self.setContent(script_id, content):
+                return False
+
+            if not self.startMarking():
+                return False
+
+            self.show_success("===LASER MARKING COMPLETED===")
+            log.info("===LASER MARKING COMPLETED===")
+            return True
+        except Exception as e:
+            self.show_error(f"Error: {e}")
+            log.error(f"Error: {e}")
             return False
-
-        if not self.setContent(script_id, content):
-            return False
-
-        if not self.startMarking():
-            return False
-
-        self.show_success("===LASER MARKING COMPLETED===")
-        log.info("===LASER MARKING COMPLETED===")
-        return True
 
     def sendCustomCommand(self, command, expect_keyword=None):
         if not self._ensure_connection():
@@ -226,38 +233,27 @@ class LaserPresenter(BasePresenter):
             log.error(f"Custom command error: {exc}")
             return False
 
-    # def sendGAtoLaser(self):
-    #     """Gửi lệnh GA với script mặc định"""
-    #     if not self._ensure_connection():
-    #         raise RuntimeError("Laser is not connected")
+    def CreateFormatContent(self, data=None):
+        """Tạo format content cho laser"""
+        try:
+            if not data:
+                log.error("Data is empty")
+                self.show_error("Data is empty")
+                return False
+            current_data = data
+            mo = current_data.mo
+            panel_no = current_data.panel_no
+            psn_list = current_data.psn_list
+            format_laser = self.laser_model.createFormatLaser(mo=mo, panel_no=panel_no, psn_list=psn_list)
+            if not format_laser:
+                log.error("Failed to create format content C2")
+                return False
 
-    #     script = str(self.default_script)
-    #     try:
-    #         self.worker.send_ga(script, timeout_ms=self.command_timeout_ms)
-    #         self.show_success(f"Send GA,{script} to laser successfully")
-    #         log.info(f"Send GA,{script} to laser successfully")
-    #     except Exception as exc:
-    #         self._handle_connection_lost()
-    #         self.show_error(f"Failed to send GA,{script} to laser: {exc}")
-    #         log.error(f"Failed to send GA,{script} to laser: {exc}")
-    #         raise
-
-    # def sendNTtoLaser(self):
-    #     """Gửi lệnh NT"""
-    #     if not self._ensure_connection():
-    #         raise RuntimeError("Laser is not connected")
-
-    #     try:
-    #         response = self.worker.send_nt(timeout_ms=self.command_timeout_ms)
-    #         self.show_success("Send NT to laser successfully")
-    #         log.info(f"Send NT to laser successfully: {response or '(empty)'}")
-    #         return response
-    #     except Exception as exc:
-    #         self._handle_connection_lost()
-    #         self.show_error(f"Failed to send NT to laser: {exc}")
-    #         log.error(f"Failed to send NT to laser: {exc}")
-    #         raise
-
+            return format_laser
+        except Exception as e:
+            self.show_error(f"{e}")
+            log.error(f"{e}")
+            return False
     # ------------------------------------------------------------------
     # Helpers
     # ------------------------------------------------------------------

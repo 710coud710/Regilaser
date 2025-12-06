@@ -194,7 +194,7 @@ class SFISWorker(QObject):
                 return None
             
             data_str = data_bytes.decode('ascii', errors='ignore')
-            self.data_received.emit(data_str)
+            # self.data_received.emit(data_str)
             log.info(f"  Data received successfully")
             log.info(f"  Total bytes: {len(data_bytes)}")
             log.info(f"  Data (text): {data_str}")

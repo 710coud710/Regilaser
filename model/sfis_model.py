@@ -33,7 +33,7 @@ class SFISModel(QObject):
     
     # Signals
     data_parsed = Signal(object)  # SFISData đã parse
-    validation_error = Signal(str)  # Lỗi validation
+    validation_error = Signal(str)  # LỗSSi validation
     
     # Constants - Định dạng mới
     STATUS_LENGTH = 20
@@ -45,7 +45,6 @@ class SFISModel(QObject):
     PSN_LENGTH = 20
     PSN_COUNT = ConfigManager().get().PANEL_NUM
     NEED_KEYWORD = "NEED"
-
     END_KEYWORD = "END"
     
     def __init__(self):
@@ -103,7 +102,7 @@ class SFISModel(QObject):
     def createFormatNeedPSN(self, mo=None, panel_num=None):
         try:
             # Lấy config từ ConfigManager
-            need_keyword = f"NEEDPSN{panel_num}"  # Format theo số panel_num
+            need_keyword = f"{self.NEED_KEYWORD}PSN{panel_num}"  # Format theo số panel_num
 
             # Kiểm tra độ dài keyword (phải là 9 bytes)
             # if len(need_keyword) != 9:
@@ -140,23 +139,6 @@ class SFISModel(QObject):
             
         except Exception as e:
             self.validation_error.emit(f"Lỗi tạo test complete: {str(e)}")
-            return None
-    
-    def createTestError(self, mo, panel_no, error_code):
-        """
-        Tạo message báo lỗi test
-
-
-        """
-        try:
-            mo_padded = mo.ljust(self.MO_LENGTH)[:self.MO_LENGTH]
-            panel_padded = panel_no.ljust(self.PANEL_NO_LENGTH)[:self.PANEL_NO_LENGTH]
-            error_padded = error_code.ljust(6)[:6]
-            
-            return f"{mo_padded}{panel_padded}{self.END_KEYWORD}{error_padded}"
-            
-        except Exception as e:
-            self.validation_error.emit(f"Lỗi tạo test error: {str(e)}")
             return None
     
     def validateMo(self, mo):

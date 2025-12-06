@@ -101,8 +101,7 @@ class PLCPresenter(BasePresenter):
         log.info("[PLC] Auto-connect stopped")
 
     #-----------------------------send to PLC-----------------------------
-    def sendData_PLC(self, label: str, payload: str = ""):
-        command = self.plc_model.build_command(label, payload)
+    def sendData_PLC(self, command: str):
         if not command:
             return False
         self.show_info(f"PLC command: {command}")
@@ -113,16 +112,16 @@ class PLCPresenter(BasePresenter):
             Q_ARG(str, command),
         )
 
-    def sendLaserOK(self):
-        return self.sendData_PLC("L_OK")
+    def sendPLC_OK(self):
+        return self.sendData_PLC("OK")
 
-    def sendLaserNG(self):
-        return self.sendData_PLC("L_NG")
+    def sendPLC_NG(self):
+        return self.sendData_PLC("NG")
 
-    def sendCheckOK(self):
+    def sendPLC_CHE_OK(self):
         return self.sendData_PLC("CHE_OK")
 
-    def sendCheckNG(self):
+    def sendPLC_CHE_NG(self):
         return self.sendData_PLC("CHE_NG")
 
     def onPLCError(self, errorMsg):
