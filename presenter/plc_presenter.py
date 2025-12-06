@@ -131,7 +131,7 @@ class PLCPresenter(BasePresenter):
     def onDataReceived(self, data: str): 
         cleaned = data.strip()
         if not cleaned:
-            return
+            return 
         log.info(f"PLC received<< {cleaned}")
         self.show_info(f"PLC received<< {cleaned}")
         self.readyReceived.emit(cleaned)

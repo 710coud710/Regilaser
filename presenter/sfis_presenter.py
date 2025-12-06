@@ -182,11 +182,13 @@ class SFISPresenter(BasePresenter):
                 log.error("Failed to send NEEDPSN message to SFIS")
                 return False
             data_res = self.sfis_worker.readData_SFIS(timeout_ms=10000)
+            # log.info(f"Data received from SFIS: {data_res}")
             if not data_res:
                 self.show_error("Timeout or no data received from SFIS")
                 log.error("Timeout or no data received from SFIS")
                 return False
             sfisData = self.sfis_model.parseResponsePsn(data_res)
+            # log.info(f"Parsed data: {sfisData}")
             return sfisData
         except Exception as e:
             self.show_error(f"Error in getDataPSNFromSFIS: {e}")
@@ -220,7 +222,7 @@ class SFISPresenter(BasePresenter):
         log.info("SFISWorker invoked successfully-->waiting for signal_sent callback...")
         return True
     
-    def sendComplete(self, mo, panelNo):
+    def sendComplete(self, mo=None, panelNo=None) -> bool:
         """   thông báo hoàn thành test"""
         if not self.isConnected:
             self.show_info("Chưa kết nối SFIS", "ERROR")
@@ -229,16 +231,23 @@ class SFISPresenter(BasePresenter):
         message = self.sfis_model.createTestComplete(mo, panelNo)
         
         if message:
-            self.show_info("Gửi test complete đến SFIS...", "INFO")
+            # self.show_info("send complete to SFIS...")
+            # log.info(f"send complete to SFIS... {message}")
             success = self.sfis_worker.sendData_SFIS(message)
-            
             if success:
-                self.show_info("Gửi test complete thành công", "SUCCESS")
-                return True
+                res = self.sfis_worker.readData_SFIS(timeout_ms=10000)
+                if res:
+                    self.show_success("Send test complete successfully")
+                    log.info("Send test complete successfully")
+                    return True
+                else:
+                    self.show_error("Timeout or no data received from SFIS")
+                    log.error("Timeout or no data received from SFIS")
+                    return False
             else:
-                self.show_info("Gửi test complete thất bại", "ERROR")
-                return False
-        
+                log.error("Send test complete failed")
+                return False  
+        log.error("Create test complete failed")
         return False
     
     def sendTestError(self, mo, panelNo, errorCode):

@@ -2,7 +2,7 @@ import yaml
 import threading
 import time
 import os
-from pydantic import BaseModel, StrictStr, StrictInt, ValidationError
+from pydantic import BaseModel, StrictBool, StrictStr, StrictInt, ValidationError
 from utils.Logging import getLogger
 from utils.schema import LaserConnectMode
 # Khởi tạo logger
@@ -24,7 +24,7 @@ class Config(BaseModel):
     PLC_COM: StrictStr
     SFIS_COM: StrictStr
     RAW_CONTENT: StrictStr
-
+    POST_RESULT_SFC: StrictBool
 # === CONFIG MANAGER (singleton + hot reload + thread-safe) ===
 class ConfigManager:
     _instance = None

@@ -1,6 +1,7 @@
 """
 Main Presenter - Điều phối giữa View (GUI) và các Presenter con
 """
+from re import L
 from PySide6.QtCore import Signal
 from presenter.sfis_presenter import SFISPresenter
 from presenter.plc_presenter import PLCPresenter
@@ -174,6 +175,8 @@ class MainPresenter(BasePresenter):
                 self.show_info(f"=========START AUTOMATION MARKING LASER=========")
                 if self.startMarkingLaserProcess():
                     self.plc_presenter.sendPLC_OK()
+                    log.info("=========MARKING LASER PROCESS SUCCESSFULLY=========")
+                    self.show_success("=========MARKING LASER PROCESS SUCCESSFULLY=========")
                     return True
                 else:
                     return False                
@@ -188,7 +191,7 @@ class MainPresenter(BasePresenter):
         """Bắt đầu khắc laser trong QThread"""
         try:
             response = self.sfis_presenter.getDataPSNFromSFIS()
-            if response:
+            if not response:
                 self.show_error("Cannot receive data from SFIS")
                 log.error("Cannot receive data from SFIS")
                 self.isRunning = False
@@ -209,11 +212,18 @@ class MainPresenter(BasePresenter):
                 self.isRunning = False
                 return False
             
-            #POST SFIS
-
-
-
-
+            #Send complete to SFIS
+            mo = response.mo
+            panel_no = response.panel_no
+            # log.info(f"Send complete to SFIS: {mo}, {panel_no}")
+            if config.POST_RESULT_SFC:
+                success = self.sfis_presenter.sendComplete(mo, panel_no)
+                if not success:
+                    self.show_error("Cannot send complete to SFIS")
+                    log.error("Cannot send complete to SFIS")
+                    self.isRunning = False
+                    return False
+                
             return True
 
         except Exception as e:

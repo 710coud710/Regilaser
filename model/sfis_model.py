@@ -90,7 +90,6 @@ class SFISModel(QObject):
             self.current_data.panel_no = panel_no
             self.current_data.psn_list = psn_list
             self.current_data.keyword = pass_keyword
-
             self.data_parsed.emit(self.current_data)
             return self.current_data
             
