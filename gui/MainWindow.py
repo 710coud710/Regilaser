@@ -2,14 +2,13 @@
 Main Window - Container chính cho toàn bộ giao diện
 """
 from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import  Signal
 from PySide6.QtGui import QAction
 
 from gui import (
     TopControlPanel,
     LeftControlPanel,
     CenterPanel,
-    RightPanel,
     LogDisplay,
     BottomStatusBar
 )
@@ -29,8 +28,9 @@ class MainWindow(QMainWindow):
     #SFIS menu
     sendNeedPSN_clicked = Signal()
     sendActivateSFIS_clicked = Signal()
-  
-
+    #Help menu
+    setting_clicked = Signal()
+    about_clicked = Signal()
     
     def __init__(self):
         super().__init__()
@@ -82,6 +82,7 @@ class MainWindow(QMainWindow):
         plc_menu = menubar.addMenu("&PLC")
         sfis_menu = menubar.addMenu("&SFIS")
         laser_menu = menubar.addMenu("&Laser")
+        help_menu = menubar.addMenu("&Help")
 
         #------------------------------File menu------------------------------
         # Menu action
@@ -136,6 +137,17 @@ class MainWindow(QMainWindow):
         laser_menu.addAction(send_nt_action)
 
         laser_menu.addSeparator()
+
+        #------------------------------Help menu------------------------------
+        about_action = QAction("About", self)
+        about_action.setShortcut("Ctrl+A")
+        about_action.triggered.connect(self.about_clicked.emit)
+        help_menu.addAction(about_action)
+
+        setting_action = QAction("Setting", self)
+        setting_action.setShortcut("Ctrl+S")
+        setting_action.triggered.connect(self.setting_clicked.emit)
+        help_menu.addAction(setting_action)
 
     def _connectSignals(self):
         """Kết nối các signals giữa các panel"""

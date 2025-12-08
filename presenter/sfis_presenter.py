@@ -83,7 +83,6 @@ class SFISPresenter(BasePresenter):
         """Ngắt kết nối SFIS"""
         self.show_info("Disconnecting from SFIS...", "INFO")
         log.info("Disconnecting from SFIS...")
-        
         # Gọi disconnect() trong thread của worker
         QMetaObject.invokeMethod(
             self.sfis_worker,
@@ -168,7 +167,7 @@ class SFISPresenter(BasePresenter):
             return None
     
 
-    def getDataPSNFromSFIS(self):
+    def getDataFromSFIS(self):
         mo = getattr(config, 'MO', '')
         panel_num = getattr(config, 'PANEL_NUM', '')
         try:
@@ -191,8 +190,8 @@ class SFISPresenter(BasePresenter):
             # log.info(f"Parsed data: {sfisData}")
             return sfisData
         except Exception as e:
-            self.show_error(f"Error in getDataPSNFromSFIS: {e}")
-            log.error(f"Error in getDataPSNFromSFIS: {e}")
+            self.show_error(f"Error in getDataFromSFIS: {e}")
+            log.error(f"Error in getDataFromSFIS: {e}")
             return False
 
     def sendNEEDPSN(self, mo=None,panel_num=None):

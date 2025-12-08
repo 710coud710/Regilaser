@@ -9,7 +9,7 @@ from presenter.laser_presenter import LaserPresenter
 from utils.Logging import getLogger
 from presenter.base_presenter import BasePresenter
 from config import ConfigManager
-
+from gui import MainSettingWindow, AboutWindow
 # Khởi tạo logger
 log = getLogger()
 
@@ -30,7 +30,9 @@ class MainPresenter(BasePresenter):
         self.main_window = main_window
         self.sfis_presenter = SFISPresenter()
         self.plc_presenter = PLCPresenter()
-        self.laser_presenter = LaserPresenter()      
+        self.laser_presenter = LaserPresenter()
+        self.setting_window = None
+        self.about_window = None
         # Kết nối signals
         self.connectSignals()
         # Trạng thái
@@ -48,6 +50,8 @@ class MainPresenter(BasePresenter):
         self.main_window.sendC2_clicked.connect(self.onSendC2)
         self.main_window.sendGA_clicked.connect(self.onSendGA)
         self.main_window.sendNT_clicked.connect(self.onSendNT)
+        self.main_window.setting_clicked.connect(self.onSettingClicked)
+        self.main_window.about_clicked.connect(self.onAboutClicked)
         # self.main_window.sendPLCPOK_clicked.connect(self.onSendPLCPOK)
         # self.main_window.sendPLCNG_clicked.connect(self.onSendPLCNG)
 
@@ -190,7 +194,7 @@ class MainPresenter(BasePresenter):
     def startMarkingLaserProcess(self) -> bool:
         """Bắt đầu khắc laser trong QThread"""
         try:
-            response = self.sfis_presenter.getDataPSNFromSFIS()
+            response = self.sfis_presenter.getDataFromSFIS()
             if not response:
                 self.show_error("Cannot receive data from SFIS")
                 log.error("Cannot receive data from SFIS")
@@ -325,6 +329,8 @@ class MainPresenter(BasePresenter):
             self.show_error(f"Failed to send NT to laser: {e}")
             log.error(f"Failed to send NT to laser: {e}")
 
+
+
     ###################PLC menu###################
     def onSendPLCPOK(self):
         """Handle menu 'Send OK to PLC'"""
@@ -371,3 +377,19 @@ class MainPresenter(BasePresenter):
         except Exception as e:
             self.show_error(f"Failed to send NEEDPSN to SFIS: {e}")
             log.error(f"Failed to send NEEDPSN to SFIS: {e}")
+#--------------------------------Help menu--------------------------------
+    def onAboutClicked(self):
+        """Open the about window from menu."""
+        if self.about_window is None:
+            self.about_window = AboutWindow(self.main_window)
+        self.about_window.show()
+        self.about_window.raise_()
+        self.about_window.activateWindow()
+
+    def onSettingClicked(self):
+        """Open the setting window from menu."""
+        if self.setting_window is None:
+            self.setting_window = MainSettingWindow(self.main_window)
+        self.setting_window.show()
+        self.setting_window.raise_()
+        self.setting_window.activateWindow()
