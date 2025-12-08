@@ -125,6 +125,7 @@ class LaserWorker:
         except Exception as exc:
             log.error(f"Error: {exc}")
             raise
+
     def send_c2(self, script: str, content: str, timeout_ms: Optional[int] = None):
         """Gửi lệnh C2,<script>,<block>,<content>"""
         try:

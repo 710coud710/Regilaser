@@ -335,6 +335,11 @@ class LaserPresenter(BasePresenter):
 
     def cleanup(self):
         """Dọn dẹp tài nguyên"""
+        #dọn dẹp auto-reconnect
+        self.auto_reconnect_enabled = False
+        if self.reconnect_timer.isActive():
+            self.reconnect_timer.stop()
+    
         self.stopAutoConnect()
         self.disconnect()
     

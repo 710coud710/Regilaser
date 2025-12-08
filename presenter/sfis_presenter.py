@@ -442,10 +442,14 @@ class SFISPresenter(BasePresenter):
     
     def cleanup(self):
         """Dọn dẹp tài nguyên"""
-        log.info("SFISPresenter.cleanup() called")
-        
+        #dọn dẹp auto-reconnect
+        self.auto_reconnect_enabled = False
+        if self.reconnect_timer.isActive():
+            self.reconnect_timer.stop()
+    
+        # Disconnect
         if self.isConnected:
-            self.sfis_worker.disconnect()
+            self.disconnect()
         
         # Dừng thread
         self.sfis_thread.quit()

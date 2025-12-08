@@ -94,6 +94,7 @@ class PLCPresenter(BasePresenter):
         self._tryConnect()
         self.reconnect_timer.start(self.reconnect_ms)
         log.info(f"PLC auto-connect started ({self.reconnect_ms}ms)")
+   
     def stopAutoConnectPLC(self):
         """Dừng tự động kết nối PLC."""
         self.auto_reconnect_enabled = False
@@ -180,6 +181,18 @@ class PLCPresenter(BasePresenter):
 
     #-----------------------------Cleanup-----------------------------
     def cleanup(self):
-        self.disconnect()
+        #dọn dẹp auto-reconnect
+        self.auto_reconnect_enabled = False
+        if self.reconnect_timer.isActive():
+            self.reconnect_timer.stop()
+        
+        # 2. Stop receiver loop và timer trong worker thread
+        self.stopReceiverPLC()
+        
+        # 3. Disconnect
+        if self.is_connected:
+            self.disconnect()
+    
+        # Dừng thread và đợi
         self.plc_thread.quit()
         self.plc_thread.wait()
