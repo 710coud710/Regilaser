@@ -10,7 +10,8 @@ from gui import (
     LeftControlPanel,
     CenterPanel,
     LogDisplay,
-    BottomStatusBar
+    BottomStatusBar,
+    TopTopPanel
 )
 
 class MainWindow(QMainWindow):
@@ -48,6 +49,8 @@ class MainWindow(QMainWindow):
         main_layout.setSpacing(5)
 
         """Top control panel"""
+        self.top_top_panel = TopTopPanel()
+        main_layout.addWidget(self.top_top_panel)
         self.top_panel = TopControlPanel()
         main_layout.addWidget(self.top_panel)
    
@@ -155,6 +158,9 @@ class MainWindow(QMainWindow):
         pass
     
     # Getter methods để presenter có thể truy cập các panel
+    def getTopTopPanel(self):
+        return self.top_top_panel
+        
     def getTopPanel(self):
         return self.top_panel
     
@@ -163,9 +169,6 @@ class MainWindow(QMainWindow):
     
     def getCenterPanel(self):
         return self.center_panel
-    
-    def getRightPanel(self):
-        return self.right_panel
     
     def getResultDisplay(self):
         return self.result_display

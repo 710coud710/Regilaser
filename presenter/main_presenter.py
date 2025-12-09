@@ -6,10 +6,10 @@ from PySide6.QtCore import Signal
 from presenter.sfis_presenter import SFISPresenter
 from presenter.plc_presenter import PLCPresenter
 from presenter.laser_presenter import LaserPresenter
+from presenter.toptop_presenter import TopTopPresenter
 from utils.Logging import getLogger
 from presenter.base_presenter import BasePresenter
 from config import ConfigManager
-from gui import MainSettingWindow, AboutWindow
 # Khởi tạo logger
 log = getLogger()
 
@@ -31,6 +31,7 @@ class MainPresenter(BasePresenter):
         self.sfis_presenter = SFISPresenter()
         self.plc_presenter = PLCPresenter()
         self.laser_presenter = LaserPresenter()
+        self.toptop_presenter = TopTopPresenter()
         self.setting_window = None
         self.about_window = None
         # Kết nối signals
@@ -57,6 +58,10 @@ class MainPresenter(BasePresenter):
 
         self.main_window.sendActivateSFIS_clicked.connect(self.onSendActivateSFIS)
         self.main_window.sendNeedPSN_clicked.connect(self.onSendNEEDPSNManual)
+        # View signals - TopTop Panel (Model Selection)
+        top_top_panel = self.main_window.getTopTopPanel()
+        top_top_panel.modelChanged.connect(self.onModelChanged)
+        
         # View signals - Top Panel
         top_panel = self.main_window.getTopPanel()
         top_panel.sfisChanged.connect(self.onSfisPortChanged)
@@ -78,6 +83,10 @@ class MainPresenter(BasePresenter):
         # Laser Presenter signals
         self.laser_presenter.logMessage.connect(self.forwardLog)
         self.laser_presenter.connectionStatusChanged.connect(self.onLaserConnectionChanged)
+        
+        # TopTop Presenter signals
+        self.toptop_presenter.logMessage.connect(self.forwardLog)
+        self.toptop_presenter.modelChanged.connect(self.onModelChangedFromPresenter)
         
         # Presenter signals to View
         self.logMessage.connect(self.updateLog)
@@ -289,12 +298,35 @@ class MainPresenter(BasePresenter):
         topPanel.setLaserConnectionStatus(isConnected, status_text)
         log.info(f"Laser status: {status_text}")
     
+    def onModelChanged(self, project_name):
+        """Xử lý khi user thay đổi project từ TopTopPanel"""
+        self.show_info(f"Project selected: {project_name}")
+        log.info(f"Project selected: {project_name}")
+        
+        # Lấy thông tin chi tiết của project
+        project_info = self.toptop_presenter.getProjectInfo(project_name)
+        if project_info:
+            lm_script = project_info.get('LM_Script_Name')
+            lm_num = project_info.get('LM_Num')
+            psn_pre = project_info.get('PSN_PRE')
+            
+            self.show_info(f"Project details - Script: {lm_script}, LM_Num: {lm_num}, PSN_PRE: {psn_pre}")
+            log.info(f"Project details - Script: {lm_script}, LM_Num: {lm_num}, PSN_PRE: {psn_pre}")
+            
+            # Có thể cập nhật config dựa trên project được chọn
+            # Ví dụ: config.LASER_SCRIPT = lm_script
+        
+    def onModelChangedFromPresenter(self, project_name):
+        """Xử lý khi TopTopPresenter thông báo project đã thay đổi"""
+        self.show_info(f"Project updated by presenter: {project_name}")
+        log.info(f"Project updated by presenter: {project_name}")
     
     def cleanup(self):
         """Dọn dẹp tài nguyên khi đóng ứng dụng"""
         self.sfis_presenter.cleanup()
         self.plc_presenter.cleanup()
         self.laser_presenter.cleanup()
+        self.toptop_presenter.cleanup()
         self.show_info("Cleanup sub-presenters completed")
         log.info("Cleanup sub-presenters completed")
 
@@ -328,7 +360,6 @@ class MainPresenter(BasePresenter):
         except Exception as e:
             self.show_error(f"Failed to send NT to laser: {e}")
             log.error(f"Failed to send NT to laser: {e}")
-
 
 
     ###################PLC menu###################
@@ -381,6 +412,7 @@ class MainPresenter(BasePresenter):
     def onAboutClicked(self):
         """Open the about window from menu."""
         if self.about_window is None:
+            from gui import AboutWindow
             self.about_window = AboutWindow(self.main_window)
         self.about_window.show()
         self.about_window.raise_()
@@ -389,6 +421,7 @@ class MainPresenter(BasePresenter):
     def onSettingClicked(self):
         """Open the setting window from menu."""
         if self.setting_window is None:
+            from gui import MainSettingWindow
             self.setting_window = MainSettingWindow(self.main_window)
         self.setting_window.show()
         self.setting_window.raise_()
