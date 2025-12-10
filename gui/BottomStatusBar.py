@@ -1,7 +1,7 @@
 """
 Bottom Status Bar - Hiển thị thông tin test và thời gian
 """
-from PySide6.QtWidgets import QWidget, QHBoxLayout, QLabel
+from PySide6.QtWidgets import QWidget, QHBoxLayout, QLabel, QPushButton
 from PySide6.QtCore import Qt
 
 
@@ -16,43 +16,61 @@ class BottomStatusBar(QWidget):
         layout = QHBoxLayout(self)
         layout.setContentsMargins(5, 2, 5, 2)
         layout.setSpacing(10)
-        
-        # Error message label
-        self.lbl_error = QLabel("CPSN00 Calibration PCB_PSN Fail")
-        self.lbl_error.setStyleSheet("""
-            background-color: #FFFFE0;
-            padding: 3px;
-            border: 1px solid #ccc;
-        """)
-        layout.addWidget(self.lbl_error, stretch=1)
-        
+            
         # Test Time label
-        self.lbl_test_time = QLabel("Test Time")
-        self.lbl_test_time.setAlignment(Qt.AlignCenter)
-        self.lbl_test_time.setStyleSheet("""
-            background-color: cyan;
-            padding: 3px;
-            font-weight: bold;
-            border: 1px solid black;
+        self.btn_sfis = QPushButton("SFIS OFF")
+        self.btn_sfis.setCheckable(True)
+        self.btn_sfis.setChecked(False)
+        self.btn_sfis.setStyleSheet("""
+            QPushButton { 
+                background-color: #ffc0cb; 
+                font-weight: bold;
+                padding: 5px;
+            }
+            QPushButton:checked { 
+                background-color: #9fff9f; 
+            }
         """)
-        self.lbl_test_time.setFixedWidth(120)
-        layout.addWidget(self.lbl_test_time)
+        # self.btn_sfis.toggled.connect(self._onSfisButtonToggled)
+        layout.addWidget(self.btn_sfis)
         
-        # Time value
-        self.lbl_time_value = QLabel("0")
-        self.lbl_time_value.setAlignment(Qt.AlignCenter)
-        self.lbl_time_value.setStyleSheet("""
-            background-color: cyan;
-            padding: 3px;
-            font-weight: bold;
-            border: 1px solid black;
+        # PLC status label
+        self.btn_plc = QPushButton("PLC OFF")
+        self.btn_plc.setCheckable(True)
+        self.btn_plc.setChecked(False)
+        self.btn_plc.setStyleSheet("""
+            QPushButton { 
+                background-color: #ffc0cb; 
+                font-weight: bold;
+                padding: 5px;
+            }
+            QPushButton:checked { 
+                background-color: #9fff9f; 
+            }
         """)
-        self.lbl_time_value.setFixedWidth(60)
-        layout.addWidget(self.lbl_time_value)
+        # self.btn_plc.toggled.connect(self._onPlcButtonToggled)
+        layout.addWidget(self.btn_plc)
+
+        # Laser status label
+        self.btn_laser = QPushButton("LASER OFF")
+        self.btn_laser.setCheckable(True)
+        self.btn_laser.setChecked(False)
+        self.btn_laser.setStyleSheet("""
+            QPushButton { 
+                background-color: #ffc0cb; 
+                font-weight: bold;
+                padding: 5px;
+            }
+            QPushButton:checked { 
+                background-color: #9fff9f; 
+            }
+        """)
+        # self.btn_laser.toggled.connect(self._onLaserButtonToggled)
+        layout.addWidget(self.btn_laser)
         
         # Additional info labels (từ ảnh)
-        info_labels = ["CPEI", "TE", "Pass:", "Fail:", "Version", "Hook Off", 
-                      "OP_Num:F9583701", "PC Name:", "DESKTOP-HQ87"]
+        info_labels = ["Version: V1.1.0 Free", 
+                      "OP_Num:OP12345", "PC Name:PC12345"]
         
         for text in info_labels:
             lbl = QLabel(text)

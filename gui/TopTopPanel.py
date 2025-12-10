@@ -18,7 +18,7 @@ class TopTopPanel(QWidget):
         main_layout.setSpacing(10)
 
         # Left: Title label
-        title = QLabel("Model:")
+        title = QLabel("Project:")
         title.setStyleSheet("font-size: 16px; font-weight: bold;")
         title.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
         title.setFixedWidth(90)
@@ -28,9 +28,16 @@ class TopTopPanel(QWidget):
         self.model_combo = QComboBox()
         self.model_combo.setFixedWidth(300)  
         self.model_combo.setPlaceholderText("Loading projects...")
-        self.model_combo.currentTextChanged.connect(self._onModelChanged)
+        self.model_combo.addItems(self.presenter.getProjectNames())
+        # self.model_combo.currentTextChanged.connect(self._onModelChanged)
         main_layout.addWidget(self.model_combo, stretch=0)
+
+
+        self.button_refresh = QPushButton("Refresh")
+        # self.button_refresh.clicked.connect(self.presenter.refreshModelData)
+        main_layout.addWidget(self.button_refresh, stretch=0)
         main_layout.addStretch(2) 
+
 
         # Dữ liệu sẽ được load từ presenter qua signal
 
@@ -82,7 +89,7 @@ class TopTopPanel(QWidget):
             
         except Exception as e:
             print(f"Error loading project names to combo box: {e}")
-            
+
     def getCurrentModel(self):
         """Lấy model hiện tại"""
         return self.presenter.getCurrentModel()

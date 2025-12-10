@@ -13,12 +13,14 @@ from gui import (
     BottomStatusBar,
     TopTopPanel
 )
+from gui.projectWindow.projectTable import ProjectTable
 
 class MainWindow(QMainWindow):
     """Main window của Sprite Auto Laser Marking Program"""
     
     # Signals cho menu actions
     menu_clicked = Signal()
+    project_clicked = Signal()
     #Laser menu
     sendC2_clicked = Signal()
     sendGA_clicked = Signal()
@@ -61,8 +63,6 @@ class MainWindow(QMainWindow):
         middle_layout.addWidget(self.left_panel)        
         self.center_panel = CenterPanel()
         middle_layout.addWidget(self.center_panel)
-        # self.right_panel = RightPanel()
-        # middle_layout.addWidget(self.right_panel)
 
         main_layout.addLayout(middle_layout)
         
@@ -72,7 +72,10 @@ class MainWindow(QMainWindow):
         
         """Bottom status panel"""
         self.bottom_status = BottomStatusBar()
-        # main_layout.addWidget(self.bottom_status)
+        main_layout.addWidget(self.bottom_status)
+        
+        # Initialize project table dialog
+        self.project_table_dialog = None
         
         # Kết nối signals (sẽ được xử lý bởi presenter)
         self._connectSignals()
@@ -93,6 +96,11 @@ class MainWindow(QMainWindow):
         menu_action.setShortcut("Ctrl+M")
         menu_action.triggered.connect(self.menu_clicked.emit)
         file_menu.addAction(menu_action)
+        # Project action
+        project_action = QAction("Projects", self)
+        project_action.setShortcut("Ctrl+P")
+        project_action.triggered.connect(self.showProjectTable)
+        file_menu.addAction(project_action)
         file_menu.addSeparator()
         
         # Exit action
@@ -175,5 +183,29 @@ class MainWindow(QMainWindow):
     
     def getBottomStatus(self):
         return self.bottom_status
+    
+    def showProjectTable(self):
+        """Show project table dialog"""
+        try:
+            # Create dialog if not exists
+            if self.project_table_dialog is None:
+                self.project_table_dialog = ProjectTable(self)
+                self.project_table_dialog.setWindowTitle("Project Management")
+                self.project_table_dialog.resize(800, 600)
+            
+            # Emit signal to notify presenter to load data
+            self.project_clicked.emit()
+            
+            # Show dialog
+            self.project_table_dialog.show()
+            self.project_table_dialog.raise_()
+            self.project_table_dialog.activateWindow()
+            
+        except Exception as e:
+            print(f"Error showing project table: {str(e)}")
+    
+    def getProjectTableDialog(self):
+        """Get project table dialog instance"""
+        return self.project_table_dialog
 
 

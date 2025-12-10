@@ -9,7 +9,7 @@ from utils.Logging import getLogger
 log = getLogger()
 
 
-class ModelWorker(QObject):
+class ProjectWorker(QObject):
     """Worker để load dữ liệu model trong background thread"""
     
     # Signals

@@ -58,6 +58,7 @@ class MainPresenter(BasePresenter):
 
         self.main_window.sendActivateSFIS_clicked.connect(self.onSendActivateSFIS)
         self.main_window.sendNeedPSN_clicked.connect(self.onSendNEEDPSNManual)
+        self.main_window.project_clicked.connect(self.onProjectClicked)
         # View signals - TopTop Panel (Model Selection)
         top_top_panel = self.main_window.getTopTopPanel()
         top_top_panel.modelChanged.connect(self.onModelChanged)
@@ -408,6 +409,46 @@ class MainPresenter(BasePresenter):
         except Exception as e:
             self.show_error(f"Failed to send NEEDPSN to SFIS: {e}")
             log.error(f"Failed to send NEEDPSN to SFIS: {e}")
+
+#--------------------------------File menu--------------------------------
+    def onProjectClicked(self):
+        """Handle menu 'Projects' - Show project table dialog"""
+        log.info("Opening project table dialog")
+        self.show_info("Opening project table...")
+        try:
+            # Get project table dialog from main window
+            project_dialog = self.main_window.getProjectTableDialog()
+            if project_dialog:
+                # Load data from toptop presenter
+                model_data = self.toptop_presenter.getModelData()
+                if model_data:
+                    project_dialog.set_data(model_data)
+                    # Connect project selection signal
+                    project_dialog.project_selected.connect(self.onProjectSelected)
+                    log.info(f"Loaded {len(model_data)} projects into table")
+                else:
+                    self.show_warning("No project data available")
+                    log.warning("No project data available")
+        except Exception as e:
+            self.show_error(f"Failed to open project table: {e}")
+            log.error(f"Failed to open project table: {e}")
+    
+    def onProjectSelected(self, project_name):
+        """Handle project selection from project table"""
+        log.info(f"Project selected: {project_name}")
+        try:
+            # Change model using toptop presenter
+            success = self.toptop_presenter.change_model(project_name)
+            if success:
+                self.show_success(f"Project changed to: {project_name}")
+                log.info(f"Project successfully changed to: {project_name}")
+            else:
+                self.show_error(f"Failed to change project to: {project_name}")
+                log.error(f"Failed to change project to: {project_name}")
+        except Exception as e:
+            self.show_error(f"Error changing project: {e}")
+            log.error(f"Error changing project: {e}")
+
 #--------------------------------Help menu--------------------------------
     def onAboutClicked(self):
         """Open the about window from menu."""

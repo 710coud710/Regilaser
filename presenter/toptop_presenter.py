@@ -5,7 +5,7 @@ import json
 import os
 from PySide6.QtCore import Signal, QThread
 from presenter.base_presenter import BasePresenter
-from workers.model_worker import ModelWorker
+from workers.project_worker import ProjectWorker
 from utils.Logging import getLogger
 
 # Khởi tạo logger
@@ -33,19 +33,19 @@ class TopTopPresenter(BasePresenter):
         
         # Model hiện tại
         self.current_model = ""  # Sẽ được set khi load data
-        self.model_data = []
+        self.project_data = []
         self.project_names = []
         
         # Khởi tạo QThread worker
-        self.model_worker = ModelWorker(self.model_json_path)
-        self.model_thread = QThread()
-        self.model_worker.moveToThread(self.model_thread)
+        self.project_worker = ProjectWorker(self.model_json_path)
+        self.project_thread = QThread()
+        self.project_worker.moveToThread(self.project_thread)
         
         # Kết nối signals
         self._connectWorkerSignals()
         
         # Khởi động thread
-        self.model_thread.start()
+        self.project_thread.start()
         
         # Đợi thread sẵn sàng
         import time
@@ -64,26 +64,24 @@ class TopTopPresenter(BasePresenter):
                 self.show_info(f"Model file exists in appdata: {self.model_json_path}")
                 self.loadModelData()
             else:
-                # Nếu chưa tồn tại, copy từ project root
-                # self.copyModelJsonToAppdata()
                 self.show_info(f"Model data copied to appdata: {self.model_json_path}")
         except Exception as e:
             self.show_error(f"Error initializing model.json: {str(e)}")
 
     def _connectWorkerSignals(self):
-        """Kết nối signals từ ModelWorker"""
-        self.model_worker.dataLoaded.connect(self.onModelLoaded)
-        self.model_worker.error.connect(self.modelLoadedError)
-        self.model_worker.progress.connect(self.modelLoadedProgress)
+        """Kết nối signals từ ProjectWorker"""
+        self.project_worker.dataLoaded.connect(self.onModelLoaded)
+        self.project_worker.error.connect(self.modelLoadedError)
+        self.project_worker.progress.connect(self.modelLoadedProgress)
     
     def onModelLoaded(self, data):
         """Xử lý khi dữ liệu model được load thành công"""
         try:
-            self.model_data = data
+            self.project_data = data
             
             # Trích xuất danh sách Project_Name
             self.project_names = []
-            for item in data:
+            for item in self.project_data:
                 project_name = item.get("Project_Name", "")
                 if project_name and project_name not in self.project_names:
                     self.project_names.append(project_name)
@@ -93,7 +91,7 @@ class TopTopPresenter(BasePresenter):
                 self.current_model = self.project_names[0]
             
             # Emit signals
-            self.modelDataLoaded.emit(self.model_data)
+            self.projectDataLoaded.emit(self.project_data)
             self.projectNamesLoaded.emit(self.project_names)
             
             self.show_success(f"Loaded {len(self.project_names)} project names")
@@ -105,42 +103,14 @@ class TopTopPresenter(BasePresenter):
     
     def modelLoadedError(self, error_msg):
         """Xử lý lỗi khi load dữ liệu model"""
-        self.show_error(f"{error_msg}")
-        log.error(f"{error_msg}")
+        self.show_error(f"Model load error: {error_msg}")
+        log.error(f"TopTopPresenter: Model load error: {error_msg}")
     
     def modelLoadedProgress(self, progress_msg):
         """Xử lý tiến trình load dữ liệu model"""
         self.show_info(progress_msg)
         log.info(f"{progress_msg}")
     
-
-    #ko dùng
-    def copyModelJsonToAppdata(self):
-        """Copy model.json từ project root vào appdata"""
-        try:
-            # Đường dẫn model.json trong project
-            project_model_path = os.path.join(os.getcwd(), "model.json")
-            
-            if os.path.exists(project_model_path):
-                with open(project_model_path, "r", encoding="utf-8") as source:
-                    model_data = json.load(source)
-                
-                with open(self.model_json_path, "w", encoding="utf-8") as target:
-                    json.dump(model_data, target, indent=2, ensure_ascii=False)
-                
-                # Load dữ liệu sau khi copy
-                self.loadModelData()
-                self.show_success("Model data successfully copied to appdata")
-            else:
-                # Tạo file model.json trống nếu không tìm thấy
-                self.model_data = []
-                with open(self.model_json_path, "w", encoding="utf-8") as f:
-                    json.dump([], f, indent=2)
-                self.show_warning("Project model.json not found, created empty model data")
-                
-        except Exception as e:
-            self.show_error(f"Error copying model.json: {str(e)}")
-            self.model_data = []
     
     def loadModelData(self):
         """Load dữ liệu từ model.json trong appdata sử dụng worker thread"""
@@ -150,7 +120,7 @@ class TopTopPresenter(BasePresenter):
             if self.model_thread.isRunning():
                 log.info("TopTopPresenter: Thread is running, emitting load signal")
                 # Emit signal để trigger worker
-                self.model_worker.loadRequested.emit()
+                self.project_worker.loadRequested.emit()
             else:
                 log.error("TopTopPresenter: Model worker thread is not running")
                 self.show_error("Model worker thread is not running")
@@ -265,33 +235,17 @@ class TopTopPresenter(BasePresenter):
         """Refresh dữ liệu model từ appdata"""
         self.loadModelData()
     
-    def saveModelData(self, data):
-        """Lưu dữ liệu model vào appdata"""
-        try:
-            with open(self.model_json_path, "w", encoding="utf-8") as f:
-                json.dump(data, f, indent=2, ensure_ascii=False)
-            
-            self.model_data = data
-            self.modelDataLoaded.emit(self.model_data)
-            self.show_success("Model data saved successfully")
-            return True
-            
-        except Exception as e:
-            self.show_error(f"Error saving model data: {str(e)}")
-            return False
-    
     def cleanup(self):
         """Dọn dẹp tài nguyên"""
         try:
-            # Dừng worker
-            if hasattr(self, 'model_worker'):
-                self.model_worker.stop()
+            if hasattr(self, 'project_worker'):
+                self.project_worker.stop()
             
             # Dừng thread
             if hasattr(self, 'model_thread') and self.model_thread.isRunning():
                 self.model_thread.quit()
                 self.model_thread.wait(3000)  # Wait up to 3 seconds
                 
-            log.info("TopTopPresenter cleanup completed")
+            log.info("Cleanup completed")
         except Exception as e:
-            log.error(f"TopTopPresenter cleanup error: {str(e)}")
+            log.error(f"Cleanup error: {str(e)}")
