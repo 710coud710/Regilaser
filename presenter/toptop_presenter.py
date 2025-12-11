@@ -3,12 +3,13 @@ TopTop Presenter - Xử lý logic chọn model và quản lý model.json trong a
 """
 import json
 import os
-from PySide6.QtCore import Signal, QThread
+from PySide6.QtCore import Signal, QThread, QTimer
+from PySide6.QtWidgets import QMessageBox, QApplication, QMessageBox
 from presenter.base_presenter import BasePresenter
 from workers.project_worker import ProjectWorker
 from utils.Logging import getLogger
 from utils.setting import settings_manager
-
+from utils.restartApp import restartApp
 # Khởi tạo logger
 log = getLogger()
 
@@ -256,6 +257,38 @@ class TopTopPresenter(BasePresenter):
     def refreshModelData(self):
         """Refresh dữ liệu model từ appdata"""
         self.loadModelData()
+    
+    def requestRestart(self):
+        """Yêu cầu restart ứng dụng thông qua restart service"""
+        try:
+            log.info("Requesting application restart...")
+            
+            # Gọi restart service
+            success = restartApp()
+            log.info(f"Restart service called {success}")
+            if success:
+                QApplication.quit()
+            else:                
+                QMessageBox.critical(
+                    None,
+                    "Restart Failed",
+                    "Failed to restart application.\n\n"
+                    "Please restart manually.",
+                    QMessageBox.Ok
+                )             
+                log.error("Failed to call restart service")
+                # Show error to user
+                
+        except Exception as e:
+            log.error(f"Error requesting restart: {str(e)}")
+            QMessageBox.critical(
+                None,
+                "Restart Failed",
+                f"Failed to restart application: {str(e)}\n\n"
+                f"Please restart manually.",
+                QMessageBox.Ok
+            )
+    
     
     def cleanup(self):
         """Dọn dẹp tài nguyên"""

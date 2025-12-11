@@ -53,8 +53,12 @@ class GeneralSettingPage(QWidget):
 
     def set_settings(self, settings):
         """Set settings from dictionary"""
-        self.station_name.setText(settings.get("station_name", ""))
-        self.mo.setText(settings.get("mo", ""))
-        self.op_num.setText(settings.get("op_num", ""))
-        self.panel_num.setText(settings.get("panel_num", ""))
+        def _to_text(value):
+            """Ensure QLineEdit receives a string."""
+            return "" if value is None else str(value)
+
+        self.station_name.setText(_to_text(settings.get("station_name", "")))
+        self.mo.setText(_to_text(settings.get("mo", "")))
+        self.op_num.setText(_to_text(settings.get("op_num", "")))
+        self.panel_num.setText(_to_text(settings.get("panel_num", "")))
         self.post_result_sfc.setChecked(settings.get("post_result_sfc", False))

@@ -94,8 +94,6 @@ class MainSettingWindow(QDialog):
     def _load_settings(self):
         """Load settings from AppData and populate UI"""
         all_settings = settings_manager.get_settings()
-        
-        # Load settings for each page
         if "general" in all_settings:
             self.general_page.set_settings(all_settings["general"])
         
@@ -114,12 +112,8 @@ class MainSettingWindow(QDialog):
         }
         
         success = settings_manager.save_settings(all_settings)
-        
-        # Reload config trong các presenter nếu cần
         if success:
-            # Config sẽ tự động được reload khi gọi SettingsManager().get() lần tiếp theo
             pass
-        
         return success
 
     def _on_ok(self):

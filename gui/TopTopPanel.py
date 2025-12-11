@@ -1,9 +1,9 @@
-from PySide6.QtWidgets import QWidget, QHBoxLayout, QLabel, QPushButton, QComboBox
-from PySide6.QtCore import Signal
-from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QWidget, QHBoxLayout, QLabel, QPushButton, QComboBox, QMessageBox
+from PySide6.QtCore import Signal, Qt
 
 class TopTopPanel(QWidget):
     modelChanged = Signal(str)
+    
     def __init__(self):
         super().__init__()
         # Khởi tạo presenter (lazy import để tránh circular import)
@@ -11,6 +11,9 @@ class TopTopPanel(QWidget):
         self.presenter = TopTopPresenter()
         self._connectSignals()
         self._init_ui()
+        
+        # Track initial project
+        self.initial_project = self.presenter.getCurrentModel()
 
     def _init_ui(self):
         main_layout = QHBoxLayout(self)
@@ -32,10 +35,26 @@ class TopTopPanel(QWidget):
         self.model_combo.setFixedWidth(300)  
         self.model_combo.setPlaceholderText("Loading projects...")
         self.model_combo.addItems(self.presenter.getProjectNames())
+        self.model_combo.currentTextChanged.connect(self._onComboSelectionChanged)
         main_layout.addWidget(self.model_combo, stretch=0)
 
         self.button_change = QPushButton("Change")
+        self.button_change.setEnabled(False)  # Disabled by default
         self.button_change.clicked.connect(self._onChangeButtonClicked)
+        self.button_change.setStyleSheet("""
+            QPushButton:disabled {
+                background-color: #cccccc;
+                color: #666666;
+            }
+            QPushButton:enabled {
+                background-color: #4CAF50;
+                color: white;
+                font-weight: bold;
+            }
+            QPushButton:enabled:hover {
+                background-color: #45a049;
+            }
+        """)
         main_layout.addWidget(self.button_change, stretch=0)
         main_layout.addStretch(2) 
 
@@ -47,13 +66,42 @@ class TopTopPanel(QWidget):
         self.presenter.modelChanged.connect(self._onPresenterModelChanged)
         self.presenter.projectNamesLoaded.connect(self._onProjectNamesLoaded)
 
+    def _onComboSelectionChanged(self, text):
+        """Xử lý khi user thay đổi selection trong combo box"""
+        # Enable button chỉ khi selection khác với current project
+        current_project = self.presenter.getCurrentModel()
+        self.button_change.setEnabled(text != current_project and text != "")
+    
     def _onChangeButtonClicked(self):
         """Xử lý khi user click button Change"""
         selected_project = self.model_combo.currentText()
-        if selected_project and selected_project != self.presenter.getCurrentModel():
+        current_project = self.presenter.getCurrentModel()
+        
+        if not selected_project or selected_project == current_project:
+            return
+        
+        # Confirm dialog
+        reply = QMessageBox.question(
+            self,
+            "Confirm Project Change",
+            f"Change project from '{current_project}' to '{selected_project}'?\n\n"
+            f"The application will restart to apply changes.",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No
+        )
+        
+        if reply == QMessageBox.Yes:
+            # Change model and save to settings
             success = self.presenter.change_model(selected_project)
             if success:
                 self.modelChanged.emit(selected_project)
+                # Restart application
+                self._restartApplication()
+    
+    def _restartApplication(self):
+        """Restart the application using restart service"""
+        # Delegate to presenter
+        self.presenter.requestRestart()
 
     def _onPresenterModelChanged(self, model):
         """Xử lý khi presenter thông báo model đã thay đổi"""
@@ -84,8 +132,13 @@ class TopTopPanel(QWidget):
                 index = self.model_combo.findText(current_model)
                 if index >= 0:
                     self.model_combo.setCurrentIndex(index)
+                    self.initial_project = current_model
             
             self.model_combo.blockSignals(False)
+            
+            # Button starts disabled (no change yet)
+            self.button_change.setEnabled(False)
+            
             print(f"Loaded {len(project_names)} project names to combo box")
             
         except Exception as e:
