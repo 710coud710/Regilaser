@@ -19,7 +19,10 @@ class TopTopPanel(QWidget):
 
         # Left: Title label
         title = QLabel("Project:")
-        title.setStyleSheet("font-size: 16px; font-weight: bold;")
+        title.setStyleSheet("""
+                        font-size: 16px; 
+                        font-weight: bold;
+                        """)
         title.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
         title.setFixedWidth(90)
         main_layout.addWidget(title, stretch=0)
@@ -29,13 +32,11 @@ class TopTopPanel(QWidget):
         self.model_combo.setFixedWidth(300)  
         self.model_combo.setPlaceholderText("Loading projects...")
         self.model_combo.addItems(self.presenter.getProjectNames())
-        # self.model_combo.currentTextChanged.connect(self._onModelChanged)
         main_layout.addWidget(self.model_combo, stretch=0)
 
-
-        self.button_refresh = QPushButton("Refresh")
-        # self.button_refresh.clicked.connect(self.presenter.refreshModelData)
-        main_layout.addWidget(self.button_refresh, stretch=0)
+        self.button_change = QPushButton("Change")
+        self.button_change.clicked.connect(self._onChangeButtonClicked)
+        main_layout.addWidget(self.button_change, stretch=0)
         main_layout.addStretch(2) 
 
 
@@ -46,13 +47,13 @@ class TopTopPanel(QWidget):
         self.presenter.modelChanged.connect(self._onPresenterModelChanged)
         self.presenter.projectNamesLoaded.connect(self._onProjectNamesLoaded)
 
-    def _onModelChanged(self, model):
-        """Xử lý khi user thay đổi model trong combo box"""
-        if model and model != self.presenter.getCurrentModel():
-            success = self.presenter.change_model(model)
+    def _onChangeButtonClicked(self):
+        """Xử lý khi user click button Change"""
+        selected_project = self.model_combo.currentText()
+        if selected_project and selected_project != self.presenter.getCurrentModel():
+            success = self.presenter.change_model(selected_project)
             if success:
-                self.model = model
-                self.modelChanged.emit(model)
+                self.modelChanged.emit(selected_project)
 
     def _onPresenterModelChanged(self, model):
         """Xử lý khi presenter thông báo model đã thay đổi"""

@@ -7,6 +7,7 @@ from PySide6.QtCore import Signal, QThread
 from presenter.base_presenter import BasePresenter
 from workers.project_worker import ProjectWorker
 from utils.Logging import getLogger
+from utils.setting import settings_manager
 
 # Khởi tạo logger
 log = getLogger()
@@ -86,14 +87,23 @@ class TopTopPresenter(BasePresenter):
                 project_name = item.get("Project_Name", "")
                 if project_name and project_name not in self.project_names:
                     self.project_names.append(project_name)
-            
-            # Set model mặc định là project đầu tiên
-            if self.project_names and not self.current_model:
+                
+            # Set model mặc định từ settings hoặc project đầu tiên
+            saved_project = settings_manager.get("project.current_project", "")
+            if saved_project and saved_project in self.project_names:
+                self.current_model = saved_project
+                log.info(f"Restored project from settings: {saved_project}")
+            elif self.project_names and not self.current_model:
                 self.current_model = self.project_names[0]
+                log.info(f"Set default project: {self.current_model}")
             
             # Emit signals
             self.projectDataLoaded.emit(self.project_data)
             self.projectNamesLoaded.emit(self.project_names)
+            
+            # Emit current model if set
+            if self.current_model:
+                self.modelChanged.emit(self.current_model)
             
             self.show_success(f"Loaded {len(self.project_names)} project names")
             log.info(f"TopTopPresenter: Loaded {len(self.project_names)} project names")
@@ -169,11 +179,25 @@ class TopTopPresenter(BasePresenter):
             self.show_error(error_msg)
     
     def change_model(self, project_name):
-        """Thay đổi model hiện tại (project name)"""
+        """Thay đổi model hiện tại (project name) và lưu vào settings"""
         try:
             if project_name in self.project_names:
                 old_model = self.current_model
                 self.current_model = project_name
+                
+                # Lấy thông tin chi tiết của project
+                project_info = self.getProjectInfo(project_name)
+                if project_info:
+                    # Lưu vào settings
+                    settings_manager.set("project.current_project", project_name)
+                    settings_manager.set("project.psn_pre", project_info.get('PSN_PRE', ''))
+                    settings_manager.set("connection.laser.script", project_info.get('LM_Script', 20))
+                    settings_manager.set("connection.laser.lm_num", project_info.get('LM_Num', 24))
+                    settings_manager.set("general.panel_num", project_info.get('LM_Num', 24))
+                    settings_manager.save_settings()
+                    
+                    self.show_info(f"Project info: LM_Script={project_info.get('LM_Script')}, LM_Num={project_info.get('LM_Num')}, PSN_PRE={project_info.get('PSN_PRE')}")
+                    log.info(f"Project info: LM_Script={project_info.get('LM_Script')}, LM_Num={project_info.get('LM_Num')}, PSN_PRE={project_info.get('PSN_PRE')}")
                 
                 # Emit signal
                 self.modelChanged.emit(project_name)
@@ -182,11 +206,6 @@ class TopTopPresenter(BasePresenter):
                 self.show_info(f"Project changed from '{old_model}' to '{project_name}'")
                 log.info(f"Project changed from '{old_model}' to '{project_name}'")
                 
-                # Lấy thông tin chi tiết của project
-                project_info = self.getProjectInfo(project_name)
-                if project_info:
-                    self.show_info(f"Project info: LM_Script={project_info.get('LM_Script_Name')}, LM_Num={project_info.get('LM_Num')}, PSN_PRE={project_info.get('PSN_PRE')}")
-                    log.info(f"Project info: LM_Script={project_info.get('LM_Script_Name')}, LM_Num={project_info.get('LM_Num')}, PSN_PRE={project_info.get('PSN_PRE')}")
                 return True
             else:
                 self.show_error(f"Invalid project name: {project_name}")
@@ -194,17 +213,19 @@ class TopTopPresenter(BasePresenter):
                 
         except Exception as e:
             self.show_error(f"Error changing project: {str(e)}")
+            log.error(f"Error changing project: {str(e)}")
             return False
     
     def getProjectInfo(self, project_name):
         """Lấy thông tin chi tiết của project"""
         try:
-            for item in self.model_data:
+            for item in self.project_data:
                 if item.get("Project_Name") == project_name:
                     return item
             return None
         except Exception as e:
             self.show_error(f"Error getting project info: {str(e)}")
+            log.error(f"Error getting project info: {str(e)}")
             return None
     
     def getProjectNames(self):
