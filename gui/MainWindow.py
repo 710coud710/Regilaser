@@ -54,7 +54,7 @@ class MainWindow(QMainWindow):
         self.top_top_panel = TopTopPanel()
         main_layout.addWidget(self.top_top_panel)
         self.top_panel = TopControlPanel()
-        main_layout.addWidget(self.top_panel)
+        # main_layout.addWidget(self.top_panel)
    
         """Middle control panel"""
         middle_layout = QHBoxLayout()

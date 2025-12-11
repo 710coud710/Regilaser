@@ -117,7 +117,7 @@ class MainSettingWindow(QDialog):
         
         # Reload config trong các presenter nếu cần
         if success:
-            # Config sẽ tự động được reload khi gọi ConfigManager().get() lần tiếp theo
+            # Config sẽ tự động được reload khi gọi SettingsManager().get() lần tiếp theo
             pass
         
         return success

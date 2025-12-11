@@ -2,14 +2,13 @@
 SFIS Presenter - Xử lý logic giao tiếp SFIS
 """
 from PySide6.QtCore import QThread, Signal, QMetaObject, Qt, Q_ARG, QTimer
-from utils.setting import ConfigManager
+from utils.setting import settings_manager
 from model.sfis_model import SFISModel
 from workers.sfis_worker import SFISWorker
 from utils.Logging import getLogger
 from presenter.base_presenter import BasePresenter
 # Khởi tạo logger
 log = getLogger()
-config = ConfigManager().get()
 
 class SFISPresenter(BasePresenter):
     """Presenter xử lý SFIS communication"""
@@ -120,7 +119,7 @@ class SFISPresenter(BasePresenter):
 
         # Send OP Number
         if op_number is None:
-            op_number = getattr(config, 'OP_NUM', '')  # Lấy OP_Number từ instance 
+            op_number = settings_manager.get("general.op_num", "")  # Lấy OP_Number từ instance 
         message_op = "{:<20}END\r\n".format(op_number if op_number else "")
         if not self.sfis_worker.sendData_SFIS(message_op):
             self.show_error("Failed to send OP number to SFIS")
@@ -168,8 +167,8 @@ class SFISPresenter(BasePresenter):
     
 
     def getDataFromSFIS(self):
-        mo = getattr(config, 'MO', '')
-        panel_num = getattr(config, 'PANEL_NUM', '')
+        mo = settings_manager.get("general.mo", '')
+        panel_num = settings_manager.get("general.panel_num", '')
         try:
             needpsn_message = self.sfis_model.createFormatNeedPSN(mo, panel_num)
             if not needpsn_message:
@@ -201,9 +200,9 @@ class SFISPresenter(BasePresenter):
             return False
         
         if panel_num is None:
-            panel_num = getattr(config, 'PANEL_NUM', '') 
+            panel_num = settings_manager.get("general.panel_num", '') 
         if mo is None:
-            mo = getattr(config, 'MO', '')  
+            mo = settings_manager.get("general.mo", '')  
         # tạo format gửi lên SFIS
         start_message = self.sfis_model.createFormatNeedPSN(mo, panel_num)
         if not start_message:

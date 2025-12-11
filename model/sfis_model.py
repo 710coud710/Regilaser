@@ -4,7 +4,7 @@ SFIS Model - Logic nghiệp vụ và cấu trúc dữ liệu cho SFIS
 from dataclasses import dataclass
 from typing import Optional, List
 from PySide6.QtCore import QObject, Signal
-from utils.setting import ConfigManager
+from utils.setting import settings_manager
 from utils.Logging import getLogger
 log = getLogger()
 
@@ -43,15 +43,13 @@ class SFISModel(QObject):
     PANEL_NO_LENGTH = 20
     ALL_PARTS_NO_LENGTH = 12
     PSN_LENGTH = 20
-    PSN_COUNT = ConfigManager().get().PANEL_NUM
+    PSN_COUNT = settings_manager.get("general.panel_num", 5)
     NEED_KEYWORD = "NEED"
     END_KEYWORD = "END"
     
     def __init__(self):
         super().__init__()
         self.current_data = SFISData()
-        # Khởi tạo ConfigManager (singleton)
-        self.config_manager = ConfigManager()
         # Lưu số lượng PSN đã request (để parse response)
         self.expected_psn_count = 0
 
@@ -100,7 +98,7 @@ class SFISModel(QObject):
     
     def createFormatNeedPSN(self, mo=None, panel_num=None):
         try:
-            # Lấy config từ ConfigManager
+            # Lấy config từ SettingsManager
             need_keyword = f"{self.NEED_KEYWORD}PSN{panel_num}"  # Format theo số panel_num
 
             # Kiểm tra độ dài keyword (phải là 9 bytes)

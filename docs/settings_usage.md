@@ -7,7 +7,7 @@ The settings manager provides a centralized way to load, save, and access applic
 
 **⚠️ IMPORTANT CHANGE:** 
 - `config.yaml` đã được thay thế bằng `settings.json` trong AppData
-- Code cũ sử dụng `from config import ConfigManager` vẫn hoạt động (backward compatible)
+- Code cũ sử dụng `from config import SettingsManager` vẫn hoạt động (backward compatible)
 - Tất cả giá trị cấu hình giờ được lưu trong AppData thay vì file config.yaml
 
 ## Migration từ config.yaml
@@ -121,13 +121,13 @@ settings_manager.reset_to_default()
 
 ## Example: Using settings in your code
 
-### Cách 1: Sử dụng ConfigManager (tương thích với code cũ)
+### Cách 1: Sử dụng SettingsManager (tương thích với code cũ)
 
 ```python
-from utils.setting import ConfigManager
+from utils.setting import SettingsManager
 
 # Code cũ vẫn hoạt động bình thường
-config = ConfigManager().get()
+config = SettingsManager().get()
 
 # Truy cập các giá trị
 station_name = config.STATION_NAME
@@ -136,7 +136,7 @@ laser_mode = config.LASER_MODE  # 1: TCP, 2: COM
 sfis_com = config.SFIS_COM
 
 # Update giá trị
-config_manager = ConfigManager()
+config_manager = SettingsManager()
 config_manager.update("LASER_IP", "192.168.1.100")
 config_manager.update("STATION_NAME", "LM01")
 ```
@@ -170,7 +170,7 @@ def connect_to_sfc():
 
 ## Mapping giữa Config cũ và Settings mới
 
-| Config cũ (YAML) | Settings mới (JSON) | ConfigManager field |
+| Config cũ (YAML) | Settings mới (JSON) | SettingsManager field |
 |------------------|---------------------|---------------------|
 | STATION_NAME | general.station_name | config.STATION_NAME |
 | MO | general.mo | config.MO |

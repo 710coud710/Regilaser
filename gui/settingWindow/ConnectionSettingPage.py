@@ -1,11 +1,9 @@
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QFormLayout, QLabel, 
-    QLineEdit, QSpinBox, QCheckBox, QFrame, QComboBox
+    QLineEdit, QSpinBox, QCheckBox, QFrame
 )
-from utils.setting import ConfigManager
 
-config = ConfigManager().get()
 
 class ConnectionSettingPage(QWidget):
     """Connection settings page with SFC, PLC, and LaserMachine groups."""
@@ -65,10 +63,12 @@ class ConnectionSettingPage(QWidget):
         # --- Left: SFC COM settings ---
         self.sfc_com_widget = QWidget()
         sfc_com_vbox = QVBoxLayout(self.sfc_com_widget)
-        self.sfc_com_form = QComboBox()
-        self.sfc_com_form.addItems(["COM1", "COM2", "COM3", "COM4", "COM5","COM6", "COM7", "COM8", "COM9", "COM10","COM11", "COM12"])
-        self.sfc_com_form.setCurrentText(config.SFIS_COM)
-        sfc_com_vbox.addWidget(self.sfc_com_form)
+        sfc_com_form = QFormLayout()
+        self.sfc_com_port = QLineEdit()
+        self.sfc_baudrate = QLineEdit()
+        sfc_com_form.addRow("COM:", self.sfc_com_port)
+        sfc_com_form.addRow("Baudrate:", self.sfc_baudrate)
+        sfc_com_vbox.addLayout(sfc_com_form)
         sfc_com_vbox.addStretch()
         sfc_settings_split.addWidget(self.sfc_com_widget)
 
@@ -150,10 +150,12 @@ class ConnectionSettingPage(QWidget):
         # --- Left: plc COM settings ---
         self.plc_com_widget = QWidget()
         plc_com_vbox = QVBoxLayout(self.plc_com_widget)
-        plc_com_form = QComboBox()
-        plc_com_form.addItems(["COM1", "COM2", "COM3", "COM4", "COM5","COM6", "COM7", "COM8", "COM9", "COM10","COM11", "COM12"])
-        plc_com_form.setCurrentText(config.PLC_COM)
-        plc_com_vbox.addWidget(plc_com_form)
+        plc_com_form = QFormLayout()
+        self.plc_com_port = QLineEdit()
+        self.plc_baudrate = QLineEdit()
+        plc_com_form.addRow("COM:", self.plc_com_port)
+        plc_com_form.addRow("Baudrate:", self.plc_baudrate)
+        plc_com_vbox.addLayout(plc_com_form)
         plc_com_vbox.addStretch()
         plc_settings_split.addWidget(self.plc_com_widget)
 
@@ -232,10 +234,12 @@ class ConnectionSettingPage(QWidget):
         # --- Left: laser COM settings ---
         self.laser_com_widget = QWidget()
         laser_com_vbox = QVBoxLayout(self.laser_com_widget)
-        laser_com_form = QComboBox()
-        laser_com_form.addItems(["COM1", "COM2", "COM3", "COM4", "COM5","COM6", "COM7", "COM8", "COM9", "COM10","COM11", "COM12"])
-        laser_com_form.setCurrentText(config.LASER_COM_PORT)
-        laser_com_vbox.addWidget(laser_com_form)
+        laser_com_form = QFormLayout()
+        self.laser_com_port = QLineEdit()
+        self.laser_baudrate = QLineEdit()
+        laser_com_form.addRow("COM:", self.laser_com_port)
+        laser_com_form.addRow("Baudrate:", self.laser_baudrate)
+        laser_com_vbox.addLayout(laser_com_form)
         laser_com_vbox.addStretch()
         laser_settings_split.addWidget(self.laser_com_widget)
 

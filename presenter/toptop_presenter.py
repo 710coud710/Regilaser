@@ -49,8 +49,8 @@ class TopTopPresenter(BasePresenter):
         self.project_thread.start()
         
         # Đợi thread sẵn sàng
-        import time
-        time.sleep(0.1)
+        # import time
+        # time.sleep(0.1)
         
         # Khởi tạo model.json trong appdata
         self.initialize()

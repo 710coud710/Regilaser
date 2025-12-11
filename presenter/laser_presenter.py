@@ -3,7 +3,7 @@ Laser Presenter - Xử lý logic giao tiếp Laser Marking System
 """
 from PySide6.QtCore import QTimer, Signal
 from presenter.base_presenter import BasePresenter
-from utils.setting import ConfigManager
+from utils.setting import settings_manager
 from workers.laser_worker import LaserWorker
 from utils.schema import LaserConnectMode
 from utils.Logging import getLogger
@@ -17,14 +17,16 @@ class LaserPresenter(BasePresenter):
     def __init__(self):
         super().__init__()
         self.laser_model = LaserModel()
-        config = ConfigManager().get()
-        self.laser_mode = config.LASER_MODE
-        self.laser_ip = config.LASER_IP
-        self.laser_port = config.LASER_PORT
-        self.laser_com_port = getattr(config, "LASER_COM_PORT", None)
-        self.laser_baudrate = getattr(config, "LASER_BAUDRATE", 9600)
-        self.default_script = str(config.LASER_SCRIPT)
-        self.command_timeout_ms = config.LASER_TIMEOUT_MS
+        
+        # Load settings từ settings_manager
+        use_com = settings_manager.get("connection.laser.use_com", False)
+        self.laser_mode = 2 if use_com else 1  # 1: TCP, 2: COM
+        self.laser_ip = settings_manager.get("connection.laser.ip", "10.153.227.38")
+        self.laser_port = settings_manager.get("connection.laser.port", 50002)
+        self.laser_com_port = settings_manager.get("connection.laser.com_port", "COM1")
+        self.laser_baudrate = settings_manager.get("connection.laser.baudrate", 9600)
+        self.default_script = str(settings_manager.get("connection.laser.script", 20))
+        self.command_timeout_ms = settings_manager.get("connection.laser.timeout_ms", 5000)
 
         self.worker = LaserWorker(
             mode=self.laser_mode,

@@ -4,7 +4,8 @@
     "mo": "2790004600",
     "op_num": "F9385022",
     "panel_num": "5",
-    "post_result_sfc": true
+    "post_result_sfc": true,
+    "raw_content": ""
   },
   "connection": {
     "sfc": {
@@ -22,12 +23,13 @@
       "port": 8080
     },
     "laser": {
-      "use_com": false,
+      "use_com": true,  
       "com_port": "COM1",
       "baudrate": 9600,
       "ip": "10.153.227.38",
       "port": 50002,
-      "timeout_ms": 5000
+      "timeout_ms": 5000,
+      "script": 20
     }
   },
   "advanced": {

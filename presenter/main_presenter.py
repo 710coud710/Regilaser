@@ -9,11 +9,9 @@ from presenter.laser_presenter import LaserPresenter
 from presenter.toptop_presenter import TopTopPresenter
 from utils.Logging import getLogger
 from presenter.base_presenter import BasePresenter
-from utils.setting import ConfigManager
+from utils.setting import settings_manager
 # Khởi tạo logger
 log = getLogger()
-
-config = ConfigManager().get()
 
 
 
@@ -63,12 +61,13 @@ class MainPresenter(BasePresenter):
         top_top_panel = self.main_window.getTopTopPanel()
         top_top_panel.modelChanged.connect(self.onModelChanged)
         
-        # View signals - Top Panel
-        top_panel = self.main_window.getTopPanel()
-        top_panel.sfisChanged.connect(self.onSfisPortChanged)
-        top_panel.sfisConnectRequested.connect(self.onSfisConnectRequested)
-        top_panel.plcChanged.connect(self.onPlcPortChanged)
-        top_panel.plcConnectRequested.connect(self.onPlcConnectRequested)
+        # View signals - Bottom Status Bar (Connection Control)
+        bottom_status = self.main_window.getBottomStatus()
+        bottom_status.sfisChanged.connect(self.onSfisPortChanged)
+        bottom_status.sfisConnectRequested.connect(self.onSfisConnectRequested)
+        bottom_status.plcChanged.connect(self.onPlcPortChanged)
+        bottom_status.plcConnectRequested.connect(self.onPlcConnectRequested)
+        bottom_status.laserConnectRequested.connect(self.onLaserConnectRequested)
         
         # SFIS Presenter signals
         self.sfis_presenter.logMessage.connect(self.forwardLog)
@@ -120,10 +119,14 @@ class MainPresenter(BasePresenter):
     
     def initialize(self):
         """Khởi tạo kết nối và cấu hình ban đầu""" 
-        # Cập nhật trạng thái laser ban đầu (disconnected)
         topPanel = self.main_window.getTopPanel()
+        bottomStatus = self.main_window.getBottomStatus()
+        
+        # Set initial status
         topPanel.setLaserConnectionStatus(False, "Initializing...")
-        # Tự động kết nối SFIS, PLC và laser
+        bottomStatus.setLaserConnectionStatus(False, "Initializing...")
+        
+        # Tự động kết nối SFIS, PLC và laser (chạy song song với QTimer)
         self.laser_presenter.startAutoConnectLaser()
         self.sfis_presenter.startAutoConnectSFIS()
         self.plc_presenter.startAutoConnectPLC()
@@ -135,17 +138,20 @@ class MainPresenter(BasePresenter):
     def onSfisConnectRequested(self, shouldConnect, portName):
         """Xử lý yêu cầu kết nối/ngắt kết nối SFIS từ nút toggle"""
         topPanel = self.main_window.getTopPanel()
+        bottomStatus = self.main_window.getBottomStatus()
         
         if shouldConnect:
             # Kết nối SFIS
             success = self.sfis_presenter.connect(portName)
             log.info(f"SFIS connected on port: {portName}")
             topPanel.setSFISConnectionStatus(success, "Connected" if success else "Failed")
+            bottomStatus.setSFISConnectionStatus(success, "Connected" if success else "Failed")
         else:
             # Ngắt kết nối SFIS
             success = self.sfis_presenter.disconnect()
             log.info(f"SFIS disconnected on port: {portName}")
             topPanel.setSFISConnectionStatus(False, "Disconnected" if success else "Error")
+            bottomStatus.setSFISConnectionStatus(False, "Disconnected" if success else "Error")
     
     
     def onStartClicked(self):    
@@ -218,8 +224,9 @@ class MainPresenter(BasePresenter):
                 log.error("Cannot create format content for laser")
                 self.isRunning = False
                 return False
-            # self.laser_presenter.setContent(script=config.LASER_SCRIPT, content=c
-            success = self.laser_presenter.startLaserMarkingProcess(script=config.LASER_SCRIPT, content=content)
+            # Get laser script from settings
+            laser_script = settings_manager.get("connection.laser.script", 20)
+            success = self.laser_presenter.startLaserMarkingProcess(script=laser_script, content=content)
             if not success:
                 self.show_error("Cannot start laser marking process")
                 log.error("Cannot start laser marking process")
@@ -230,7 +237,8 @@ class MainPresenter(BasePresenter):
             mo = response.mo
             panel_no = response.panel_no
             # log.info(f"Send complete to SFIS: {mo}, {panel_no}")
-            if config.POST_RESULT_SFC:
+            post_result_sfc = settings_manager.get("general.post_result_sfc", True)
+            if post_result_sfc:
                 success = self.sfis_presenter.sendComplete(mo, panel_no)
                 if not success:
                     self.show_error("Cannot send complete to SFIS")
@@ -247,9 +255,12 @@ class MainPresenter(BasePresenter):
             return False
     
     def onSfisConnectionChanged(self, isConnected):
+        """Cập nhật trạng thái SFIS trên cả TopPanel và BottomStatus"""
         topPanel = self.main_window.getTopPanel()
+        bottomStatus = self.main_window.getBottomStatus()
         status_text = "Connected" if isConnected else "Disconnected"
         topPanel.setSFISConnectionStatus(isConnected, status_text)
+        bottomStatus.setSFISConnectionStatus(isConnected, status_text)
     
     def onStartSignalSent(self):
         """Flow: SFISWorker → SFISPresenter → MainPresenter (callback này)"""  
@@ -268,15 +279,18 @@ class MainPresenter(BasePresenter):
     def onPlcConnectRequested(self, shouldConnect, portName):
         """Xử lý yêu cầu kết nối/ngắt kết nối PLC"""
         topPanel = self.main_window.getTopPanel()
+        bottomStatus = self.main_window.getBottomStatus()
 
         if shouldConnect:
             success = self.plc_presenter.connect(portName)
             log.info(f"PLC connect request on {portName}: {success}")
             topPanel.setPLCConnectionStatus(success, "Connected" if success else "Failed")
+            bottomStatus.setPLCConnectionStatus(success, "Connected" if success else "Failed")
         else:
             success = self.plc_presenter.disconnect()
             log.info(f"PLC disconnect request on {portName}: {success}")
             topPanel.setPLCConnectionStatus(False, "Disconnected" if success else "Error")
+            bottomStatus.setPLCConnectionStatus(False, "Disconnected" if success else "Error")
 
     #Theo dõi thay đổi COM port PLC*
     def onPlcPortChanged(self, portName): 
@@ -289,14 +303,29 @@ class MainPresenter(BasePresenter):
     def onPlcConnectionChanged(self, isConnected):
         """Xử lý khi trạng thái kết nối PLC thay đổi (cập nhật UI như bấm nút Connect)."""
         topPanel = self.main_window.getTopPanel()
+        bottomStatus = self.main_window.getBottomStatus()
         status_text = "Connected" if isConnected else "Disconnected"
         topPanel.setPLCConnectionStatus(isConnected, status_text)
+        bottomStatus.setPLCConnectionStatus(isConnected, status_text)
+    
+    def onLaserConnectRequested(self, shouldConnect):
+        """Xử lý yêu cầu kết nối/ngắt kết nối Laser từ nút toggle"""
+        if shouldConnect:
+            # Kết nối Laser
+            success = self.laser_presenter.connect()
+            log.info(f"Laser connect request: {success}")
+        else:
+            # Ngắt kết nối Laser
+            success = self.laser_presenter.disconnect()
+            log.info(f"Laser disconnect request: {success}")
 
     def onLaserConnectionChanged(self, isConnected):
         """Xử lý khi trạng thái kết nối laser thay đổi"""
         topPanel = self.main_window.getTopPanel()
+        bottomStatus = self.main_window.getBottomStatus()
         status_text = "Connected" if isConnected else "Disconnected"
         topPanel.setLaserConnectionStatus(isConnected, status_text)
+        bottomStatus.setLaserConnectionStatus(isConnected, status_text)
         log.info(f"Laser status: {status_text}")
     
     def onModelChanged(self, project_name):
@@ -334,8 +363,9 @@ class MainPresenter(BasePresenter):
     ###################Laser menu###################
     def onSendC2(self):
         """Handle menu 'Send C2 to LASER'"""
-        fixed_command = config.RAW_CONTENT
-        success = self.laser_presenter.setContent(script=config.LASER_SCRIPT, content=fixed_command) 
+        fixed_command = settings_manager.get("general.raw_content", "")
+        laser_script = settings_manager.get("connection.laser.script", 20)
+        success = self.laser_presenter.setContent(script=laser_script, content=fixed_command) 
 
         if success:
             self.show_success("C2 command sent to laser successfully")
