@@ -5,6 +5,24 @@ Settings are now stored in the Windows AppData folder: `%APPDATA%\Regilazi\setti
 
 The settings manager provides a centralized way to load, save, and access application settings.
 
+**⚠️ IMPORTANT CHANGE:** 
+- `config.yaml` đã được thay thế bằng `settings.json` trong AppData
+- Code cũ sử dụng `from config import ConfigManager` vẫn hoạt động (backward compatible)
+- Tất cả giá trị cấu hình giờ được lưu trong AppData thay vì file config.yaml
+
+## Migration từ config.yaml
+
+Nếu bạn có file `config.yaml` cũ, chạy script migration:
+
+```bash
+python utils/migrate_config.py
+```
+
+Script sẽ tự động:
+- Đọc config.yaml
+- Chuyển đổi sang settings.json trong AppData
+- Tạo backup config.yaml.backup
+
 ## Basic Usage
 
 ### Import the settings manager
@@ -103,6 +121,28 @@ settings_manager.reset_to_default()
 
 ## Example: Using settings in your code
 
+### Cách 1: Sử dụng ConfigManager (tương thích với code cũ)
+
+```python
+from utils.setting import ConfigManager
+
+# Code cũ vẫn hoạt động bình thường
+config = ConfigManager().get()
+
+# Truy cập các giá trị
+station_name = config.STATION_NAME
+laser_ip = config.LASER_IP
+laser_mode = config.LASER_MODE  # 1: TCP, 2: COM
+sfis_com = config.SFIS_COM
+
+# Update giá trị
+config_manager = ConfigManager()
+config_manager.update("LASER_IP", "192.168.1.100")
+config_manager.update("STATION_NAME", "LM01")
+```
+
+### Cách 2: Sử dụng settings_manager trực tiếp
+
 ```python
 from utils.setting import settings_manager
 
@@ -127,6 +167,24 @@ def connect_to_sfc():
     baudrate = settings_manager.get("connection.sfc.baudrate")
     print(f"Connecting to SFC via {com_port} at {baudrate} baud")
 ```
+
+## Mapping giữa Config cũ và Settings mới
+
+| Config cũ (YAML) | Settings mới (JSON) | ConfigManager field |
+|------------------|---------------------|---------------------|
+| STATION_NAME | general.station_name | config.STATION_NAME |
+| MO | general.mo | config.MO |
+| OP_NUM | general.op_num | config.OP_NUM |
+| PANEL_NUM | general.panel_num | config.PANEL_NUM |
+| POST_RESULT_SFC | general.post_result_sfc | config.POST_RESULT_SFC |
+| LASER_MODE | connection.laser.use_com | config.LASER_MODE |
+| LASER_IP | connection.laser.ip | config.LASER_IP |
+| LASER_PORT | connection.laser.port | config.LASER_PORT |
+| LASER_TIMEOUT_MS | connection.laser.timeout_ms | config.LASER_TIMEOUT_MS |
+| LASER_COM_PORT | connection.laser.com_port | config.LASER_COM_PORT |
+| LASER_BAUDRATE | connection.laser.baudrate | config.LASER_BAUDRATE |
+| PLC_COM | connection.plc.com_port | config.PLC_COM |
+| SFIS_COM | connection.sfc.com_port | config.SFIS_COM |
 
 ## Notes
 

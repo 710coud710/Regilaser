@@ -9,7 +9,7 @@ from presenter.laser_presenter import LaserPresenter
 from presenter.toptop_presenter import TopTopPresenter
 from utils.Logging import getLogger
 from presenter.base_presenter import BasePresenter
-from config import ConfigManager
+from utils.setting import ConfigManager
 # Khởi tạo logger
 log = getLogger()
 

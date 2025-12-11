@@ -4,7 +4,7 @@ SFIS Model - Logic nghiệp vụ và cấu trúc dữ liệu cho SFIS
 from dataclasses import dataclass
 from typing import Optional, List
 from PySide6.QtCore import QObject, Signal
-from config import ConfigManager
+from utils.setting import ConfigManager
 from utils.Logging import getLogger
 log = getLogger()
 
@@ -121,7 +121,7 @@ class SFISModel(QObject):
             return start_signal
             
         except AttributeError as e:
-            error_msg = f"Read config error: {str(e)} - Check PANEL_NUM in config.yaml"
+            error_msg = f"Read config error: {str(e)} - Check PANEL_NUM in settings"
             self.validation_error.emit(error_msg)
             return None
         except Exception as e:

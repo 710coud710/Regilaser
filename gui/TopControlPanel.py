@@ -6,7 +6,7 @@ from PySide6.QtWidgets import (QWidget, QHBoxLayout,
                                QPushButton, QLabel)
 from PySide6.QtCore import Signal
 
-from config import ConfigManager
+from utils.setting import ConfigManager
 config = ConfigManager().get()
 
 class TopControlPanel(QWidget):

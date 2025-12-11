@@ -106,6 +106,7 @@ class MainSettingWindow(QDialog):
             self.advanced_page.set_settings(all_settings["advanced"])
     
     def _save_settings(self):
+        """Save all settings to AppData"""
         all_settings = {
             "general": self.general_page.get_settings(),
             "connection": self.connection_page.get_settings(),
@@ -113,6 +114,12 @@ class MainSettingWindow(QDialog):
         }
         
         success = settings_manager.save_settings(all_settings)
+        
+        # Reload config trong các presenter nếu cần
+        if success:
+            # Config sẽ tự động được reload khi gọi ConfigManager().get() lần tiếp theo
+            pass
+        
         return success
 
     def _on_ok(self):

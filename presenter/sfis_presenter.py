@@ -2,7 +2,7 @@
 SFIS Presenter - Xử lý logic giao tiếp SFIS
 """
 from PySide6.QtCore import QThread, Signal, QMetaObject, Qt, Q_ARG, QTimer
-from config import ConfigManager
+from utils.setting import ConfigManager
 from model.sfis_model import SFISModel
 from workers.sfis_worker import SFISWorker
 from utils.Logging import getLogger

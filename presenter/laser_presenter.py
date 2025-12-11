@@ -3,7 +3,7 @@ Laser Presenter - Xử lý logic giao tiếp Laser Marking System
 """
 from PySide6.QtCore import QTimer, Signal
 from presenter.base_presenter import BasePresenter
-from config import ConfigManager
+from utils.setting import ConfigManager
 from workers.laser_worker import LaserWorker
 from utils.schema import LaserConnectMode
 from utils.Logging import getLogger

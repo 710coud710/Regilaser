@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Optional, List
 from PySide6.QtCore import QObject, Signal
-from config import ConfigManager
+from utils.setting import ConfigManager
 from utils.Logging import getLogger
 log = getLogger()
 

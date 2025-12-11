@@ -18,6 +18,7 @@ class TopTopPresenter(BasePresenter):
     # Signals
     modelChanged = Signal(str)  # Model đã thay đổi
     modelDataLoaded = Signal(list)  # Dữ liệu model đã load
+    projectDataLoaded = Signal(list)  # Dữ liệu project đã load (alias cho modelDataLoaded)
     projectNamesLoaded = Signal(list)  # Danh sách Project_Name đã load
     
     def __init__(self):
@@ -117,7 +118,7 @@ class TopTopPresenter(BasePresenter):
         try:
             log.info(f"TopTopPresenter: Starting to load model data from {self.model_json_path}")
             
-            if self.model_thread.isRunning():
+            if self.project_thread.isRunning():
                 log.info("TopTopPresenter: Thread is running, emitting load signal")
                 # Emit signal để trigger worker
                 self.project_worker.loadRequested.emit()
@@ -242,9 +243,9 @@ class TopTopPresenter(BasePresenter):
                 self.project_worker.stop()
             
             # Dừng thread
-            if hasattr(self, 'model_thread') and self.model_thread.isRunning():
-                self.model_thread.quit()
-                self.model_thread.wait(3000)  # Wait up to 3 seconds
+            if hasattr(self, 'project_thread') and self.project_thread.isRunning():
+                self.project_thread.quit()
+                self.project_thread.wait(3000)  # Wait up to 3 seconds
                 
             log.info("Cleanup completed")
         except Exception as e:
