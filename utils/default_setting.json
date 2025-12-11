@@ -1,0 +1,38 @@
+{
+  "general": {
+    "station_name": "LM",
+    "mo": "2790004600",
+    "op_num": "F9385022",
+    "panel_num": "5",
+    "post_result_sfc": true
+  },
+  "connection": {
+    "sfc": {
+      "use_com": true,
+      "com_port": "COM8",
+      "baudrate": 9600,
+      "ip": "",
+      "port": 8080
+    },
+    "plc": {
+      "use_com": true,
+      "com_port": "COM3",
+      "baudrate": 9600,
+      "ip": "",
+      "port": 8080
+    },
+    "laser": {
+      "use_com": false,
+      "com_port": "COM1",
+      "baudrate": 9600,
+      "ip": "10.153.227.38",
+      "port": 50002,
+      "timeout_ms": 5000
+    }
+  },
+  "advanced": {
+    "language": "en",
+    "command_timeout_ms": 10000
+  }
+}
+

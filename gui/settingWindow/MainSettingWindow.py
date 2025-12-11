@@ -5,8 +5,8 @@ from PySide6.QtWidgets import (
 
 from .GeneralSettingPage import GeneralSettingPage
 from .ConnectionSettingPage import ConnectionSettingPage
-from .LaserSettingPage import LaserSettingPage
 from .AdvancedSettingPage import AdvancedSettingPage
+from utils.setting import settings_manager
 
 
 class MainSettingWindow(QDialog):
@@ -19,6 +19,7 @@ class MainSettingWindow(QDialog):
         self.setAttribute(Qt.WA_DeleteOnClose, False)
         self.resize(600, 500)
         self._build_ui()
+        self._load_settings()
 
     def _build_ui(self):
         # Main vertical layout
@@ -36,7 +37,6 @@ class MainSettingWindow(QDialog):
         self.menu_list.setFixedWidth(120)
         self.menu_list.addItem("General")
         self.menu_list.addItem("Connection")
-        self.menu_list.addItem("Laser")
         self.menu_list.addItem("Advanced")
         self.menu_list.setCurrentRow(0)
         self.menu_list.currentRowChanged.connect(self._on_menu_changed)
@@ -53,11 +53,9 @@ class MainSettingWindow(QDialog):
         # Create pages
         self.general_page = GeneralSettingPage()
         self.connection_page = ConnectionSettingPage()
-        self.laser_page = LaserSettingPage()
         self.advanced_page = AdvancedSettingPage()
         self.content_stack.addWidget(self.general_page)
         self.content_stack.addWidget(self.connection_page)
-        self.content_stack.addWidget(self.laser_page)
         self.content_stack.addWidget(self.advanced_page)
         # Add to content layout
         content_layout.addWidget(self.menu_list)
@@ -93,11 +91,41 @@ class MainSettingWindow(QDialog):
         """Handle menu selection change"""
         self.content_stack.setCurrentIndex(index)
 
+    def _load_settings(self):
+        """Load settings from AppData and populate UI"""
+        all_settings = settings_manager.get_settings()
+        
+        # Load settings for each page
+        if "general" in all_settings:
+            self.general_page.set_settings(all_settings["general"])
+        
+        if "connection" in all_settings:
+            self.connection_page.set_settings(all_settings["connection"])
+        
+        if "advanced" in all_settings:
+            self.advanced_page.set_settings(all_settings["advanced"])
+    
+    def _save_settings(self):
+        all_settings = {
+            "general": self.general_page.get_settings(),
+            "connection": self.connection_page.get_settings(),
+            "advanced": self.advanced_page.get_settings()
+        }
+        
+        success = settings_manager.save_settings(all_settings)
+        return success
+
     def _on_ok(self):
         """Handle save and close button click."""
-        QMessageBox.information(self, "Info", "Settings saved and closed successfully.")
-        self.close()
+        if self._save_settings():
+            QMessageBox.information(self, "Info", "Settings saved successfully.")
+            self.close()
+        else:
+            QMessageBox.warning(self, "Warning", "Failed to save settings.")
 
     def _on_apply(self):
         """Apply current settings"""
-        QMessageBox.information(self, "Info", "Settings applied successfully.")
+        if self._save_settings():
+            QMessageBox.information(self, "Info", "Settings applied successfully.")
+        else:
+            QMessageBox.warning(self, "Warning", "Failed to apply settings.")

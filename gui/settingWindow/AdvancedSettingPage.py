@@ -45,12 +45,3 @@ class AdvancedSettingPage(QWidget):
         idx = self.language_select.findData(lang)
         if idx >= 0:
             self.language_select.setCurrentIndex(idx)
-
-    def get_settings(self):
-        """Get current settings as dictionary"""
-        return {
-            "command_timeout_ms": self.command_timeout_ms.value(),
-        }
-    def set_settings(self, settings):
-        """Set settings from dictionary"""
-        self.command_timeout_ms.setValue(settings.get("command_timeout_ms", 10000))

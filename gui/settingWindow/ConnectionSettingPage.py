@@ -309,28 +309,56 @@ class ConnectionSettingPage(QWidget):
     def get_settings(self):
         """Get current settings as dictionary"""
         return {
-            "sfc_use_com": self.sfc_com_checkbox.isChecked(),
-            "sfc_com_port": self.sfc_com_port.text().strip(),
-            "sfc_baudrate": self.sfc_baudrate.value(),
-            "sfc_ip": self.sfc_ip.text().strip(),
-            "sfc_port": self.sfc_port.value(),
-            "plc_com": self.plc_com.text().strip(),
-            "laser_ip": self.laser_ip.text().strip(),
-            "laser_port": self.laser_port.value(),
-            "laser_com_port": self.laser_com_port.text().strip(),
-            "laser_baudrate": self.laser_baudrate.value(),
+            "sfc": {
+                "use_com": self.sfc_com_checkbox.isChecked(),
+                "com_port": self.sfc_com_port.text().strip(),
+                "baudrate": int(self.sfc_baudrate.text()) if self.sfc_baudrate.text() else 9600,
+                "ip": self.sfc_ip.text().strip(),
+                "port": int(self.sfc_port.text()) if self.sfc_port.text() else 8080,
+            },
+            "plc": {
+                "use_com": self.plc_com_checkbox.isChecked(),
+                "com_port": self.plc_com_port.text().strip(),
+                "baudrate": int(self.plc_baudrate.text()) if self.plc_baudrate.text() else 9600,
+                "ip": self.plc_ip.text().strip(),
+                "port": int(self.plc_port.text()) if self.plc_port.text() else 8080,
+            },
+            "laser": {
+                "use_com": self.laser_com_checkbox.isChecked(),
+                "com_port": self.laser_com_port.text().strip(),
+                "baudrate": int(self.laser_baudrate.text()) if self.laser_baudrate.text() else 9600,
+                "ip": self.laser_ip.text().strip(),
+                "port": int(self.laser_port.text()) if self.laser_port.text() else 50002,
+                "timeout_ms": int(self.laser_timeout_ms.text()) if self.laser_timeout_ms.text() else 5000,
+            }
         }
 
     def set_settings(self, settings):
         """Set settings from dictionary"""
-        self.sfc_com_checkbox.setChecked(settings.get("sfc_use_com", True))
-        self.sfc_tcpip_checkbox.setChecked(not settings.get("sfc_use_com", True))
-        self.sfc_com_port.setText(settings.get("sfc_com_port", ""))
-        self.sfc_baudrate.setValue(settings.get("sfc_baudrate", 9600))
-        self.sfc_ip.setText(settings.get("sfc_ip", ""))
-        self.sfc_port.setValue(settings.get("sfc_port", 8080))
-        self.plc_com.setText(settings.get("plc_com", ""))
-        self.laser_ip.setText(settings.get("laser_ip", ""))
-        self.laser_port.setValue(settings.get("laser_port", 50002))
-        self.laser_com_port.setText(settings.get("laser_com_port", ""))
-        self.laser_baudrate.setValue(settings.get("laser_baudrate", 9600))
+        # SFC settings
+        sfc = settings.get("sfc", {})
+        self.sfc_com_checkbox.setChecked(sfc.get("use_com", True))
+        self.sfc_tcpip_checkbox.setChecked(not sfc.get("use_com", True))
+        self.sfc_com_port.setText(sfc.get("com_port", ""))
+        self.sfc_baudrate.setText(str(sfc.get("baudrate", 9600)))
+        self.sfc_ip.setText(sfc.get("ip", ""))
+        self.sfc_port.setText(str(sfc.get("port", 8080)))
+        
+        # PLC settings
+        plc = settings.get("plc", {})
+        self.plc_com_checkbox.setChecked(plc.get("use_com", True))
+        self.plc_tcpip_checkbox.setChecked(not plc.get("use_com", True))
+        self.plc_com_port.setText(plc.get("com_port", ""))
+        self.plc_baudrate.setText(str(plc.get("baudrate", 9600)))
+        self.plc_ip.setText(plc.get("ip", ""))
+        self.plc_port.setText(str(plc.get("port", 8080)))
+        
+        # Laser settings
+        laser = settings.get("laser", {})
+        self.laser_com_checkbox.setChecked(laser.get("use_com", False))
+        self.laser_tcpip_checkbox.setChecked(not laser.get("use_com", False))
+        self.laser_com_port.setText(laser.get("com_port", ""))
+        self.laser_baudrate.setText(str(laser.get("baudrate", 9600)))
+        self.laser_ip.setText(laser.get("ip", ""))
+        self.laser_port.setText(str(laser.get("port", 50002)))
+        self.laser_timeout_ms.setText(str(laser.get("timeout_ms", 5000)))
