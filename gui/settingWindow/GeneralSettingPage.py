@@ -2,7 +2,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QFormLayout, QLabel, QLineEdit, QCheckBox
 )
-
+from PySide6.QtWidgets import QFrame
 
 class GeneralSettingPage(QWidget):
     """General Configuration settings page."""
@@ -39,6 +39,15 @@ class GeneralSettingPage(QWidget):
         form.addRow("", self.post_result_sfc)
         
         layout.addLayout(form)
+        self.add_line(layout)
+        # Form  BOMver
+        form2 = QFormLayout()
+        form2.setLabelAlignment(Qt.AlignRight)
+        self.pcb_product_name = QLineEdit()
+        self.pcb_number = QLineEdit()
+        form2.addRow("PCB Product Name:", self.pcb_product_name)
+        form2.addRow("PCB Number:", self.pcb_number)
+        layout.addLayout(form2)
         layout.addStretch()
 
     def get_settings(self):
@@ -49,16 +58,25 @@ class GeneralSettingPage(QWidget):
             "op_num": self.op_num.text().strip(),
             "panel_num": self.panel_num.text().strip(),
             "post_result_sfc": self.post_result_sfc.isChecked(),
+            "pcb_product_name": self.pcb_product_name.text().strip(),
+            "pcb_number": self.pcb_number.text().strip(),
         }
+    def add_line(self, parent_layout):
+        line = QFrame()
+        line.setFrameShape(QFrame.HLine)
+        line.setFrameShadow(QFrame.Sunken)
+        parent_layout.addWidget(line)
+
 
     def set_settings(self, settings):
         """Set settings from dictionary"""
         def _to_text(value):
             """Ensure QLineEdit receives a string."""
             return "" if value is None else str(value)
-
         self.station_name.setText(_to_text(settings.get("station_name", "")))
         self.mo.setText(_to_text(settings.get("mo", "")))
         self.op_num.setText(_to_text(settings.get("op_num", "")))
         self.panel_num.setText(_to_text(settings.get("panel_num", "")))
         self.post_result_sfc.setChecked(settings.get("post_result_sfc", False))
+        self.pcb_product_name.setText(_to_text(settings.get("pcb_product_name", "")))
+        self.pcb_number.setText(_to_text(settings.get("pcb_number", "")))

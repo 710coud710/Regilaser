@@ -186,8 +186,30 @@ class SFISPresenter(BasePresenter):
         mo = settings_manager.get("general.mo", '')
         pcb_product_name = settings_manager.get("general.pcb_product_name", '')
         pcb_number = settings_manager.get("general.pcb_number", '')
-        
-        return False
+        try: 
+            req1 = self.sfis_model.createFormatBOMVER(mo, pcb_product_name)
+            if self.sfis_worker.sendData_SFIS(req1):
+                data_res = self.sfis_worker.readData_SFIS(timeout_ms=10000)
+                if 'ENDBOMVERPASS' in data_res:
+                    req2 = self.sfis_model.createFormatBOMVERNeedSN(mo, pcb_number)
+                    if self.sfis_worker.sendData_SFIS(req2):
+                        data_res2 = self.sfis_worker.readData_SFIS(timeout_ms=10000)
+                        if data_res2:
+                            return data_res2
+                        else:
+                            return False
+                    else:
+                        return False
+                else:
+                    log.error(f"SFIS FAIL:{data_res}")
+                    return False
+            else:
+                log.error("error send data to SFIS")
+                return False
+        except Exception as e:
+            self.show_error(f"Error in getDataFromSFIS_MODE2: {e}")
+            log.error(f"Error in getDataFromSFIS_MODE2: {e}")
+            return False
 
     def getDataFromSFIS_MODE1(self):
         mo = settings_manager.get("general.mo", '')
@@ -380,7 +402,37 @@ class SFISPresenter(BasePresenter):
 
         # Emit signal để MainPresenter cập nhật UI
         self.connectionStatusChanged.emit(isConnected)
+    
 
+    ##MENU SFIS
+    def sendBOMVER(self):
+        mo = settings_manager.get("general.mo", '')
+        pcb_product_name = settings_manager.get("general.pcb_product_name", '')
+        try:
+            req1 = self.sfis_model.createFormatBOMVER(mo, pcb_product_name)
+            if self.sfis_worker.sendData_SFIS(req1):
+                data_res = self.sfis_worker.readData_SFIS(timeout_ms=10000)
+                return data_res
+            else:
+                log.error("error send data to SFIS")
+                return False
+        except Exception as e:
+            log.error(f"{e}")
+            return False
+    def sendBOMVERNeedSN(self):
+        mo = settings_manager.get("general.mo", '')
+        pcb_number = settings_manager.get("general.pcb_number", '')
+        try:
+            req = self.sfis_model.createFormatBOMVERNeedSN(mo, pcb_number)
+            if self.sfis_worker.sendData_SFIS(req):
+                data_res = self.sfis_worker.readData_SFIS(timeout_ms=10000)
+                return data_res
+            else:
+                log.error("error send data to SFIS")
+                return False
+        except Exception as e:
+            log.error(f"{e}")
+            return False
     # ------------------------------------------------------------------
     # Auto-reconnect helpers
     # ------------------------------------------------------------------

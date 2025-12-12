@@ -56,6 +56,9 @@ class MainPresenter(BasePresenter):
 
         self.main_window.sendActivateSFIS_clicked.connect(self.onSendActivateSFIS)
         self.main_window.sendNeedPSN_clicked.connect(self.onSendNEEDPSNManual)
+
+        self.main_window.sendBOMVER_clicked.connect(self.onSendBOMVER)
+        self.main_window.sendBOMVERNeedSN_clicked.connect(self.onSendBOMVERNeedSN)
         self.main_window.project_clicked.connect(self.onProjectClicked)
         # View signals - TopTop Panel (Model Selection)
         top_top_panel = self.main_window.getTopTopPanel()
@@ -439,6 +442,30 @@ class MainPresenter(BasePresenter):
         except Exception as e:
             self.show_error(f"Failed to send NEEDPSN to SFIS: {e}")
             log.error(f"Failed to send NEEDPSN to SFIS: {e}")
+
+    def onSendBOMVER(self):
+        """Handle menu 'Send BOMVER to SFIS'"""
+        log.info("Send BOMVER to SFIS")
+        self.show_info("Send BOMVER to SFIS")
+        try:
+            self.sfis_presenter.sendBOMVER()
+            self.show_success("Send BOMVER to SFIS successfully")
+            log.info("Send BOMVER to SFIS successfully")
+        except Exception as e:
+            self.show_error(f"Failed to send BOMVER to SFIS: {e}")
+            log.error(f"Failed to send BOMVER to SFIS: {e}")
+
+    def onSendBOMVERNeedSN(self):
+        """Handle menu 'Send BOMVERNeedSN to SFIS'"""
+        log.info("Send BOMVERNeedSN to SFIS")
+        self.show_info("Send BOMVERNeedSN to SFIS")
+        try:
+            self.sfis_presenter.sendBOMVERNeedSN()
+            self.show_success("Send BOMVERNeedSN to SFIS successfully")
+            log.info("Send BOMVERNeedSN to SFIS successfully")
+        except Exception as e:
+            self.show_error(f"Failed to send BOMVERNeedSN to SFIS: {e}")
+            log.error(f"Failed to send BOMVERNeedSN to SFIS: {e}")
 
 #--------------------------------File menu--------------------------------
     def onProjectClicked(self):

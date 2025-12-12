@@ -3,6 +3,7 @@ SFIS Model - Logic nghiệp vụ và cấu trúc dữ liệu cho SFIS
 """
 from dataclasses import dataclass
 from typing import Optional, List
+from unittest import result
 from PySide6.QtCore import QObject, Signal
 from utils.setting import settings_manager
 from utils.Logging import getLogger
@@ -98,14 +99,7 @@ class SFISModel(QObject):
     
     def createFormatNeedPSN(self, mo=None, panel_num=None):
         try:
-            # Lấy config từ SettingsManager
-            need_keyword = f"{self.NEED_KEYWORD}PSN{panel_num}"  # Format theo số panel_num
-
-            # Kiểm tra độ dài keyword (phải là 9 bytes)
-            # if len(need_keyword) != 9:
-            #     self.validation_error.emit(f"NEEDPSN keyword is not the correct length: {len(need_keyword)} (expected: 9)")
-            #     return None
-            
+            need_keyword = f"{self.NEED_KEYWORD}PSN{panel_num}" 
             mo_padded = str(mo).ljust(20)[:20] #MO: 20 bytes
             panel_padded = "".ljust(20) # Panel Number: 20 bytes (để trống)
             
@@ -125,43 +119,41 @@ class SFISModel(QObject):
         except Exception as e:
             self.validation_error.emit(f"Create START signal error: {str(e)}")
             return None
-    def createFormatBOMVER(self, mo=None, panel_num=None):
+    def createFormatBOMVER(self, mo=None, pcb_product_name=None):
+        key ="NEEDBOMVER"
         try:
-            # Lấy config từ SettingsManager
-            need_keyword = f"{self.NEED_KEYWORD}PSN{panel_num}"  # Format theo số panel_num
-
-            # Kiểm tra độ dài keyword (phải là 9 bytes)
-            # if len(need_keyword) != 9:
-            #     self.validation_error.emit(f"NEEDPSN keyword is not the correct length: {len(need_keyword)} (expected: 9)")
-            #     return None
-            
-            mo_padded = str(mo).ljust(20)[:20] #MO: 20 bytes
-            panel_padded = "".ljust(20) # Panel Number: 20 bytes (để trống)
-            
-            # Tạo START signal: 20 + 20 + 9 = 49 bytes
-            start_signal = f"{mo_padded}{panel_padded}{need_keyword}\r\n"
-            log.info(f"START signal: {start_signal}")
-            # Lưu vào current_data
-            self.current_data.mo = mo
-            self.current_data.panel_no = ""
-            
-            return start_signal
-            
-        except AttributeError as e:
-            error_msg = f"Read config error: {str(e)} - Check PANEL_NUM in settings"
-            self.validation_error.emit(error_msg)
-            return None
+            mo_padded = str(mo).ljust(15)[:15]
+            pcb_product_name_padded = str(pcb_product_name).ljust(20)[:20]
+            result = f"{mo_padded}{pcb_product_name_padded}{key}\r\n"
+            log.info(f"Data Create: {result}")
+            return result
         except Exception as e:
-            self.validation_error.emit(f"Create START signal error: {str(e)}")
+            self.validation_error.emit(f"Create Format BOMVER error: {str(e)}")
             return None
+
+    def createFormatBOMVERNeedSN(self, mo=None, pcb_number=None):
+        try:
+            needsn_keyword = f"{self.NEED_KEYWORD}SN{self.PSN_COUNT}"
+            mo_padded = str(mo).ljust(15)[:15]
+            pcb_number_padded = str(pcb_number).ljust(50)[:50]
+
+            self.current_data.mo = mo
+            self.current_data.pcb_number = pcb_number
+            result = f"{mo_padded}{pcb_number_padded}{needsn_keyword}\r\n"
+            log.info(f"Data Create: {result}")
+            return result
+        except Exception as e:
+            self.validation_error.emit(f"Create Format BOMVERNEDSN error: {str(e)}")
+            return None
+
+
+
     def createTestComplete(self, mo, panel_no):
         """Tạo message báo hoàn thành test"""
         try:
             mo_padded = mo.ljust(self.MO_LENGTH)[:self.MO_LENGTH]
             panel_padded = panel_no.ljust(self.PANEL_NO_LENGTH)[:self.PANEL_NO_LENGTH]
-            
             return f"{mo_padded}{panel_padded}{self.END_KEYWORD}"
-            
         except Exception as e:
             self.validation_error.emit(f"Lỗi tạo test complete: {str(e)}")
             return None

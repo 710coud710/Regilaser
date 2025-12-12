@@ -31,6 +31,8 @@ class MainWindow(QMainWindow):
     #SFIS menu
     sendNeedPSN_clicked = Signal()
     sendActivateSFIS_clicked = Signal()
+    sendBOMVER_clicked = Signal()
+    sendBOMVERNeedSN_clicked = Signal()
     #Help menu
     setting_clicked = Signal()
     about_clicked = Signal()
@@ -130,7 +132,16 @@ class MainWindow(QMainWindow):
         Send_needPSN_Action.setShortcut("Ctrl+9")
         Send_needPSN_Action.triggered.connect(self.sendNeedPSN_clicked.emit)
         sfis_menu.addAction(Send_needPSN_Action)
+        sfis_menu.addSeparator()
+        Send_BOMVER_Action = QAction("Send BOMVER", self)
+        Send_Activate_Action.setShortcut("Ctrl+8")
+        Send_BOMVER_Action.triggered.connect(self.sendBOMVER_clicked.emit)
+        sfis_menu.addAction(Send_BOMVER_Action)
 
+        Send_BOMVERNeedSN_Action = QAction("Send BOMVERNeedSN", self)
+        Send_BOMVERNeedSN_Action.setShortcut("Ctrl+9")
+        Send_BOMVERNeedSN_Action.triggered.connect(self.sendBOMVERNeedSN_clicked.emit)
+        sfis_menu.addAction(Send_BOMVERNeedSN_Action)
        #--------------------------------Laser menu--------------------------------
         send_ga_action = QAction("Activate Job", self)
         send_ga_action.setShortcut("Ctrl+1")

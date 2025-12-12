@@ -6,6 +6,7 @@ from PySide6.QtWidgets import (
 from .GeneralSettingPage import GeneralSettingPage
 from .ConnectionSettingPage import ConnectionSettingPage
 from .AdvancedSettingPage import AdvancedSettingPage
+from .projectSettingPage import ProjectSettingPage
 from utils.setting import settings_manager
 
 
@@ -37,6 +38,7 @@ class MainSettingWindow(QDialog):
         self.menu_list.setFixedWidth(120)
         self.menu_list.addItem("General")
         self.menu_list.addItem("Connection")
+        self.menu_list.addItem("Project")
         self.menu_list.addItem("Advanced")
         self.menu_list.setCurrentRow(0)
         self.menu_list.currentRowChanged.connect(self._on_menu_changed)
@@ -53,9 +55,11 @@ class MainSettingWindow(QDialog):
         # Create pages
         self.general_page = GeneralSettingPage()
         self.connection_page = ConnectionSettingPage()
+        self.project_page = ProjectSettingPage()
         self.advanced_page = AdvancedSettingPage()
         self.content_stack.addWidget(self.general_page)
         self.content_stack.addWidget(self.connection_page)
+        self.content_stack.addWidget(self.project_page)
         self.content_stack.addWidget(self.advanced_page)
         # Add to content layout
         content_layout.addWidget(self.menu_list)
@@ -99,15 +103,20 @@ class MainSettingWindow(QDialog):
         
         if "connection" in all_settings:
             self.connection_page.set_settings(all_settings["connection"])
-        
+
+        if "project" in all_settings:
+            self.project_page.set_settings(all_settings["project"])
+
         if "advanced" in all_settings:
             self.advanced_page.set_settings(all_settings["advanced"])
+
     
     def _save_settings(self):
         """Save all settings to AppData"""
         all_settings = {
             "general": self.general_page.get_settings(),
             "connection": self.connection_page.get_settings(),
+            "project": self.project_page.get_settings(),
             "advanced": self.advanced_page.get_settings()
         }
         
