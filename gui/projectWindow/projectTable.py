@@ -31,11 +31,6 @@ class ProjectTable(QDialog):
         layout.addWidget(self.table)
 
     def set_data(self, data):
-        """
-        Set table data.
-        data: list of dicts with keys from model.json structure
-        Expected keys: 'Project_Name', 'LM_Script_Name', 'LM_Num', 'PSN_PRE'
-        """
         self.table.setRowCount(len(data))
         for row, item in enumerate(data):
             project_item = QTableWidgetItem(str(item.get("Project_Name", "")))

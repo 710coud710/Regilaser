@@ -3,13 +3,18 @@
     "station_name": "LM",
     "mo": "2790004600",
     "op_num": "F9385022",
-    "panel_num": "5",
+    "panel_num": 10,
     "post_result_sfc": true,
-    "raw_content": ""
+    "raw_content": "",
+    "pcb_number":"SWG20250804000001701"
   },
   "project": {
     "current_project": "",
-    "psn_pre": ""
+    "psn_pre": "",
+    "SFIS_format": 1,
+    "LM_mode":1,
+    "script": 1,
+    "lm_num": 10
   },
   "connection": {
     "sfc": {
@@ -32,14 +37,11 @@
       "baudrate": 9600,
       "ip": "10.153.227.38",
       "port": 50002,
-      "timeout_ms": 5000,
-      "script": 20,
-      "lm_num": 24
+      "timeout_ms": 5000
     }
   },
   "advanced": {
-    "language": "en",
-    "command_timeout_ms": 10000
+    "language": "en"
   }
 }
 

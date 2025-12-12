@@ -3,6 +3,7 @@ TopTop Presenter - Xử lý logic chọn model và quản lý model.json trong a
 """
 import json
 import os
+import shutil
 from PySide6.QtCore import Signal, QThread, QTimer
 from PySide6.QtWidgets import QMessageBox, QApplication, QMessageBox
 from presenter.base_presenter import BasePresenter
@@ -30,6 +31,10 @@ class TopTopPresenter(BasePresenter):
         self.appdata_path = os.getenv("APPDATA")
         self.app_folder = os.path.join(self.appdata_path, "Regilazi")
         self.model_json_path = os.path.join(self.app_folder, "model.json")
+        # Đường dẫn default_model.json trong thư mục dự án
+        self.default_model_path = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), "..", "default_model.json")
+        )
         
         # Tạo thư mục nếu chưa tồn tại
         os.makedirs(self.app_folder, exist_ok=True)
@@ -60,16 +65,25 @@ class TopTopPresenter(BasePresenter):
         self.loadModelDataImmediate()
         
     def initialize(self):
-        """Khởi tạo model.json trong appdata nếu chưa tồn tại"""
         try:
             if os.path.exists(self.model_json_path):
                 # Nếu đã tồn tại, load dữ liệu
                 self.show_info(f"Model file exists in appdata: {self.model_json_path}")
                 self.loadModelData()
             else:
-                self.show_info(f"Model data copied to appdata: {self.model_json_path}")
+                if os.path.exists(self.default_model_path):
+                    shutil.copyfile(self.default_model_path, self.model_json_path)
+                    self.show_info(f"Model data copied to appdata: {self.model_json_path}")
+                    log.info(
+                        f"default model.json copied from {self.default_model_path}"
+                    )
+                else:
+                    raise FileNotFoundError(
+                        f"Default model file not found at {self.default_model_path}"
+                    )
         except Exception as e:
-            self.show_error(f"Error initializing model.json: {str(e)}")
+            self.show_error(f"{str(e)}")
+            log.error(f"{str(e)}")
 
     def _connectWorkerSignals(self):
         """Kết nối signals từ ProjectWorker"""
@@ -115,8 +129,8 @@ class TopTopPresenter(BasePresenter):
     
     def modelLoadedError(self, error_msg):
         """Xử lý lỗi khi load dữ liệu model"""
-        self.show_error(f"Model load error: {error_msg}")
-        log.error(f"TopTopPresenter: Model load error: {error_msg}")
+        self.show_error(f"{error_msg}")
+        log.error(f"{error_msg}")
     
     def modelLoadedProgress(self, progress_msg):
         """Xử lý tiến trình load dữ liệu model"""
@@ -125,7 +139,6 @@ class TopTopPresenter(BasePresenter):
     
     
     def loadModelData(self):
-        """Load dữ liệu từ model.json trong appdata sử dụng worker thread"""
         try:
             log.info(f"TopTopPresenter: Starting to load model data from {self.model_json_path}")
             
@@ -189,16 +202,18 @@ class TopTopPresenter(BasePresenter):
                 # Lấy thông tin chi tiết của project
                 project_info = self.getProjectInfo(project_name)
                 if project_info:
-                    # Lưu vào settings
+                    # Lưu vào settings (project section)
                     settings_manager.set("project.current_project", project_name)
                     settings_manager.set("project.psn_pre", project_info.get('PSN_PRE', ''))
-                    settings_manager.set("connection.laser.script", project_info.get('LM_Script', 20))
-                    settings_manager.set("connection.laser.lm_num", project_info.get('LM_Num', 24))
-                    settings_manager.set("general.panel_num", project_info.get('LM_Num', 24))
+                    settings_manager.set("project.script", project_info.get('LM_Script_Name', 1))
+                    settings_manager.set("project.lm_num", project_info.get('LM_Num', 10))
+                    settings_manager.set("project.SFIS_format", project_info.get('SFIS_format', 1))
+                    settings_manager.set("project.LM_mode", project_info.get('LM_mode', 1))
+                    settings_manager.set("general.panel_num", project_info.get('LM_Num', 10))
                     settings_manager.save_settings()
                     
-                    self.show_info(f"Project info: LM_Script={project_info.get('LM_Script')}, LM_Num={project_info.get('LM_Num')}, PSN_PRE={project_info.get('PSN_PRE')}")
-                    log.info(f"Project info: LM_Script={project_info.get('LM_Script')}, LM_Num={project_info.get('LM_Num')}, PSN_PRE={project_info.get('PSN_PRE')}")
+                    self.show_info(f"Project info: LM_Script={project_info.get('LM_Script_Name')}, LM_Num={project_info.get('LM_Num')}, PSN_PRE={project_info.get('PSN_PRE')}, SFIS_format={project_info.get('SFIS_format')}, LM_mode={project_info.get('LM_mode')}")
+                    log.info(f"Project info: LM_Script={project_info.get('LM_Script_Name')}, LM_Num={project_info.get('LM_Num')}, PSN_PRE={project_info.get('PSN_PRE')}, SFIS_format={project_info.get('SFIS_format')}, LM_mode={project_info.get('LM_mode')}")
                 
                 # Emit signal
                 self.modelChanged.emit(project_name)

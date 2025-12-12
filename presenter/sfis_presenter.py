@@ -165,8 +165,31 @@ class SFISPresenter(BasePresenter):
             log.error("Timeout hoặc không nhận được dữ liệu từ SFIS")
             return None
     
-
     def getDataFromSFIS(self):
+        try:
+            log.info("getDataFromSFIS started")
+            mode = settings_manager.get("project.SFIS_format", 1)
+            log.info(f"Mode: {mode}")
+            if mode == 1:
+                return self.getDataFromSFIS_MODE1()
+            elif mode == 2:
+                return self.getDataFromSFIS_MODE2()
+            else:
+                log.error("Error in getDataFromSFIS: Invalid mode")
+                return False
+        except Exception as e:
+            self.show_error(f"Error in getDataFromSFIS: {e}")
+            log.error(f"Error in getDataFromSFIS: {e}")
+            return False
+
+    def getDataFromSFIS_MODE2(self):
+        mo = settings_manager.get("general.mo", '')
+        pcb_product_name = settings_manager.get("general.pcb_product_name", '')
+        pcb_number = settings_manager.get("general.pcb_number", '')
+        
+        return False
+
+    def getDataFromSFIS_MODE1(self):
         mo = settings_manager.get("general.mo", '')
         panel_num = settings_manager.get("general.panel_num", '')
         try:
@@ -192,6 +215,7 @@ class SFISPresenter(BasePresenter):
             self.show_error(f"Error in getDataFromSFIS: {e}")
             log.error(f"Error in getDataFromSFIS: {e}")
             return False
+
 
     def sendNEEDPSN(self, mo=None,panel_num=None):
         if not self.isConnected:

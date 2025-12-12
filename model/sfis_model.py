@@ -30,15 +30,14 @@ class SFISData:
 
 class SFISModel(QObject):
     """Model xử lý logic SFIS"""
-    
     # Signals
     data_parsed = Signal(object)  # SFISData đã parse
-    validation_error = Signal(str)  # LỗSSi validation
-    
-    # Constants - Định dạng mới
+    validation_error = Signal(str)  # Lỗi validation
+    #Constants
+
     STATUS_LENGTH = 20
     PASS_KEYWORD = "PASS"   
-    # Constants - Định dạng cũ
+    #Constants
     MO_LENGTH = 20
     PANEL_NO_LENGTH = 20
     ALL_PARTS_NO_LENGTH = 12
@@ -46,7 +45,9 @@ class SFISModel(QObject):
     PSN_COUNT = settings_manager.get("general.panel_num", 5)
     NEED_KEYWORD = "NEED"
     END_KEYWORD = "END"
-    
+    #MODE2
+    PCB_LENGTH = 50
+
     def __init__(self):
         super().__init__()
         self.current_data = SFISData()
@@ -61,7 +62,6 @@ class SFISModel(QObject):
             if len(response) < expected_length:
                 self.validation_error.emit(f"Response quá ngắn: {len(response)} < {expected_length}")
                 return None
-            
             # Parse các field
             pos = 0
             mo = response[pos:pos + self.MO_LENGTH].strip()
@@ -125,7 +125,35 @@ class SFISModel(QObject):
         except Exception as e:
             self.validation_error.emit(f"Create START signal error: {str(e)}")
             return None
-    
+    def createFormatBOMVER(self, mo=None, panel_num=None):
+        try:
+            # Lấy config từ SettingsManager
+            need_keyword = f"{self.NEED_KEYWORD}PSN{panel_num}"  # Format theo số panel_num
+
+            # Kiểm tra độ dài keyword (phải là 9 bytes)
+            # if len(need_keyword) != 9:
+            #     self.validation_error.emit(f"NEEDPSN keyword is not the correct length: {len(need_keyword)} (expected: 9)")
+            #     return None
+            
+            mo_padded = str(mo).ljust(20)[:20] #MO: 20 bytes
+            panel_padded = "".ljust(20) # Panel Number: 20 bytes (để trống)
+            
+            # Tạo START signal: 20 + 20 + 9 = 49 bytes
+            start_signal = f"{mo_padded}{panel_padded}{need_keyword}\r\n"
+            log.info(f"START signal: {start_signal}")
+            # Lưu vào current_data
+            self.current_data.mo = mo
+            self.current_data.panel_no = ""
+            
+            return start_signal
+            
+        except AttributeError as e:
+            error_msg = f"Read config error: {str(e)} - Check PANEL_NUM in settings"
+            self.validation_error.emit(error_msg)
+            return None
+        except Exception as e:
+            self.validation_error.emit(f"Create START signal error: {str(e)}")
+            return None
     def createTestComplete(self, mo, panel_no):
         """Tạo message báo hoàn thành test"""
         try:
