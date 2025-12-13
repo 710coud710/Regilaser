@@ -27,7 +27,6 @@ class SettingsManager:
                 with open(self.config_path, "r", encoding="utf-8") as f:
                     return json.load(f)
             except Exception as e:
-                print(f"Error loading settings: {e}")
                 return self._loadDefaultSettings()
         else:
             return self._loadDefaultSettings()
@@ -39,7 +38,6 @@ class SettingsManager:
             self.save_settings(default_settings)
             return default_settings
         except Exception as e:
-            print(f"Error loading default settings: {e}")
             return {}
     
     def get_settings(self):
@@ -73,7 +71,6 @@ class SettingsManager:
                 json.dump(self._settings, f, indent=2, ensure_ascii=False)
             return True
         except Exception as e:
-            print(f"Error saving settings: {e}")
             return False
     
     def reload(self):

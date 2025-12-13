@@ -18,7 +18,6 @@ if (Test-Path $serviceFile) {
                 Write-Host "Killing process $($proc.Name)..."
                 Stop-Process -Id $proc.Id -Force
             }
-
             # Start lại app
             Write-Host "Starting $($json.app_path)..."
             Start-Process $json.app_path

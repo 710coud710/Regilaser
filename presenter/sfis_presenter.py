@@ -93,11 +93,11 @@ class SFISPresenter(BasePresenter):
         
         if success:
             self.currentPort = None
-            self.show_info("Ngắt kết nối SFIS thành công", "INFO")
-            log.info("Ngắt kết nối SFIS thành công")
+            self.show_info("Disconnect SFIS successfully", "INFO")
+            log.info("Disconnect SFIS successfully")
         else:
-            self.show_info("Lỗi ngắt kết nối SFIS", "ERROR")
-            log.error("Lỗi ngắt kết nối SFIS")
+            self.show_info("Error disconnect SFIS", "ERROR")
+            log.error("Error disconnect SFIS")
         
         return success
 

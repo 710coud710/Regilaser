@@ -11,6 +11,7 @@ class ProjectTable(QDialog):
         super().__init__(parent)
         self._init_ui()
 
+
     def _init_ui(self):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(5, 5, 5, 5)
@@ -21,10 +22,10 @@ class ProjectTable(QDialog):
         title_label.setStyleSheet("font-size: 16px; font-weight: bold;")
         layout.addWidget(title_label)
 
-        # Table widget with 5 columns: Project_Name, LM_Script_Name, LM_Num, PSN_PRE, Action
-        self.table = QTableWidget(0, 5, self)
+        # Table 7 columns: Project_Name, LM_Script_Name, LM_Num, PSN_PRE, SFIS Format, LM Mode, Action
+        self.table = QTableWidget(0, 7, self)
         self.table.setHorizontalHeaderLabels([
-            "Project Name", "LM Script", "LM Num", "PSN PRE", "Action"
+            "Project Name", "LM Script", "LM Num", "PSN PRE","SFIS Format", "LM Mode", "Action"
         ])
         self.table.horizontalHeader().setStretchLastSection(True)
         self.table.setEditTriggers(QTableWidget.NoEditTriggers)
@@ -37,16 +38,19 @@ class ProjectTable(QDialog):
             script_item = QTableWidgetItem(str(item.get("LM_Script_Name", "")))
             lm_num_item = QTableWidgetItem(str(item.get("LM_Num", "")))
             psn_pre_item = QTableWidgetItem(str(item.get("PSN_PRE", "")))
+            sfis_format_item = QTableWidgetItem(str(item.get("SFIS_format", "")))
+            lm_mode_item = QTableWidgetItem(str(item.get("LM_mode", "")))
 
             self.table.setItem(row, 0, project_item)
             self.table.setItem(row, 1, script_item)
             self.table.setItem(row, 2, lm_num_item)
             self.table.setItem(row, 3, psn_pre_item)
-
+            self.table.setItem(row, 4, sfis_format_item)
+            self.table.setItem(row, 5, lm_mode_item)
             # Action button: Select this project
             action_btn = QPushButton("Select")
             action_btn.clicked.connect(lambda checked, idx=row: self.on_select_clicked(idx))
-            self.table.setCellWidget(row, 4, action_btn)
+            self.table.setCellWidget(row, 6, action_btn)
 
     def on_select_clicked(self, row):
         """Handle select button click for the given row"""

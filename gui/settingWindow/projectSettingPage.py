@@ -32,7 +32,7 @@ class ProjectSettingPage(QWidget):
         self.sfis_format.addItems(["1", "2"])
         self.lm_mode = QComboBox()
         self.lm_mode.addItems(["1", "2"])
-        self.script = QComboBox()
+        self.script = QLineEdit()
         self.lm_num = QLineEdit()
         
         form.addRow("Current Project:", self.current_project)
@@ -45,13 +45,11 @@ class ProjectSettingPage(QWidget):
         layout.addStretch()
 
     def get_settings(self):
-        """Get current settings as dictionary"""
         return {
-            "station_name": self.station_name.text().strip(),
             "psn_pre": self.psn_pre.text().strip(),
             "sfis_format": self.sfis_format.currentText(),
             "lm_mode": self.lm_mode.currentText(),
-            "script": self.script.currentText(),
+            "script": self.script.text().strip(),
             "lm_num": self.lm_num.text().strip(),
         }
     def add_line(self, parent_layout):
@@ -70,5 +68,5 @@ class ProjectSettingPage(QWidget):
         self.psn_pre.setText(_to_text(settings.get("psn_pre", "")))
         self.sfis_format.setCurrentText((_to_text(settings.get("SFIS_format", ""))))
         self.lm_mode.setCurrentText((_to_text(settings.get("LM_mode", ""))))
-        self.script.setCurrentText((_to_text(settings.get("script", ""))))
+        self.script.setText((_to_text(settings.get("script", ""))))
         self.lm_num.setText((_to_text(settings.get("lm_num", ""))))

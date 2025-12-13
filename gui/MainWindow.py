@@ -4,16 +4,18 @@ Main Window - Container chính cho toàn bộ giao diện
 from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout
 from PySide6.QtCore import  Signal
 from PySide6.QtGui import QAction
-
-from gui import (
+from PySide6.QtGui import QIcon
+from utils.AppPathService import getAppDirectory
+import os
+from gui import (   
+    TopTopPanel,
     TopControlPanel,
     LeftControlPanel,
-    CenterPanel,
+    CenterPanel, 
     LogDisplay,
     BottomStatusBar,
-    TopTopPanel
 )
-from gui.projectWindow.projectTable import ProjectTable
+from gui.projectWindow import ProjectTable
 
 class MainWindow(QMainWindow):
     """Main window của Sprite Auto Laser Marking Program"""
@@ -40,6 +42,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Regilazi - Version 1.0 Prenium")
+        self.setWindowIcon(QIcon(os.path.join(getAppDirectory(), "icon.ico")))
         # self.setGeometry(100, 100, 1000, 700)
         # Tạo menu bar
         self._createMenuBar()
