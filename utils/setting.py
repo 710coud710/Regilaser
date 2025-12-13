@@ -1,17 +1,22 @@
 import json
 import os
-
+from utils.AppPathService import getAppDirectory
 
 class SettingsManager:
     def __init__(self):
+        exe_dir = getAppDirectory()
         appdata = os.getenv("APPDATA")
         self.app_folder = os.path.join(appdata, "Regilazi")
         os.makedirs(self.app_folder, exist_ok=True)
         self.config_path = os.path.join(self.app_folder, "settings.json")
         # Default settings nằm ở thư mục chính của project
-        self.default_setting_path = os.path.abspath(
-            os.path.join(os.path.dirname(__file__), "..", "default_setting.json")
-        )
+        # self.default_setting_path = os.path.abspath(
+        #     os.path.join(os.path.dirname(__file__), "..", "default_setting.json")
+        # )
+        self.default_setting_path = os.path.join(
+        exe_dir,
+        "default_setting.json"
+            )
         
         # Load settings
         self._settings = self._loadSettings()

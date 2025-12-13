@@ -11,6 +11,7 @@ from workers.project_worker import ProjectWorker
 from utils.Logging import getLogger
 from utils.setting import settings_manager
 from utils.restartApp import restartApp
+from utils.AppPathService import getAppDirectory
 # Khởi tạo logger
 log = getLogger()
 
@@ -28,14 +29,18 @@ class TopTopPresenter(BasePresenter):
         super().__init__()
         
         # Đường dẫn appdata
+        exe_dir = getAppDirectory()
         self.appdata_path = os.getenv("APPDATA")
         self.app_folder = os.path.join(self.appdata_path, "Regilazi")
         self.model_json_path = os.path.join(self.app_folder, "model.json")
         # Đường dẫn default_model.json trong thư mục dự án
-        self.default_model_path = os.path.abspath(
-            os.path.join(os.path.dirname(__file__), "..", "default_model.json")
-        )
-        
+        # self.default_model_path = os.path.abspath(
+        #     os.path.join(os.path.dirname(__file__), "..", "default_model.json")
+        # )
+        self.default_model_path = os.path.join(
+        exe_dir,
+        "default_model.json"
+            )
         # Tạo thư mục nếu chưa tồn tại
         os.makedirs(self.app_folder, exist_ok=True)
         

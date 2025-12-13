@@ -3,9 +3,11 @@ import sys
 import json
 import subprocess
 from utils.Logging import getLogger
+from utils.AppPathService import getAppDirectory
 log = getLogger()
 
 def restartApp(app_path = None):
+    exe_dir = getAppDirectory()
     """
     Ghi file service.json vào AppData để yêu cầu restart app.
     app_path: đường dẫn exe của ứng dụng cần restart
@@ -32,7 +34,7 @@ def restartApp(app_path = None):
                 json.dump(data, f)
             log.info(f"Restart request written to {service_file}")
 
-            ps_script = os.path.join(service_folder, "restart.ps1")  # Đường dẫn script PowerShell
+            ps_script = os.path.join(exe_dir, "restart.ps1")  # Đường dẫn script PowerShell
             if os.path.exists(ps_script):
                 subprocess.run([
                     "powershell",
