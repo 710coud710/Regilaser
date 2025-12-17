@@ -27,16 +27,14 @@ class CenterPanel(QWidget):
         # Standby Status (nền vàng)
         self.lbl_sprite = QLabel(self.STANDBY)
         self.lbl_sprite.setAlignment(Qt.AlignCenter)
-        font = QFont()
-        font.setPointSize(28)
-        font.setBold(True)
-        self.lbl_sprite.setFont(font)
         self.lbl_sprite.setStyleSheet("""
             background-color: #5493ff;
             border: 1px solid gray;
             border-radius: 10px;
             padding: 0px;
             color: #ffffff;
+            font-size: 28pt;
+            font-weight: bold;
         """)
         self.lbl_sprite.setMinimumHeight(70)
         self.lbl_sprite.setMinimumWidth(420)
@@ -89,5 +87,7 @@ class CenterPanel(QWidget):
             border-radius: 10px;
             padding: 0px;
             color: {text_color};
+            font-size: 28pt;
+            font-weight: bold;
         """)
 

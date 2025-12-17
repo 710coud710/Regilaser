@@ -3,8 +3,7 @@ Main Window - Container chính cho toàn bộ giao diện
 """
 from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout
 from PySide6.QtCore import  Signal
-from PySide6.QtGui import QAction
-from PySide6.QtGui import QIcon
+from PySide6.QtGui import QAction, QIcon, QFont
 from utils.AppPathService import getAppDirectory
 import os
 from gui import (   
@@ -45,7 +44,11 @@ class MainWindow(QMainWindow):
         self.setWindowIcon(QIcon(os.path.join(getAppDirectory(), "icon.ico")))
     
         # self.setGeometry(100, 100, 1000, 700)
-        self.setMinimumSize(850, 600)
+        self.setMinimumSize(850, 450)
+        
+        # Set default font cho toàn bộ application
+        app_font = QFont("Arial", 10)
+        self.setFont(app_font)
 
         # Apply background image
         bg_path = os.path.join(getAppDirectory(), "assets", "items", "bg3.jpg").replace("\\", "/")
@@ -61,6 +64,9 @@ class MainWindow(QMainWindow):
         self.setStyleSheet(f"""
             QMainWindow {{
                  border-image: url({bg_path})  0 0 0 0 stretch stretch;
+            }}
+            * {{
+                 font-family: Arial, sans-serif;
             }}
         """)
         

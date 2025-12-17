@@ -114,6 +114,7 @@ class LogDisplay(QWidget):
         self.log_view.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
         self.log_view.setMaximumBlockCount(3000)  # Giữ lại 2000 dòng gần nhất
 
+        # Giữ Consolas cho log (monospace font tốt cho log)
         font = QFont("Consolas", 10)
         self.log_view.setFont(font)        
         layout.addWidget(self.log_view, stretch=1)

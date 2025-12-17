@@ -26,8 +26,9 @@ class TopTopPanel(QWidget):
 
         # Title label
         title = QLabel("PROJECT:")
+        # Kế thừa Arial từ parent, chỉ tăng size
         title.setStyleSheet("""
-                        font-size: 24px; 
+                        font-size: 24pt; 
                         font-weight: bold;
                         color: #00bcd4;
                         """)

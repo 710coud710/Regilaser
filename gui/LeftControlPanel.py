@@ -54,11 +54,13 @@ class LeftControlPanel(QWidget):
  
         # Start button (to, in nghiêng)
         self.btn_start = QPushButton("Start")
-        font = QFont()
-        font.setPointSize(24)
-        font.setItalic(True)
-        font.setBold(True)
-        self.btn_start.setFont(font)
+        self.btn_start.setStyleSheet("""
+            QPushButton {
+                font-size: 25pt;
+                font-weight: bold;
+                color: #101033;
+            }
+        """)
         self.btn_start.setMinimumHeight(80)
         self.btn_start.clicked.connect(self.startClicked.emit)
         layout.addWidget(self.btn_start)
