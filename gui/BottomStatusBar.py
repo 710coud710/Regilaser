@@ -25,15 +25,11 @@ class BottomStatusBar(QWidget):
         layout.setContentsMargins(5, 2, 5, 2)
         layout.setSpacing(10)
         
-        # Load settings
-        self.sfis_com = settings_manager.get("connection.sfc.com_port", "COM8")
-        self.plc_com = settings_manager.get("connection.plc.com_port", "COM3")
-        self.op_num = settings_manager.get("general.op_num", "")
-        # ===== SFIS Control =====
-        self.btn_sfis = QPushButton("SFIS OFF")
-        self.btn_sfis.setCheckable(True)
-        self.btn_sfis.setChecked(False)
-        self.btn_sfis.setStyleSheet("""
+        self.setStyleSheet("""
+            QWidget {
+                background-color: #f0f0f0;
+                border: 1px solid grey;
+            }
             QPushButton { 
                 background-color: #ffc0cb; 
                 font-weight: bold;
@@ -43,7 +39,33 @@ class BottomStatusBar(QWidget):
             QPushButton:checked { 
                 background-color: #9fff9f; 
             }
-        """)
+            QComboBox {
+                background-color: #f0f0f0;
+                border: 1px solid grey;
+                color: black;
+                padding: 5px;
+            }
+            QComboBox:hover {
+                background-color: #e0e0e0;
+            }
+            QComboBox:editable {
+                background-color: #f0f0f0;
+                border: 1px solid grey;
+                color: black;
+                padding: 5px;
+            }
+            QLabel {
+                color: black;
+                padding: 5px;
+            }
+        """)        # Load settings
+        self.sfis_com = settings_manager.get("connection.sfc.com_port", "COM8")
+        self.plc_com = settings_manager.get("connection.plc.com_port", "COM3")
+        self.op_num = settings_manager.get("general.op_num", "")
+        # ===== SFIS Control =====
+        self.btn_sfis = QPushButton("SFIS OFF")
+        self.btn_sfis.setCheckable(True)
+        self.btn_sfis.setChecked(False)   
         self.btn_sfis.toggled.connect(self._onSfisButtonToggled)
         layout.addWidget(self.btn_sfis)
         
@@ -60,17 +82,6 @@ class BottomStatusBar(QWidget):
         self.btn_plc = QPushButton("PLC OFF")
         self.btn_plc.setCheckable(True)
         self.btn_plc.setChecked(False)
-        self.btn_plc.setStyleSheet("""
-            QPushButton { 
-                background-color: #ffc0cb; 
-                font-weight: bold;
-                padding: 5px;
-                min-width: 80px;
-            }
-            QPushButton:checked { 
-                background-color: #9fff9f; 
-            }
-        """)
         self.btn_plc.toggled.connect(self._onPlcButtonToggled)
         layout.addWidget(self.btn_plc)
         
@@ -87,17 +98,6 @@ class BottomStatusBar(QWidget):
         self.btn_laser = QPushButton("LASER OFF")
         self.btn_laser.setCheckable(True)
         self.btn_laser.setChecked(False)
-        self.btn_laser.setStyleSheet("""
-            QPushButton { 
-                background-color: #ffc0cb; 
-                font-weight: bold;
-                padding: 5px;
-                min-width: 80px;
-            }
-            QPushButton:checked { 
-                background-color: #9fff9f; 
-            }
-        """)
         self.btn_laser.toggled.connect(self._onLaserButtonToggled)
         layout.addWidget(self.btn_laser)
         
@@ -106,21 +106,13 @@ class BottomStatusBar(QWidget):
         
         # ===== Info Labels =====
         lbl = QLabel("Version: 1.0.1b")
-        lbl.setStyleSheet("padding: 2px; border: 1px solid #ccc;")
         layout.addWidget(lbl)
-
         lbl = QLabel(f"OP_Num: {self.op_num}")
-        lbl.setStyleSheet("padding: 2px; border: 1px solid #ccc;")
         layout.addWidget(lbl)
-        
         lbl = QLabel("PC Name: ")
-        lbl.setStyleSheet("padding: 2px; border: 1px solid #ccc;")
-        layout.addWidget(lbl)
-        
-        layout.addStretch()
-        
+        layout.addWidget(lbl)        
+        layout.addStretch()        
         self.setMaximumHeight(35)
-        self.setStyleSheet("background-color: #f0f0f0;")
     
     # ===== Event Handlers =====
     def _onSfisButtonToggled(self, checked):

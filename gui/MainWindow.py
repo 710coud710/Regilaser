@@ -43,11 +43,45 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("Regilazi - Version 1.0 Prenium")
         self.setWindowIcon(QIcon(os.path.join(getAppDirectory(), "icon.ico")))
+    
         # self.setGeometry(100, 100, 1000, 700)
+        self.setMinimumSize(850, 600)
+
+        # Apply background image
+        bg_path = os.path.join(getAppDirectory(), "assets", "items", "bg3.jpg").replace("\\", "/")
+        
+        # self.setStyleSheet(f"""
+        #     QMainWindow {{
+        #         background-image: url({bg_path});
+        #         background-repeat: no-repeat;
+        #         background-position: center;
+        #         background-size: contain;
+        #     }}
+        # """)
+        self.setStyleSheet(f"""
+            QMainWindow {{
+                 border-image: url({bg_path})  0 0 0 0 stretch stretch;
+            }}
+        """)
+        
         # Tạo menu bar
         self._createMenuBar()
+        # Chỉnh màu menubar bằng stylesheet
+        self.menuBar().setStyleSheet("""
+            QMenuBar {
+                background-color: transparent;
+                color: white;
+                font-size: 13px;
+                font-weight: bold;
+            }
+            QMenuBar::item:pressed {
+                background: #4caf50;
+                color: white;
+            }
+        """)
         # Main widget
         main_widget = QWidget()
+        # main_widget.setStyleSheet("background: transparent;")
         self.setCentralWidget(main_widget)
         
         """Main layout"""

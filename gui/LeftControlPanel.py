@@ -25,6 +25,33 @@ class LeftControlPanel(QWidget):
         layout.setContentsMargins(5, 5, 5, 5)
         layout.setSpacing(10)
         
+        self.setStyleSheet("""
+            QPushButton {
+                background-color: #cadcaf;
+                border: 1px solid black;
+                border-radius: 5px;
+                padding: 10px;
+                font-size: 16pt;
+            }         
+            QPushButton:hover {
+                background-color: #cadcfc;
+                color: black;
+            }
+            QPushButton:pressed {
+                background-color: #00236b;
+                color: white;
+            }
+
+            QLabel {
+                background-color: white;
+                border: 1px solid gray;
+                border-radius: 10px;
+                font-size: 19pt;
+                font-weight: bold;
+                color: #101033;
+            }
+        """)
+ 
         # Start button (to, in nghiêng)
         self.btn_start = QPushButton("Start")
         font = QFont()
@@ -33,20 +60,12 @@ class LeftControlPanel(QWidget):
         font.setBold(True)
         self.btn_start.setFont(font)
         self.btn_start.setMinimumHeight(80)
-        self.btn_start.setStyleSheet("background-color: #f0f0f0;")
         self.btn_start.clicked.connect(self.startClicked.emit)
         layout.addWidget(self.btn_start)
         
         #INTERVAL
-        self.lbl_interval = QLabel("Time Test: 20s")
+        self.lbl_interval = QLabel("Time Test: 11s")
         self.lbl_interval.setAlignment(Qt.AlignCenter)
-        self.lbl_interval.setStyleSheet("""
-            background-color: cyan;
-            padding: 5px;
-            font-size: 16pt;
-            font-weight: bold;
-            border: 1px solid black;
-        """)
         self.lbl_interval.setMaximumHeight(40)
         layout.addWidget(self.lbl_interval)        
         

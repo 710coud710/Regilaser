@@ -19,25 +19,26 @@ class TopTopPanel(QWidget):
         main_layout = QHBoxLayout(self)
         main_layout.setContentsMargins(5, 5, 5, 5)
         main_layout.setSpacing(10)
+        main_layout.addStretch(1)
 
-        # Left: Title label
-        title = QLabel("Project:")
+        center_layout = QHBoxLayout()
+        center_layout.setSpacing(10)
+
+        # Title label
+        title = QLabel("PROJECT:")
         title.setStyleSheet("""
-                        font-size: 16px; 
+                        font-size: 24px; 
                         font-weight: bold;
+                        color: #00bcd4;
                         """)
-        title.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
-        title.setFixedWidth(90)
-        main_layout.addWidget(title, stretch=0)
-
-        # Center: Combo box, centered via stretch
+        center_layout.addWidget(title)
+        # Combo box
         self.model_combo = QComboBox()
-        self.model_combo.setFixedWidth(300)  
         self.model_combo.setPlaceholderText("Loading projects...")
         self.model_combo.addItems(self.presenter.getProjectNames())
         self.model_combo.currentTextChanged.connect(self._onComboSelectionChanged)
-        main_layout.addWidget(self.model_combo, stretch=0)
-
+        center_layout.addWidget(self.model_combo)
+        # Button
         self.button_change = QPushButton("Change")
         self.button_change.setEnabled(False)  # Disabled by default
         self.button_change.clicked.connect(self._onChangeButtonClicked)
@@ -55,11 +56,9 @@ class TopTopPanel(QWidget):
                 background-color: #45a049;
             }
         """)
-        main_layout.addWidget(self.button_change, stretch=0)
-        main_layout.addStretch(2) 
-
-
-        # Dữ liệu sẽ được load từ presenter qua signal
+        center_layout.addWidget(self.button_change)
+        main_layout.addLayout(center_layout)
+        main_layout.addStretch(1)
 
     def _connectSignals(self):
         """Kết nối signals từ presenter"""

@@ -28,14 +28,15 @@ class CenterPanel(QWidget):
         self.lbl_sprite = QLabel(self.STANDBY)
         self.lbl_sprite.setAlignment(Qt.AlignCenter)
         font = QFont()
-        font.setPointSize(16)
+        font.setPointSize(28)
         font.setBold(True)
         self.lbl_sprite.setFont(font)
         self.lbl_sprite.setStyleSheet("""
-            background-color: aqua;
-            border: 2px solid black;
+            background-color: #5493ff;
+            border: 1px solid gray;
             border-radius: 10px;
             padding: 0px;
+            color: #ffffff;
         """)
         self.lbl_sprite.setMinimumHeight(70)
         self.lbl_sprite.setMinimumWidth(420)
@@ -64,22 +65,29 @@ class CenterPanel(QWidget):
         
         # Update background color based on status
         if status == self.STANDBY:
-            bg_color = "aqua"
+            bg_color = "#5493ff"
+            text_color = "#ffffff"
         elif status == self.MARKING:
-            bg_color = "yellow"
+            bg_color = "#ffd600"
+            text_color = "#000000"
         elif status == self.COMPLETED:
-            bg_color = "lightgreen"
+            bg_color = "#00e676"
+            text_color = "#ffffff"
         elif status == self.FAILED:
-            bg_color = "orange"
+            bg_color = "#ff9800"
+            text_color = "#ffffff"
         elif status == self.ERROR:
-            bg_color = "red"
+            bg_color = "#f44336"
+            text_color = "#ffffff"
         else:
-            bg_color = "aqua"
+            bg_color = "#6f6ffc"
+            text_color = "#ffffff"
         
         self.lbl_sprite.setStyleSheet(f"""
             background-color: {bg_color};
-            border: 2px solid black;
+            border: 1px solid gray;
             border-radius: 10px;
             padding: 0px;
+            color: {text_color};
         """)
 

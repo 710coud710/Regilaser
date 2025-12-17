@@ -21,6 +21,7 @@ class SFISPresenter(BasePresenter):
     def __init__(self):
         super().__init__()        
         # Khởi tạo Model
+        
         self.sfis_model = SFISModel()
         
         # Khởi tạo Worker và Thread cho SFIS (chỉ cần 1 worker)
