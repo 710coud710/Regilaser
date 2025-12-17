@@ -11,15 +11,13 @@ log = getLogger()
 
 @dataclass
 class SFISData:
-    """Cấu trúc dữ liệu SFIS"""
-    # Request data
-    mo: str = ""  # Manufacturing Order (20 bytes)
-    all_parts_no: str = ""  # ALL PARTS NO (12 bytes)
-    panel_no: str = ""  # Panel Number (20 bytes)
+    mo: str = ""  
+    all_parts_no: str = ""  
+    panel_no: str = "" 
     
     # Response data
-    laser_sn: str = ""  # Laser Serial Number (25 bytes)
-    status: str = ""  # Status (20 bytes)
+    laser_sn: str = ""  
+    status: str = ""
     
     # PSN data (if using old format)
     psn_list: List[str] = None  # List of PSN (10 items, 20 bytes each)

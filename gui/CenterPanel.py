@@ -57,4 +57,29 @@ class CenterPanel(QWidget):
     
     def get_selected_com2(self):
         return self.combo_com2.currentText()
+    
+    def setStatus(self, status):
+        """Set status and update UI accordingly"""
+        self.lbl_sprite.setText(status)
+        
+        # Update background color based on status
+        if status == self.STANDBY:
+            bg_color = "aqua"
+        elif status == self.MARKING:
+            bg_color = "yellow"
+        elif status == self.COMPLETED:
+            bg_color = "lightgreen"
+        elif status == self.FAILED:
+            bg_color = "orange"
+        elif status == self.ERROR:
+            bg_color = "red"
+        else:
+            bg_color = "aqua"
+        
+        self.lbl_sprite.setStyleSheet(f"""
+            background-color: {bg_color};
+            border: 2px solid black;
+            border-radius: 10px;
+            padding: 0px;
+        """)
 

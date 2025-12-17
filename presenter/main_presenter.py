@@ -2,12 +2,13 @@
 Main Presenter - Điều phối giữa View (GUI) và các Presenter con
 """
 from re import L
-from PySide6.QtCore import Signal
+from PySide6.QtCore import Signal, QThread
 from presenter.sfis_presenter import SFISPresenter
 from presenter.plc_presenter import PLCPresenter
 from presenter.laser_presenter import LaserPresenter
 from presenter.toptop_presenter import TopTopPresenter
 from presenter.project_presenter import ProjectPresenter
+from workers.marking_worker import MarkingWorker
 from utils.Logging import getLogger
 from presenter.base_presenter import BasePresenter
 from utils.setting import settings_manager
@@ -35,8 +36,23 @@ class MainPresenter(BasePresenter):
         self.project_presenter = ProjectPresenter()
         self.setting_window = None
         self.about_window = None
+        
+        # Khởi tạo marking worker và thread
+        self.marking_worker = MarkingWorker(
+            self.sfis_presenter,
+            self.laser_presenter,
+            settings_manager
+        )
+        self.marking_thread = QThread()
+        self.marking_worker.moveToThread(self.marking_thread)
+        
         # Kết nối signals
         self.connectSignals()
+        self._connectMarkingWorkerSignals()
+        
+        # Khởi động marking thread
+        self.marking_thread.start()
+        
         # Trạng thái
         self.isRunning = False
         log.info("MainPresenter initialized successfully")
@@ -104,6 +120,13 @@ class MainPresenter(BasePresenter):
         self.logMessage.connect(self.updateLog)
         self.statusChanged.connect(self.updateStatusBar)
     
+    def _connectMarkingWorkerSignals(self):
+        """Kết nối signals từ MarkingWorker"""
+        self.marking_worker.statusChanged.connect(self.onMarkingStatusChanged)
+        self.marking_worker.progressUpdate.connect(self.onMarkingProgressUpdate)
+        self.marking_worker.finished.connect(self.onMarkingFinished)
+        self.marking_worker.error.connect(self.onMarkingError)
+    
     def forwardLog(self, message, level):
         """Forward log from sub-presenters to View"""
         self.logMessage.emit(message, level)
@@ -133,10 +156,18 @@ class MainPresenter(BasePresenter):
         """Khởi tạo kết nối và cấu hình ban đầu""" 
         topPanel = self.main_window.getTopPanel()
         bottomStatus = self.main_window.getBottomStatus()
+        centerPanel = self.main_window.getCenterPanel()
+        leftPanel = self.main_window.getLeftPanel()
         
         # Set initial status
         topPanel.setLaserConnectionStatus(False, "Initializing...")
         bottomStatus.setLaserConnectionStatus(False, "Initializing...")
+        
+        # Set center panel to STANDBY
+        centerPanel.setStatus(centerPanel.STANDBY)
+        
+        # Reset timer
+        leftPanel.resetTimer()
         
         # Tự động kết nối SFIS, PLC và laser (chạy song song với QTimer)
         self.laser_presenter.startAutoConnectLaser()
@@ -198,73 +229,104 @@ class MainPresenter(BasePresenter):
         log.info("START signal sent successfully - waiting for response...")
         self.show_info("START signal sent successfully - waiting for response...")
     
-    def startAutomationMarkingLaser(self,message):
+    def startAutomationMarkingLaser(self, message):
         try:
             if message == "Ready" or "READY":
                 log.info(f"PLC received:[{message}] --> start marking process")
                 self.show_info(f"PLC received:[{message}] --> start marking process")
                 log.info(f"=========START AUTOMATION MARKING LASER=========")
                 self.show_info(f"=========START AUTOMATION MARKING LASER=========")
-                if self.startMarkingLaserProcess():
-                    self.plc_presenter.sendPLC_OK()
-                    log.info("=========MARKING LASER PROCESS SUCCESSFULLY=========")
-                    self.show_success("=========MARKING LASER PROCESS SUCCESSFULLY=========")
-                    return True
-                else:
-                    return False                
+                
+                # Check if already running
+                if self.isRunning:
+                    log.warning("Marking process already running")
+                    self.show_warning("Marking process already running, please wait...")
+                    return False
+                
+                # Mark as running
+                self.isRunning = True
+                
+                # Start timer
+                left_panel = self.main_window.getLeftPanel()
+                left_panel.startTimer()
+                
+                # Start marking in worker thread
+                from PySide6.QtCore import QMetaObject, Qt
+                QMetaObject.invokeMethod(
+                    self.marking_worker,
+                    "startMarking",
+                    Qt.QueuedConnection
+                )
+                
+                return True
             else:
                 log.info(f"PLC received:[{message}] --> Wrong signal cannot start")
                 self.show_info(f"PLC received:[{message}] --> Wrong signal cannot start")
-        except Exception as e:
-            log.error(f"Error starting automation marking laser: {e}")
-            self.show_error(f"Error starting automation marking laser: {e}")
-
-    def startMarkingLaserProcess(self) -> bool:
-        """Bắt đầu khắc laser trong QThread"""
-        try:
-            response = self.sfis_presenter.getDataFromSFIS()
-            if not response:
-                self.show_error("Cannot receive data from SFIS")
-                log.error("Cannot receive data from SFIS")
-                self.isRunning = False
                 return False
-         
-            #Đã Format dữ liệu từ SFIS
-            content = self.laser_presenter.CreateFormatContent(response)
-            if not content:
-                self.show_error("Cannot create format content for laser")
-                log.error("Cannot create format content for laser")
-                self.isRunning = False
-                return False
-            # Get laser script from settings
-            laser_script = settings_manager.get("connection.laser.script", 20)
-            success = self.laser_presenter.startLaserMarkingProcess(script=laser_script, content=content)
-            if not success:
-                self.show_error("Cannot start laser marking process")
-                log.error("Cannot start laser marking process")
-                self.isRunning = False
-                return False
-            
-            #Send complete to SFIS
-            mo = response.mo
-            panel_no = response.panel_no
-            # log.info(f"Send complete to SFIS: {mo}, {panel_no}")
-            post_result_sfc = settings_manager.get("general.post_result_sfc", True)
-            if post_result_sfc:
-                success = self.sfis_presenter.sendComplete(mo, panel_no)
-                if not success:
-                    self.show_error("Cannot send complete to SFIS")
-                    log.error("Cannot send complete to SFIS")
-                    self.isRunning = False
-                    return False
-                
-            return True
-
         except Exception as e:
             log.error(f"Error starting automation marking laser: {e}")
             self.show_error(f"Error starting automation marking laser: {e}")
             self.isRunning = False
             return False
+    
+    def _resetToStandby(self):
+        """Reset system to STANDBY state"""
+        try:
+            center_panel = self.main_window.getCenterPanel()
+            left_panel = self.main_window.getLeftPanel()
+            
+            center_panel.setStatus(center_panel.STANDBY)
+            left_panel.resetTimer()
+            
+            log.info("System reset to STANDBY")
+        except Exception as e:
+            log.error(f"Error resetting to standby: {e}")
+    
+    def onMarkingStatusChanged(self, status):
+        """Handle status change from marking worker"""
+        try:
+            center_panel = self.main_window.getCenterPanel()
+            center_panel.setStatus(status)
+            log.info(f"Status changed to: {status}")
+        except Exception as e:
+            log.error(f"Error handling status change: {e}")
+    
+    def onMarkingProgressUpdate(self, message):
+        """Handle progress update from marking worker"""
+        self.show_info(message)
+        log.info(f"Progress: {message}")
+    
+    def onMarkingFinished(self, success):
+        """Handle marking process finished"""
+        try:
+            left_panel = self.main_window.getLeftPanel()
+            left_panel.stopTimer()
+            elapsed = left_panel.getElapsedTime()
+            
+            if success:
+                self.plc_presenter.sendPLC_OK()
+                self.show_success(f"Marking completed successfully in {elapsed}s")
+                log.info(f"=========MARKING LASER PROCESS SUCCESSFULLY in {elapsed}s=========")
+            else:
+                self.show_error(f"Marking failed after {elapsed}s")
+                log.error(f"=========MARKING LASER PROCESS FAILED in {elapsed}s=========")
+            
+            # Reset to STANDBY after delay
+            from PySide6.QtCore import QTimer
+            QTimer.singleShot(3000, self._resetToStandby)
+            
+            # Mark as not running
+            self.isRunning = False
+            
+        except Exception as e:
+            log.error(f"Error handling marking finished: {e}")
+            self.isRunning = False
+    
+    def onMarkingError(self, error_msg):
+        """Handle error from marking worker"""
+        self.show_error(error_msg)
+        log.error(f"Marking error: {error_msg}")
+
     
     def onSfisConnectionChanged(self, isConnected):
         """Cập nhật trạng thái SFIS trên cả TopPanel và BottomStatus"""
@@ -377,13 +439,24 @@ class MainPresenter(BasePresenter):
     
     def cleanup(self):
         """Dọn dẹp tài nguyên khi đóng ứng dụng"""
+        # Stop marking worker
+        if hasattr(self, 'marking_worker'):
+            self.marking_worker.stop()
+        
+        # Stop marking thread
+        if hasattr(self, 'marking_thread') and self.marking_thread.isRunning():
+            self.marking_thread.quit()
+            self.marking_thread.wait(3000)
+        
+        # Cleanup presenters
         self.sfis_presenter.cleanup()
         self.plc_presenter.cleanup()
         self.laser_presenter.cleanup()
         self.toptop_presenter.cleanup()
         self.project_presenter.cleanup()
-        self.show_info("Cleanup sub-presenters completed")
-        log.info("Cleanup sub-presenters completed")
+        
+        self.show_info("Cleanup completed")
+        log.info("Cleanup completed")
 
     ###################Laser menu###################
     def onSendC2(self):

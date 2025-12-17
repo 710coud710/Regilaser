@@ -3,7 +3,7 @@ Left Control Panel - Chứa ALL PARTS checkbox, Start button, SFIS/LCD controls
 """
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QCheckBox, QPushButton,
                              QGroupBox, QLabel, QLineEdit)
-from PySide6.QtCore import Signal, Qt
+from PySide6.QtCore import Signal, Qt, QTimer
 from PySide6.QtGui import QFont
 
 
@@ -15,6 +15,9 @@ class LeftControlPanel(QWidget):
     
     def __init__(self):
         super().__init__()
+        self.elapsed_seconds = 0
+        self.timer = QTimer()
+        self.timer.timeout.connect(self._updateTimer)
         self._init_ui()
     
     def _init_ui(self):
@@ -56,4 +59,29 @@ class LeftControlPanel(QWidget):
     
     def getIntervalLabel(self):
         return self.lbl_interval
+    
+    def startTimer(self):
+        """Start the timer"""
+        self.elapsed_seconds = 0
+        self.lbl_interval.setText("Time Test: 0s")
+        self.timer.start(1000)  # Update every second
+    
+    def stopTimer(self):
+        """Stop the timer"""
+        self.timer.stop()
+    
+    def resetTimer(self):
+        """Reset the timer"""
+        self.timer.stop()
+        self.elapsed_seconds = 0
+        self.lbl_interval.setText("Time Test: 0s")
+    
+    def getElapsedTime(self):
+        """Get elapsed time in seconds"""
+        return self.elapsed_seconds
+    
+    def _updateTimer(self):
+        """Update timer display"""
+        self.elapsed_seconds += 1
+        self.lbl_interval.setText(f"Time Test: {self.elapsed_seconds}s")
 
