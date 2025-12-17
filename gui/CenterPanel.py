@@ -63,19 +63,19 @@ class CenterPanel(QWidget):
         
         # Update background color based on status
         if status == self.STANDBY:
-            bg_color = "#5493ff"
+            bg_color = "#2563EB"
             text_color = "#ffffff"
         elif status == self.MARKING:
-            bg_color = "#ffd600"
+            bg_color = "#F59E0B"
             text_color = "#000000"
         elif status == self.COMPLETED:
-            bg_color = "#00e676"
+            bg_color = "#22C55E"
             text_color = "#ffffff"
         elif status == self.FAILED:
-            bg_color = "#ff9800"
+            bg_color = "#EF4444"
             text_color = "#ffffff"
         elif status == self.ERROR:
-            bg_color = "#f44336"
+            bg_color = "#991B1B"
             text_color = "#ffffff"
         else:
             bg_color = "#6f6ffc"

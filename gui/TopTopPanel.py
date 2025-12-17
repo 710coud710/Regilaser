@@ -1,5 +1,9 @@
+from multiprocessing import set_forkserver_preload
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QLabel, QPushButton, QComboBox, QMessageBox
 from PySide6.QtCore import Signal, Qt
+from PySide6.QtGui import QIcon
+from utils.AppPathService import getAppDirectory
+import os
 
 class TopTopPanel(QWidget):
     modelChanged = Signal(str)
@@ -20,30 +24,39 @@ class TopTopPanel(QWidget):
         main_layout.setContentsMargins(5, 5, 5, 5)
         main_layout.setSpacing(10)
         main_layout.addStretch(1)
-
         center_layout = QHBoxLayout()
         center_layout.setSpacing(10)
-
-        # Title label
-        title = QLabel("PROJECT:")
-        # Kế thừa Arial từ parent, chỉ tăng size
-        title.setStyleSheet("""
-                        font-size: 24pt; 
-                        font-weight: bold;
-                        color: #00bcd4;
-                        """)
-        center_layout.addWidget(title)
-        # Combo box
-        self.model_combo = QComboBox()
-        self.model_combo.setPlaceholderText("Loading projects...")
-        self.model_combo.addItems(self.presenter.getProjectNames())
-        self.model_combo.currentTextChanged.connect(self._onComboSelectionChanged)
-        center_layout.addWidget(self.model_combo)
-        # Button
-        self.button_change = QPushButton("Change")
-        self.button_change.setEnabled(False)  # Disabled by default
-        self.button_change.clicked.connect(self._onChangeButtonClicked)
-        self.button_change.setStyleSheet("""
+        self.setStyleSheet("""
+            QLabel {
+                font-size: 24pt; 
+                font-weight: bold;
+                color: #041d36;
+            }    
+            QComboBox {
+                font-size: 14pt;
+                font-weight: bold;
+                color: #101033;
+            }
+            QComboBox:disabled {
+                background-color: #cccccc;
+                color: #666666;
+            }
+            QComboBox:enabled:hover {
+                background-color: lightblue;
+            }
+            QComboBox:editable {
+                font-size: 18pt;
+                font-weight: bold;
+                color: #101033;
+            }
+            QComboBox:editable:hover {
+                background-color: lightblue;
+            }   
+            QPushButton {
+                font-size: 14pt;
+                font-weight: bold;
+                color: #101033;
+            }
             QPushButton:disabled {
                 background-color: #cccccc;
                 color: #666666;
@@ -57,6 +70,20 @@ class TopTopPanel(QWidget):
                 background-color: #45a049;
             }
         """)
+        # Title label
+        title = QLabel("PROJECT :")
+        center_layout.addWidget(title)
+        # Combo box
+        self.model_combo = QComboBox()
+        self.model_combo.setPlaceholderText("Loading projects...")
+        self.model_combo.addItems(self.presenter.getProjectNames())
+        self.model_combo.currentTextChanged.connect(self._onComboSelectionChanged)
+        center_layout.addWidget(self.model_combo)
+        # Button
+        self.button_change = QPushButton("Change")
+        self.button_change.setIcon(QIcon(os.path.join(getAppDirectory(), "assets/change.svg")))
+        self.button_change.setEnabled(False)  # Disabled by default
+        self.button_change.clicked.connect(self._onChangeButtonClicked)
         center_layout.addWidget(self.button_change)
         main_layout.addLayout(center_layout)
         main_layout.addStretch(1)

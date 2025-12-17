@@ -44,14 +44,14 @@ class MainWindow(QMainWindow):
         self.setWindowIcon(QIcon(os.path.join(getAppDirectory(), "icon.ico")))
     
         # self.setGeometry(100, 100, 1000, 700)
-        self.setMinimumSize(850, 450)
+        self.setMinimumSize(800, 450)
         
         # Set default font cho toàn bộ application
-        app_font = QFont("Arial", 10)
-        self.setFont(app_font)
+        # app_font = QFont("Arial", 10)
+        # self.setFont(app_font)
 
         # Apply background image
-        bg_path = os.path.join(getAppDirectory(), "assets", "items", "bg3.jpg").replace("\\", "/")
+        bg_path = os.path.join(getAppDirectory(), "assets", "items", "bg.jpg").replace("\\", "/")
         
         # self.setStyleSheet(f"""
         #     QMainWindow {{
