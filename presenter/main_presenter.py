@@ -7,9 +7,11 @@ from presenter.sfis_presenter import SFISPresenter
 from presenter.plc_presenter import PLCPresenter
 from presenter.laser_presenter import LaserPresenter
 from presenter.toptop_presenter import TopTopPresenter
+from presenter.project_presenter import ProjectPresenter
 from utils.Logging import getLogger
 from presenter.base_presenter import BasePresenter
 from utils.setting import settings_manager
+from utils.restartApp import restartApp
 # Khởi tạo logger
 log = getLogger()
 
@@ -30,6 +32,7 @@ class MainPresenter(BasePresenter):
         self.plc_presenter = PLCPresenter()
         self.laser_presenter = LaserPresenter()
         self.toptop_presenter = TopTopPresenter()
+        self.project_presenter = ProjectPresenter()
         self.setting_window = None
         self.about_window = None
         # Kết nối signals
@@ -90,6 +93,12 @@ class MainPresenter(BasePresenter):
         # TopTop Presenter signals
         self.toptop_presenter.logMessage.connect(self.forwardLog)
         self.toptop_presenter.modelChanged.connect(self.onModelChangedFromPresenter)
+        
+        # Project Presenter signals
+        self.project_presenter.logMessage.connect(self.forwardLog)
+        self.project_presenter.projectDataLoaded.connect(self.onProjectDataLoadedFromPresenter)
+        self.project_presenter.projectUpdated.connect(self.onProjectUpdatedFromPresenter)
+        self.project_presenter.projectDeleted.connect(self.onProjectDeletedFromPresenter)
         
         # Presenter signals to View
         self.logMessage.connect(self.updateLog)
@@ -354,12 +363,25 @@ class MainPresenter(BasePresenter):
         self.show_info(f"Project updated by presenter: {project_name}")
         log.info(f"Project updated by presenter: {project_name}")
     
+    def onProjectDataLoadedFromPresenter(self, project_data):
+        """Xử lý khi ProjectPresenter load xong dữ liệu"""
+        log.info(f"Project data loaded: {len(project_data)} projects")
+    
+    def onProjectUpdatedFromPresenter(self, project_name):
+        """Xử lý khi ProjectPresenter update project thành công"""
+        log.info(f"Project updated notification: {project_name}")
+    
+    def onProjectDeletedFromPresenter(self, project_name):
+        """Xử lý khi ProjectPresenter delete project thành công"""
+        log.info(f"Project deleted notification: {project_name}")
+    
     def cleanup(self):
         """Dọn dẹp tài nguyên khi đóng ứng dụng"""
         self.sfis_presenter.cleanup()
         self.plc_presenter.cleanup()
         self.laser_presenter.cleanup()
         self.toptop_presenter.cleanup()
+        self.project_presenter.cleanup()
         self.show_info("Cleanup sub-presenters completed")
         log.info("Cleanup sub-presenters completed")
 
@@ -473,16 +495,22 @@ class MainPresenter(BasePresenter):
         log.info("Opening project table dialog")
         self.show_info("Opening project table...")
         try:
+            # Refresh project data trước khi hiển thị
+            self.project_presenter.loadProjectDataImmediate()
+            
             # Get project table dialog from main window
             project_dialog = self.main_window.getProjectTableDialog()
             if project_dialog:
-                # Load data from toptop presenter
-                model_data = self.toptop_presenter.getModelData()
-                if model_data:
-                    project_dialog.set_data(model_data)
-                    # Connect project selection signal
+                # Load data from project presenter
+                project_data = self.project_presenter.getProjectData()
+                if project_data:
+                    project_dialog.set_data(project_data)
+                    # Connect project signals
                     project_dialog.project_selected.connect(self.onProjectSelected)
-                    log.info(f"Loaded {len(model_data)} projects into table")
+                    project_dialog.project_edit.connect(self.onProjectEdit)
+                    project_dialog.project_delete.connect(self.onProjectDelete)
+                    project_dialog.project_add.connect(self.onProjectAdd)
+                    log.info(f"Loaded {len(project_data)} projects into table")
                 else:
                     self.show_warning("No project data available")
                     log.warning("No project data available")
@@ -499,12 +527,90 @@ class MainPresenter(BasePresenter):
             if success:
                 self.show_success(f"Project changed to: {project_name}")
                 log.info(f"Project successfully changed to: {project_name}")
+                restartApp()
             else:
                 self.show_error(f"Failed to change project to: {project_name}")
                 log.error(f"Failed to change project to: {project_name}")
         except Exception as e:
             self.show_error(f"Error changing project: {e}")
             log.error(f"Error changing project: {e}")
+    
+    def onProjectEdit(self, project_data):
+        """Handle project edit from project table"""
+        project_name = project_data.get("Project_Name", "")
+        log.info(f"Editing project: {project_name}")
+        try:
+            # Update project using project presenter
+            success = self.project_presenter.updateProject(project_data)
+            if success:
+                self.show_success(f"Project updated: {project_name}")
+                log.info(f"Project successfully updated: {project_name}")
+                
+                # Refresh toptop presenter data nếu project hiện tại bị thay đổi
+                current_project = self.toptop_presenter.getCurrentModel()
+                if current_project == project_name:
+                    self.toptop_presenter.loadModelDataImmediate()
+                
+                # Refresh project table
+                self.onProjectClicked()
+            else:
+                self.show_error(f"Failed to update project: {project_name}")
+                log.error(f"Failed to update project: {project_name}")
+        except Exception as e:
+            self.show_error(f"Error updating project: {e}")
+            log.error(f"Error updating project: {e}")
+    
+    def onProjectDelete(self, project_name):
+        """Handle project delete from project table"""
+        log.info(f"Deleting project: {project_name}")
+        try:
+            # Check if trying to delete current project
+            current_project = self.toptop_presenter.getCurrentModel()
+            if current_project == project_name:
+                self.show_error(f"Cannot delete current active project: {project_name}")
+                log.error(f"Cannot delete current active project: {project_name}")
+                return
+            
+            # Delete project using project presenter
+            success = self.project_presenter.deleteProject(project_name)
+            if success:
+                self.show_success(f"Project deleted: {project_name}")
+                log.info(f"Project successfully deleted: {project_name}")
+                
+                # Refresh toptop presenter data
+                self.toptop_presenter.loadModelDataImmediate()
+                
+                # Refresh project table
+                self.onProjectClicked()
+            else:
+                self.show_error(f"Failed to delete project: {project_name}")
+                log.error(f"Failed to delete project: {project_name}")
+        except Exception as e:
+            self.show_error(f"Error deleting project: {e}")
+            log.error(f"Error deleting project: {e}")
+    
+    def onProjectAdd(self, project_data):
+        """Handle add new project from project table"""
+        project_name = project_data.get("Project_Name", "")
+        log.info(f"Adding new project: {project_name}")
+        try:
+            # Add project using project presenter
+            success = self.project_presenter.addProject(project_data)
+            if success:
+                self.show_success(f"Project added: {project_name}")
+                log.info(f"Project successfully added: {project_name}")
+                
+                # Refresh toptop presenter data
+                self.toptop_presenter.loadModelDataImmediate()
+                
+                # Refresh project table
+                self.onProjectClicked()
+            else:
+                self.show_error(f"Failed to add project: {project_name}")
+                log.error(f"Failed to add project: {project_name}")
+        except Exception as e:
+            self.show_error(f"Error adding project: {e}")
+            log.error(f"Error adding project: {e}")
 
 #--------------------------------Help menu--------------------------------
     def onAboutClicked(self):

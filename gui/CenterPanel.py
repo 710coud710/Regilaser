@@ -9,11 +9,11 @@ from PySide6.QtGui import QFont
 
 class CenterPanel(QWidget):
     """Panel trung tâm"""
-    STANDBY = "Standby"
-    CALIBRATION = "Calibration"
-    ERROR = "Error"
-    PASS = "Pass"
-    FAIL = "Fail"
+    STANDBY = "STANDBY"
+    MARKING = "MARKING"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
+    ERROR = "ERROR"
     
     def __init__(self):
         super().__init__()

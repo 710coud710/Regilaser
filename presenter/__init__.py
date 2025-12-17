@@ -7,6 +7,7 @@ from presenter.sfis_presenter import SFISPresenter
 from presenter.plc_presenter import PLCPresenter
 from presenter.laser_presenter import LaserPresenter
 from presenter.toptop_presenter import TopTopPresenter
+from presenter.project_presenter import ProjectPresenter
 
 __all__ = [
     'MainPresenter',
@@ -15,5 +16,6 @@ __all__ = [
     'PLCPresenter',
     'LaserPresenter',
     'TopTopPresenter',
+    'ProjectPresenter',
 ]
 
