@@ -302,3 +302,5 @@ exists = self.project_presenter.projectExists("ProjectName")
 - Khi update/delete project, cần refresh cả ProjectPresenter và TopTopPresenter
 - Không thể xóa project đang active
 
+
+
