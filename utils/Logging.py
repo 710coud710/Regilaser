@@ -6,6 +6,7 @@ import logging
 import os
 import threading
 from datetime import datetime
+from utils.setting import settings_manager
 
 # Màu ANSI cho console
 COLOR = {
@@ -53,20 +54,39 @@ class ColoredFormatter(logging.Formatter):
 
 
 class ThreadLogger:
-    """
-    Thread-safe Singleton Logger
-    Tự động tạo log file theo ngày trong thư mục logs/
-    """
     _instance = None
     _lock = threading.Lock()
 
-    def __new__(cls, log_name="Regilazi", log_dir="logs"):
+    def __new__(cls, log_name="Regilazi", log_dir=None):
         with cls._lock:
             if cls._instance is None:
                 cls._instance = super().__new__(cls)
 
+                # Lấy đường dẫn từ settings nếu không được cung cấp
+                if log_dir is None:
+                    try:
+                        settings = settings_manager.get_settings()
+                        base_path = settings.get("advanced", {}).get("path_app", None)
+                        
+                        # Nếu path_app là null hoặc rỗng, dùng mặc định
+                        if not base_path:
+                            log_dir = "logs"
+                        else:
+                            # Tạo subfolder RegilaserLog trong path_app
+                            log_dir = os.path.join(base_path, "RegilaserLog")
+                    except Exception as e:
+                        print(f"Warning: Could not load settings, using default log directory: {e}")
+                        log_dir = "logs"
+
                 # Tạo thư mục logs nếu chưa có
-                os.makedirs(log_dir, exist_ok=True)
+                try:
+                    os.makedirs(log_dir, exist_ok=True)
+                    print(f"Log directory: {log_dir}")
+                except Exception as e:
+                    print(f"Error creating log directory '{log_dir}': {e}")
+                    print("Falling back to 'logs' directory")
+                    log_dir = "logs"
+                    os.makedirs(log_dir, exist_ok=True)
 
                 logger = logging.getLogger(log_name)
                 logger.setLevel(logging.DEBUG)
@@ -126,8 +146,8 @@ class ThreadLogger:
 
 
 #Hàm tiện ích để lấy logger
-def getLogger(name="Regilazi"):
-    return ThreadLogger(log_name=name).logger
+def getLogger(name="Regilazi", log_dir=None):
+    return ThreadLogger(log_name=name, log_dir=log_dir).logger
 
 
 if __name__ == "__main__":     

@@ -41,7 +41,8 @@
     }
   },
   "advanced": {
-    "language": "en"
+    "language": "en",
+    "path_app": null
   }
 }
 
