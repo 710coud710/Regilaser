@@ -73,7 +73,7 @@ class SingleInstanceWindows:
                 self.kernel32.CloseHandle(self.mutex_handle)
                 self.mutex_handle = None
                 self.is_locked = False
-                log.info("SingleInstanceWindows: Mutex released")
+                # log.info("SingleInstanceWindows: Mutex released")
             except Exception as e:
                 log.error(f"SingleInstanceWindows: Error releasing mutex: {e}")
     

@@ -9,6 +9,7 @@ from presenter.laser_presenter import LaserPresenter
 from presenter.toptop_presenter import TopTopPresenter
 from presenter.project_presenter import ProjectPresenter
 from workers.marking_worker import MarkingWorker
+from PySide6.QtCore import QCoreApplication
 from utils.Logging import getLogger
 from presenter.base_presenter import BasePresenter
 from utils.setting import settings_manager
@@ -145,10 +146,9 @@ class MainPresenter(BasePresenter):
         elif level == "DEBUG":
             logDisplay.addDebug(message)
         else:
-            logDisplay.addInfo(message)
+            logDisplay.addInfo(message) 
     
     def updateStatusBar(self, statusText):
-        """Cập nhật status bar"""
         # TODO: Implement status bar update
         pass
     
@@ -437,26 +437,7 @@ class MainPresenter(BasePresenter):
         """Xử lý khi ProjectPresenter delete project thành công"""
         log.info(f"Project deleted notification: {project_name}")
     
-    def cleanup(self):
-        """Dọn dẹp tài nguyên khi đóng ứng dụng"""
-        # Stop marking worker
-        if hasattr(self, 'marking_worker'):
-            self.marking_worker.stop()
-        
-        # Stop marking thread
-        if hasattr(self, 'marking_thread') and self.marking_thread.isRunning():
-            self.marking_thread.quit()
-            self.marking_thread.wait(3000)
-        
-        # Cleanup presenters
-        self.sfis_presenter.cleanup()
-        self.plc_presenter.cleanup()
-        self.laser_presenter.cleanup()
-        self.toptop_presenter.cleanup()
-        self.project_presenter.cleanup()
-        
-        self.show_info("Cleanup completed")
-        log.info("Cleanup completed")
+
 
     ###################Laser menu###################
     def onSendC2(self):
@@ -703,3 +684,44 @@ class MainPresenter(BasePresenter):
         self.setting_window.show()
         self.setting_window.raise_()
         self.setting_window.activateWindow()
+
+
+
+
+
+
+
+
+
+
+
+
+    def cleanup(self):
+        """Dọn dẹp tài nguyên khi đóng ứng dụng"""
+        # Stop marking worker
+        if hasattr(self, 'marking_worker'):
+            self.marking_worker.stop()
+        QCoreApplication.processEvents()
+        QThread.msleep(50) #Đợi 50ms để đảm bảo dữ liệu được gửi đi
+        # Stop marking thread
+        if hasattr(self, 'marking_thread') and self.marking_thread.isRunning():
+            self.marking_thread.quit()
+            self.marking_thread.wait(3000)
+        
+        # Cleanup presenters 
+        self.sfis_presenter.cleanup()
+        self.plc_presenter.cleanup()
+        self.laser_presenter.cleanup()
+        self.toptop_presenter.cleanup()
+        self.project_presenter.cleanup()
+        QThread.msleep(200) #Đợi 200ms để đảm bảo dữ liệu được gửi đi
+
+        # Stop marking thread
+        if hasattr(self, 'marking_thread') and self.marking_thread.isRunning():
+            self.marking_thread.quit()
+            if not self.marking_thread.wait(5000):
+                self.marking_thread.terminate()
+                self.marking_thread.wait()
+
+        self.show_info("Cleanup completed")
+        log.info("Cleanup completed")

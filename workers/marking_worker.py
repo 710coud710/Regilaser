@@ -18,8 +18,7 @@ class MarkingWorker(QObject):
         self.sfis_presenter = sfis_presenter
         self.laser_presenter = laser_presenter
         self.settings_manager = settings_manager
-        self.is_running = False
-
+        self.delay_step = settings_manager.get("project.delay_step", 0)
     @Slot()
     def startMarking(self):
         """Start marking process"""
@@ -44,11 +43,11 @@ class MarkingWorker(QObject):
                 self.finished.emit(False)
                 return
             
-            self.progressUpdate.emit("Step 1: Data received from SFIS ✓")
+            self.progressUpdate.emit("Data received from SFIS")
             log.info("Marking worker: Data received from SFIS")
             
             # Step 2: Format content
-            self.progressUpdate.emit("Step 2: Creating format content...")
+            self.progressUpdate.emit("Creating format content...")
             log.info("Marking worker: Creating format content")
             
             content = self.laser_presenter.CreateFormatContent(response)
@@ -60,14 +59,14 @@ class MarkingWorker(QObject):
                 self.finished.emit(False)
                 return
             
-            self.progressUpdate.emit("Step 2: Format content created ✓")
+            self.progressUpdate.emit("Format content created ")
             log.info("Marking worker: Format content created")
             
             # Step 3: Start laser marking
-            self.progressUpdate.emit("Step 3: Starting laser marking...")
+            self.progressUpdate.emit("Starting laser marking...")
             log.info("Marking worker: Starting laser marking")
             
-            laser_script = self.settings_manager.get("connection.laser.script", 20)
+            laser_script = self.settings_manager.get("project.script", None)
             success = self.laser_presenter.startLaserMarkingProcess(
                 script=laser_script, 
                 content=content
@@ -81,7 +80,7 @@ class MarkingWorker(QObject):
                 self.finished.emit(False)
                 return
             
-            self.progressUpdate.emit("Step 3: Laser marking completed ✓")
+            self.progressUpdate.emit("Step 3: Laser marking completed ")
             log.info("Marking worker: Laser marking completed")
             
             # Step 4: Send complete to SFIS

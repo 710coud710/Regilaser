@@ -283,8 +283,8 @@ class ProjectTable(QDialog):
                 "LM_Script_Name": 1,
                 "Panel_Num": 10,
                 "PSN_PRE": "",
-                "SFIS_format": 1,
-                "LM_mode": 1
+                "sfis_format": 1,
+                "lm_mode": 1
             }
             
             # Open edit dialog for new project

@@ -17,7 +17,7 @@ class GeneralSettingPage(QWidget):
         layout.setSpacing(10)
         
         # Title
-        title = QLabel("General Configuration")
+        title = QLabel("General Settings")
         title.setStyleSheet("font-size: 16px; font-weight: bold; margin-bottom: 10px;")
         layout.addWidget(title)
         

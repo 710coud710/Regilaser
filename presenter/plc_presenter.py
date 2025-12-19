@@ -78,11 +78,12 @@ class PLCPresenter(BasePresenter):
 
     def stopReceiverPLC(self):
         """Tắt vòng lặp nhận dữ liệu PLC."""
-        QMetaObject.invokeMethod(
-            self.plc_worker,
-            "stopReceiver",
-            Qt.QueuedConnection,
-        )
+        QMetaObject.invokeMethod(self.plc_worker,"stopReceiver",Qt.BlockingQueuedConnection,)
+        # QMetaObject.invokeMethod(
+        #     self.plc_worker,
+        #     "stopReceiver",
+        #     Qt.QueuedConnection,
+        # )
     # ------------------------------Auto connect / reconnect-------------------------------
     def startAutoConnectPLC(self, port_name: str | None = None):
         """Bắt đầu tự động kết nối PLC"""
@@ -185,14 +186,16 @@ class PLCPresenter(BasePresenter):
         self.auto_reconnect_enabled = False
         if self.reconnect_timer.isActive():
             self.reconnect_timer.stop()
-        
         # 2. Stop receiver loop và timer trong worker thread
         self.stopReceiverPLC()
         
         # 3. Disconnect
         if self.is_connected:
             self.disconnect()
-    
+        QThread.msleep(100) #Đợi 100ms để đảm bảo dữ liệu được gửi đi
         # Dừng thread và đợi
         self.plc_thread.quit()
-        self.plc_thread.wait()
+        if not self.plc_thread.wait(3000):
+            # log.warning("PLC thread did not stop gracefully")
+            self.plc_thread.terminate()
+            self.plc_thread.wait()

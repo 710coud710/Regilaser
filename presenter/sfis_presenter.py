@@ -169,7 +169,7 @@ class SFISPresenter(BasePresenter):
     def getDataFromSFIS(self):
         try:
             log.info("getDataFromSFIS started")
-            mode = settings_manager.get("project.SFIS_format", 1)
+            mode = settings_manager.get("project.sfis_format", 1)
             log.info(f"Mode: {mode}")
             if mode == 1:
                 return self.getDataFromSFIS_MODE1()

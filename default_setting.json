@@ -10,10 +10,11 @@
   "project": {
     "current_project": "",
     "psn_pre": "",
-    "SFIS_format": 1,
-    "LM_mode":1,
     "script": 1,
-    "panel_num": 10
+    "panel_num": 10,
+    "sfis_format": 1,
+    "lm_mode":1,
+    "delay_step": 0.1
   },
   "connection": {
     "sfc": {

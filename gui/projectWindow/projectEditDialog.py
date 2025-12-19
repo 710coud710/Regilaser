@@ -134,7 +134,7 @@ class ProjectEditDialog(QDialog):
             # Update project data
             self.project_data["Project_Name"] = project_name
             self.project_data["LM_Script_Name"] = int(self.lm_script_input.text())
-            self.project_data["Panel_Num"] = int(self.panel_num_input.text())
+            self.project_data["LM_Num"] = int(self.lm_num_input.text())
             self.project_data["PSN_PRE"] = psn_pre
             self.project_data["SFIS_format"] = self.sfis_format_input.currentText()
             self.project_data["LM_mode"] = self.lm_mode_input.currentText()

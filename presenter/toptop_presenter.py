@@ -203,15 +203,15 @@ class TopTopPresenter(BasePresenter):
                 if project_info:
                     # Lưu vào settings (project section)
                     settings_manager.set("project.current_project", project_name)
-                    settings_manager.set("project.psn_pre", project_info.get('PSN_PRE', ''))
-                    settings_manager.set("project.script", project_info.get('LM_Script_Name', 1))
-                    settings_manager.set("project.panel_num", project_info.get('Panel_Num', 10))
-                    settings_manager.set("project.SFIS_format", project_info.get('SFIS_format', 1))
-                    settings_manager.set("project.LM_mode", project_info.get('LM_mode', 1))
+                    settings_manager.set("project.psn_pre", project_info.get('PSN_PRE'))
+                    settings_manager.set("project.script", project_info.get('LM_Script_Name'))
+                    settings_manager.set("project.panel_num", project_info.get('Panel_Num'))
+                    settings_manager.set("project.sfis_format", project_info.get('SFIS_format'))
+                    settings_manager.set("project.lm_mode", project_info.get('LM_mode'))
                     settings_manager.save_settings()
                     
-                    self.show_info(f"Project info: LM_Script={project_info.get('LM_Script_Name')}, Panel_Num={project_info.get('Panel_Num')}, PSN_PRE={project_info.get('PSN_PRE')}, SFIS_format={project_info.get('SFIS_format')}, LM_mode={project_info.get('LM_mode')}")
-                    log.info(f"Project info: LM_Script={project_info.get('LM_Script_Name')}, Panel_Num={project_info.get('Panel_Num')}, PSN_PRE={project_info.get('PSN_PRE')}, SFIS_format={project_info.get('SFIS_format')}, LM_mode={project_info.get('LM_mode')}")
+                    self.show_info(f"Project info: LM_Script={project_info.get('LM_Script_Name')}, Panel_Num={project_info.get('Panel_Num')}, PSN_PRE={project_info.get('PSN_PRE')}, SFIS_format={project_info.get('sfis_format')}, LM_mode={project_info.get('LM_mode')}")
+                    log.info(f"Project info: LM_Script={project_info.get('LM_Script_Name')}, Panel_Num={project_info.get('Panel_Num')}, PSN_PRE={project_info.get('PSN_PRE')}, SFIS_format={project_info.get('sfis_format')}, LM_mode={project_info.get('LM_mode')}")
                 
                 # Emit signal
                 self.modelChanged.emit(project_name)

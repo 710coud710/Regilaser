@@ -8,6 +8,9 @@ from workers.laser_worker import LaserWorker
 from utils.schema import LaserConnectMode
 from utils.Logging import getLogger
 from model.laser_model import LaserModel
+from utils.setting import settings_manager
+from time import sleep
+from workers.marking_worker import MarkingWorker
 # Khởi tạo logger
 log = getLogger()
 
@@ -17,17 +20,17 @@ class LaserPresenter(BasePresenter):
     def __init__(self):
         super().__init__()
         self.laser_model = LaserModel()
-        
+    
         # Load settings từ settings_manager
         use_com = settings_manager.get("connection.laser.use_com", False)
         self.laser_mode = 2 if use_com else 1  # 1: TCP, 2: COM
-        self.laser_ip = settings_manager.get("connection.laser.ip", "10.153.227.38")
-        self.laser_port = settings_manager.get("connection.laser.port", 50002)
-        self.laser_com_port = settings_manager.get("connection.laser.com_port", "COM1")
-        self.laser_baudrate = settings_manager.get("connection.laser.baudrate", 9600)
-        self.default_script = str(settings_manager.get("connection.laser.script", 20))
-        self.command_timeout_ms = settings_manager.get("connection.laser.timeout_ms", 5000)
-
+        self.laser_ip = settings_manager.get("connection.laser.ip",)
+        self.laser_port = settings_manager.get("connection.laser.port", )
+        self.laser_com_port = settings_manager.get("connection.laser.com_port", )
+        self.laser_baudrate = settings_manager.get("connection.laser.baudrate", )
+        self.default_script = str(settings_manager.get("project.script", ))
+        self.command_timeout_ms = settings_manager.get("connection.laser.timeout_ms", )
+        self.delay_step = settings_manager.get("project.delay_step", 0)
         self.worker = LaserWorker(
             mode=self.laser_mode,
             ip=self.laser_ip,
@@ -94,20 +97,7 @@ class LaserPresenter(BasePresenter):
         self.connectionStatusChanged.emit(False)
         self.show_info("Disconnected from laser controller")
         log.info("Disconnected from laser controller")
-
-    def disconnect(self):
-        """Ngắt kết nối Laser System"""
-        self.auto_reconnect_enabled = False
-        self.reconnect_timer.stop()
-        
-        if not self.is_connected:
-            return
-
-        self.worker.disconnect()
-        self.is_connected = False
-        self.connectionStatusChanged.emit(False)
-        self.show_info("Disconnected from laser controller")
-        log.info("Disconnected from laser controller")
+        return True
 
     #-------------------------- GA / C2 / NT -----------------------------
 
@@ -116,7 +106,7 @@ class LaserPresenter(BasePresenter):
         if not self._ensure_connection():
             return False
 
-        script = str(script_number or self.default_script)
+        script = str(script_number)
         self.show_info(f"Send GA command with script {script}")
         log.info(f"Send GA command with script {script}")
         try:
@@ -194,13 +184,12 @@ class LaserPresenter(BasePresenter):
             log.info("=== START LASER MARKING ===")
             if not self.activateScript(script_id):
                 return False
-
+            sleep(self.delay_step)
             if not self.setContent(script_id, content):
                 return False
-
+            sleep(self.delay_step)
             if not self.startMarking():
                 return False
-
             self.show_success("===LASER MARKING COMPLETED===")
             log.info("===LASER MARKING COMPLETED===")
             return True
@@ -338,6 +327,9 @@ class LaserPresenter(BasePresenter):
     def cleanup(self):
         """Dọn dẹp tài nguyên"""
         #dọn dẹp auto-reconnect
+        self.is_connected = False
+        self.connectionStatusChanged.emit(False)
+
         self.auto_reconnect_enabled = False
         if self.reconnect_timer.isActive():
             self.reconnect_timer.stop()

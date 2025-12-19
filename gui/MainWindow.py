@@ -44,7 +44,7 @@ class MainWindow(QMainWindow):
         self.setWindowIcon(QIcon(os.path.join(getAppDirectory(), "icon.ico")))
     
         # self.setGeometry(100, 100, 1000, 700)
-        self.setMinimumSize(800, 450)
+        self.setMinimumSize(800, 600)
         
         # Set default font cho toàn bộ application
         # app_font = QFont("Arial", 10)
