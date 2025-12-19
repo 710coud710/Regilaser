@@ -6,6 +6,7 @@ from gui.BottomStatusBar import BottomStatusBar
 from gui.LogDisplay import LogDisplay
 from gui.AboutWindow import AboutWindow
 from gui.settingWindow import MainSettingWindow
+from gui.PathSetupDialog import PathSetupDialog
 
 
 __all__ = [
@@ -17,5 +18,6 @@ __all__ = [
     'BottomStatusBar',
     'AboutWindow',
     'MainSettingWindow',
+    'PathSetupDialog',
 ]
 
