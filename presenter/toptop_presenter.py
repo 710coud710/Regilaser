@@ -31,16 +31,10 @@ class TopTopPresenter(BasePresenter):
         # Đường dẫn appdata
         exe_dir = getAppDirectory()
         self.appdata_path = os.getenv("APPDATA")
-        self.app_folder = os.path.join(self.appdata_path, "Regilazi")
+        self.app_folder = os.path.join(self.appdata_path, "Regilaser")
         self.model_json_path = os.path.join(self.app_folder, "model.json")
         # Đường dẫn default_model.json trong thư mục dự án
-        # self.default_model_path = os.path.abspath(
-        #     os.path.join(os.path.dirname(__file__), "..", "default_model.json")
-        # )
-        self.default_model_path = os.path.join(
-        exe_dir,
-        "default_model.json"
-            )
+        self.default_model_path = os.path.join(exe_dir,"default_model.json")
         # Tạo thư mục nếu chưa tồn tại
         os.makedirs(self.app_folder, exist_ok=True)
         
@@ -211,14 +205,13 @@ class TopTopPresenter(BasePresenter):
                     settings_manager.set("project.current_project", project_name)
                     settings_manager.set("project.psn_pre", project_info.get('PSN_PRE', ''))
                     settings_manager.set("project.script", project_info.get('LM_Script_Name', 1))
-                    settings_manager.set("project.lm_num", project_info.get('LM_Num', 10))
+                    settings_manager.set("project.panel_num", project_info.get('Panel_Num', 10))
                     settings_manager.set("project.SFIS_format", project_info.get('SFIS_format', 1))
                     settings_manager.set("project.LM_mode", project_info.get('LM_mode', 1))
-                    settings_manager.set("general.panel_num", project_info.get('LM_Num', 10))
                     settings_manager.save_settings()
                     
-                    self.show_info(f"Project info: LM_Script={project_info.get('LM_Script_Name')}, LM_Num={project_info.get('LM_Num')}, PSN_PRE={project_info.get('PSN_PRE')}, SFIS_format={project_info.get('SFIS_format')}, LM_mode={project_info.get('LM_mode')}")
-                    log.info(f"Project info: LM_Script={project_info.get('LM_Script_Name')}, LM_Num={project_info.get('LM_Num')}, PSN_PRE={project_info.get('PSN_PRE')}, SFIS_format={project_info.get('SFIS_format')}, LM_mode={project_info.get('LM_mode')}")
+                    self.show_info(f"Project info: LM_Script={project_info.get('LM_Script_Name')}, Panel_Num={project_info.get('Panel_Num')}, PSN_PRE={project_info.get('PSN_PRE')}, SFIS_format={project_info.get('SFIS_format')}, LM_mode={project_info.get('LM_mode')}")
+                    log.info(f"Project info: LM_Script={project_info.get('LM_Script_Name')}, Panel_Num={project_info.get('Panel_Num')}, PSN_PRE={project_info.get('PSN_PRE')}, SFIS_format={project_info.get('SFIS_format')}, LM_mode={project_info.get('LM_mode')}")
                 
                 # Emit signal
                 self.modelChanged.emit(project_name)

@@ -411,11 +411,11 @@ class MainPresenter(BasePresenter):
         project_info = self.toptop_presenter.getProjectInfo(project_name)
         if project_info:
             lm_script = project_info.get('LM_Script_Name')
-            lm_num = project_info.get('LM_Num')
+            panel_num = project_info.get('Panel_Num')
             psn_pre = project_info.get('PSN_PRE')
             
-            self.show_info(f"Project details - Script: {lm_script}, LM_Num: {lm_num}, PSN_PRE: {psn_pre}")
-            log.info(f"Project details - Script: {lm_script}, LM_Num: {lm_num}, PSN_PRE: {psn_pre}")
+            self.show_info(f"Project details - Script: {lm_script}, Panel_Num: {panel_num}, PSN_PRE: {psn_pre}")
+            log.info(f"Project details - Script: {lm_script}, Panel_Num: {panel_num}, PSN_PRE: {psn_pre}")
             
             # Có thể cập nhật config dựa trên project được chọn
             # Ví dụ: config.LASER_SCRIPT = lm_script
@@ -577,7 +577,7 @@ class MainPresenter(BasePresenter):
                 # Load data from project presenter
                 project_data = self.project_presenter.getProjectData()
                 if project_data:
-                    project_dialog.set_data(project_data)
+                    project_dialog.set_data(project_data) # Set data to the table
                     # Connect project signals
                     project_dialog.project_selected.connect(self.onProjectSelected)
                     project_dialog.project_edit.connect(self.onProjectEdit)

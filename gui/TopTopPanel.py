@@ -27,12 +27,12 @@ class TopTopPanel(QWidget):
         center_layout = QHBoxLayout()
         center_layout.setSpacing(10)
         self.setStyleSheet("""
-            QLabel {
+            TopTopPanel QLabel {
                 font-size: 24pt; 
                 font-weight: bold;
                 color: #041d36;
             }    
-            QComboBox {
+            TopTopPanel QComboBox {
                 font-size: 14pt;
                 font-weight: bold;
                 color: #101033;
@@ -52,7 +52,7 @@ class TopTopPanel(QWidget):
             QComboBox:editable:hover {
                 background-color: lightblue;
             }   
-            QPushButton {
+            TopTopPanel QPushButton {
                 font-size: 14pt;
                 font-weight: bold;
                 color: #101033;

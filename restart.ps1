@@ -1,5 +1,5 @@
 # Path tới file service.json trong AppData
-$serviceFile = "$env:APPDATA\Regilazi\service.json"
+$serviceFile = "$env:APPDATA\Regilaser\service.json"
 
 if (Test-Path $serviceFile) {
     try {

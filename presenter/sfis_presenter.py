@@ -214,7 +214,7 @@ class SFISPresenter(BasePresenter):
 
     def getDataFromSFIS_MODE1(self):
         mo = settings_manager.get("general.mo", '')
-        panel_num = settings_manager.get("general.panel_num", '')
+        panel_num = settings_manager.get("project.panel_num", '')
         try:
             needpsn_message = self.sfis_model.createFormatNeedPSN(mo, panel_num)
             if not needpsn_message:
@@ -247,7 +247,7 @@ class SFISPresenter(BasePresenter):
             return False
         
         if panel_num is None:
-            panel_num = settings_manager.get("general.panel_num", '') 
+            panel_num = settings_manager.get("project.panel_num", '') 
         if mo is None:
             mo = settings_manager.get("general.mo", '')  
         # tạo format gửi lên SFIS

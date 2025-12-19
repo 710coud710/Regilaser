@@ -29,7 +29,7 @@ class ProjectPresenter(BasePresenter):
         # Đường dẫn appdata
         exe_dir = getAppDirectory()
         self.appdata_path = os.getenv("APPDATA")
-        self.app_folder = os.path.join(self.appdata_path, "Regilazi")
+        self.app_folder = os.path.join(self.appdata_path, "Regilaser")
         self.model_json_path = os.path.join(self.app_folder, "model.json")
         self.default_model_path = os.path.join(exe_dir, "default_model.json")
         
@@ -155,7 +155,7 @@ class ProjectPresenter(BasePresenter):
         """Load dữ liệu ngay lập tức trong main thread"""
         try:
             if os.path.exists(self.model_json_path):
-                log.info(f"ProjectPresenter: Loading project data immediately from {self.model_json_path}")
+                # log.info(f"project data immediately from {self.model_json_path}")
                 with open(self.model_json_path, "r", encoding="utf-8") as f:
                     data = json.load(f)
                 

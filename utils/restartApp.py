@@ -19,7 +19,7 @@ def restartApp(app_path = None):
             app_path = os.path.abspath(app_path)
         log.info(f"Restart app path: {app_path}")
         appdata = os.getenv("APPDATA")
-        service_folder = os.path.join(appdata, "Regilazi")
+        service_folder = os.path.join(appdata, "Regilaser")
         os.makedirs(service_folder, exist_ok=True)
 
         service_file = os.path.join(service_folder, "service.json")

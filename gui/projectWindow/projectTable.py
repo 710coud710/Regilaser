@@ -65,10 +65,10 @@ class ProjectTable(QDialog):
         line.setStyleSheet("background-color: #CCCCCC; margin-bottom: 2px; margin-top: 2px;")
         layout.addWidget(line)
 
-        # Table 7 columns: Project_Name, LM_Script_Name, LM_Num, PSN_PRE, SFIS Format, LM Mode, Actions
+        # Table 7 columns: Project_Name, LM_Script_Name, Panel_Num, PSN_PRE, SFIS Format, LM Mode, Actions
         self.table = QTableWidget(0, 7, self)
         self.table.setHorizontalHeaderLabels([
-            "Project Name", "LM Script", "LM Num", "PSN PRE", "SFIS Format", "LM Mode", "Actions"
+            "Project Name", "LM Script", "Panel Num", "PSN PRE", "SFIS Format", "LM Mode", "Actions"
         ])
         self.table.horizontalHeader().setStretchLastSection(True)
         self.table.setEditTriggers(QTableWidget.NoEditTriggers)
@@ -102,7 +102,7 @@ class ProjectTable(QDialog):
             # Set text items for each column
             project_item = QTableWidgetItem(str(item.get("Project_Name", "")))
             script_item = QTableWidgetItem(str(item.get("LM_Script_Name", "")))
-            lm_num_item = QTableWidgetItem(str(item.get("LM_Num", "")))
+            panel_num_item = QTableWidgetItem(str(item.get("Panel_Num", "")))
             psn_pre_item = QTableWidgetItem(str(item.get("PSN_PRE", "")))
             sfis_format_item = QTableWidgetItem(str(item.get("SFIS_format", "")))
             lm_mode_item = QTableWidgetItem(str(item.get("LM_mode", "")))
@@ -110,14 +110,14 @@ class ProjectTable(QDialog):
             # Center align all items
             project_item.setTextAlignment(Qt.AlignCenter)
             script_item.setTextAlignment(Qt.AlignCenter)
-            lm_num_item.setTextAlignment(Qt.AlignCenter)
+            panel_num_item.setTextAlignment(Qt.AlignCenter)
             psn_pre_item.setTextAlignment(Qt.AlignCenter)
             sfis_format_item.setTextAlignment(Qt.AlignCenter)
             lm_mode_item.setTextAlignment(Qt.AlignCenter)
 
             self.table.setItem(row, 0, project_item)
             self.table.setItem(row, 1, script_item)
-            self.table.setItem(row, 2, lm_num_item)
+            self.table.setItem(row, 2, panel_num_item)
             self.table.setItem(row, 3, psn_pre_item)
             self.table.setItem(row, 4, sfis_format_item)
             self.table.setItem(row, 5, lm_mode_item)
@@ -281,7 +281,7 @@ class ProjectTable(QDialog):
             new_project_data = {
                 "Project_Name": "",
                 "LM_Script_Name": 1,
-                "LM_Num": 10,
+                "Panel_Num": 10,
                 "PSN_PRE": "",
                 "SFIS_format": 1,
                 "LM_mode": 1

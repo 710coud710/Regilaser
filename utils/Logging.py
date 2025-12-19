@@ -57,7 +57,7 @@ class ThreadLogger:
     _instance = None
     _lock = threading.Lock()
 
-    def __new__(cls, log_name="Regilazi", log_dir=None):
+    def __new__(cls, log_name="Regilaser", log_dir=None):
         with cls._lock:
             if cls._instance is None:
                 cls._instance = super().__new__(cls)
@@ -112,7 +112,7 @@ class ThreadLogger:
                     console_handler.setLevel(logging.INFO)
 
                     # ===== File =====
-                    # File name: Regilazi_2025-11-21.log
+                    # File name: Regilaser_2025-11-21.log
                     today = datetime.now().strftime("%Y-%m-%d")
                     log_filename = os.path.join(log_dir, f"{log_name}_{today}.log")
                     
@@ -146,7 +146,7 @@ class ThreadLogger:
 
 
 #Hàm tiện ích để lấy logger
-def getLogger(name="Regilazi", log_dir=None):
+def getLogger(name="Regilaser", log_dir=None):
     return ThreadLogger(log_name=name, log_dir=log_dir).logger
 
 

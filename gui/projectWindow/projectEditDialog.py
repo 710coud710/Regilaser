@@ -48,8 +48,8 @@ class ProjectEditDialog(QDialog):
         form_layout.addRow("LM Script:", self.lm_script_input)
         
         # LM Num
-        self.lm_num_input = QLineEdit()
-        form_layout.addRow("LM Num:", self.lm_num_input)
+        self.panel_num_input = QLineEdit()
+        form_layout.addRow("Panel Num:", self.panel_num_input)
         
         # PSN PRE
         self.psn_pre_input = QLineEdit()
@@ -112,7 +112,7 @@ class ProjectEditDialog(QDialog):
         """Populate form with project data"""
         self.project_name_input.setText(self.project_data.get("Project_Name", ""))
         self.lm_script_input.setText(str(self.project_data.get("LM_Script_Name", 0)))
-        self.lm_num_input.setText(str(self.project_data.get("LM_Num", 1)))
+        self.panel_num_input.setText(str(self.project_data.get("Panel_Num", 1)))
         self.psn_pre_input.setText(self.project_data.get("PSN_PRE", ""))
         self.sfis_format_input.setCurrentText(str(self.project_data.get("SFIS_format", 1)))
         self.lm_mode_input.setCurrentText(str(self.project_data.get("LM_mode", 1)))
@@ -134,7 +134,7 @@ class ProjectEditDialog(QDialog):
             # Update project data
             self.project_data["Project_Name"] = project_name
             self.project_data["LM_Script_Name"] = int(self.lm_script_input.text())
-            self.project_data["LM_Num"] = int(self.lm_num_input.text())
+            self.project_data["Panel_Num"] = int(self.panel_num_input.text())
             self.project_data["PSN_PRE"] = psn_pre
             self.project_data["SFIS_format"] = self.sfis_format_input.currentText()
             self.project_data["LM_mode"] = self.lm_mode_input.currentText()

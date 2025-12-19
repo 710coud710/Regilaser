@@ -1,6 +1,6 @@
 # autobuild.ps1 → Build siêu nhẹ chỉ với Nuitka + UPX
 
-Write-Host "=== REGILAZI - BUILD USING NUITKA ===" -ForegroundColor Cyan
+Write-Host "=== REGILAZER - BUILD USING NUITKA ===" -ForegroundColor Cyan
 Write-Host "Building... please wait!" -ForegroundColor Yellow
 
 # Tạo thư mục dist nếu chưa có
@@ -16,12 +16,12 @@ if (!(Test-Path "dist")) { New-Item -ItemType Directory -Path "dist" | Out-Null 
   --windows-icon-from-ico=icon.ico `
   --assume-yes-for-downloads `
   --jobs=0 `
-  --windows-product-name="Regilazi" `
-  --windows-file-description="Regilazi - Laser Control Software by SWE Team - Ryder" `
+  --windows-product-name="Regilaser" `
+  --windows-file-description="Regilaser - Laser Control Software by SWE Team - Ryder" `
   --windows-company-name="SWE Team - Ryder" `
-  --windows-product-version=1.0.0 `
+  --windows-product-version=1.1.2.5 `
   --output-dir=dist `
-  --output-filename=Regilazi.exe `
+  --output-filename=Regilaser.exe `
   main.py
 
 if ($LASTEXITCODE -eq 0) {
@@ -30,14 +30,14 @@ if ($LASTEXITCODE -eq 0) {
     # Nén UPX nếu có
     if (Test-Path "upx.exe") {
         Write-Host "Compressing UPX..." -ForegroundColor Yellow
-        .\upx.exe --best --lzma dist/Regilazi.exe
+        .\upx.exe --best --lzma dist/Regilaser.exe
     } else {
         Write-Host "upx.exe not found → skipping compression." -ForegroundColor DarkYellow
     }
 
-    $size = "{0:N2}" -f ((Get-Item "dist/Regilazi.exe").Length / 1MB)
+    $size = "{0:N2}" -f ((Get-Item "dist/Regilaser.exe").Length / 1MB)
     Write-Host "`nCompleted!" -ForegroundColor Cyan
-    Write-Host "File output: dist\Regilazi.exe   |   Size: $size MB" -ForegroundColor Green
+    Write-Host "File output: dist\Regilaser.exe   |   Size: $size MB" -ForegroundColor Green
     Invoke-Item dist
 } else {
     Write-Host "`nBuild failed! Check the error above." -ForegroundColor Red

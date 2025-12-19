@@ -41,7 +41,7 @@ class SFISModel(QObject):
     PANEL_NO_LENGTH = 20
     ALL_PARTS_NO_LENGTH = 12
     PSN_LENGTH = 20
-    PSN_COUNT = settings_manager.get("general.panel_num", 5)
+    PSN_COUNT = settings_manager.get("project.panel_num", 5)
     NEED_KEYWORD = "NEED"
     END_KEYWORD = "END"
     #MODE2

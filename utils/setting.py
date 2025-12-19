@@ -6,7 +6,7 @@ class SettingsManager:
     def __init__(self):
         exe_dir = getAppDirectory()
         appdata = os.getenv("APPDATA")
-        self.app_folder = os.path.join(appdata, "Regilazi")
+        self.app_folder = os.path.join(appdata, "Regilaser")
         os.makedirs(self.app_folder, exist_ok=True)
         self.config_path = os.path.join(self.app_folder, "settings.json")
         # Default settings nằm ở thư mục chính của project

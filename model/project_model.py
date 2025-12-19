@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 class ProjectData(BaseModel):
     Project_Name: str = Field(..., description="Tên project")
     LM_Script: int = Field(..., description="Laser script number")
-    LM_Num: int = Field(..., description="Laser number (panel number)")
+    Panel_Num: int = Field(..., description="Panel number")
     PSN_PRE: str = Field(..., description="PSN prefix")
     
     class Config:

@@ -33,14 +33,14 @@ class ProjectSettingPage(QWidget):
         self.lm_mode = QComboBox()
         self.lm_mode.addItems(["1", "2"])
         self.script = QLineEdit()
-        self.lm_num = QLineEdit()
+        self.panel_num = QLineEdit()
         
         form.addRow("Current Project:", self.current_project)
         form.addRow("PSN PRE:", self.psn_pre)
         form.addRow("SFIS Format:", self.sfis_format)
         form.addRow("LM Mode:", self.lm_mode)
         form.addRow("Script:", self.script)
-        form.addRow("LM Num:", self.lm_num)
+        form.addRow("Panel Num:", self.panel_num)
         layout.addLayout(form)
         layout.addStretch()
 
@@ -50,7 +50,7 @@ class ProjectSettingPage(QWidget):
             "sfis_format": self.sfis_format.currentText(),
             "lm_mode": self.lm_mode.currentText(),
             "script": self.script.text().strip(),
-            "lm_num": self.lm_num.text().strip(),
+            "panel_num": self.panel_num.text().strip(),
         }
     def add_line(self, parent_layout):
         line = QFrame()
@@ -69,4 +69,4 @@ class ProjectSettingPage(QWidget):
         self.sfis_format.setCurrentText((_to_text(settings.get("SFIS_format", ""))))
         self.lm_mode.setCurrentText((_to_text(settings.get("LM_mode", ""))))
         self.script.setText((_to_text(settings.get("script", ""))))
-        self.lm_num.setText((_to_text(settings.get("lm_num", ""))))
+        self.panel_num.setText((_to_text(settings.get("Panel_num", ""))))

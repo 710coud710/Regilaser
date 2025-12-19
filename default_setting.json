@@ -3,7 +3,6 @@
     "station_name": "LM",
     "mo": "2790004600",
     "op_num": "F9385022",
-    "panel_num": 10,
     "post_result_sfc": true,
     "raw_content": "",
     "pcb_number":"SWG20250804000001701"
@@ -14,7 +13,7 @@
     "SFIS_format": 1,
     "LM_mode":1,
     "script": 1,
-    "lm_num": 10
+    "panel_num": 10
   },
   "connection": {
     "sfc": {
