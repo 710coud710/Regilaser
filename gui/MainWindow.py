@@ -40,7 +40,7 @@ class MainWindow(QMainWindow):
     
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Regilaser -  1.1.2.5 Trial Version ")
+        self.setWindowTitle("Regilaser -  v1.1.3.5a Trial Version ")
         self.setWindowIcon(QIcon(os.path.join(getAppDirectory(), "icon.ico")))
     
         # self.setGeometry(100, 100, 1000, 700)

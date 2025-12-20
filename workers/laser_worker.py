@@ -153,27 +153,29 @@ class LaserWorker:
         timeout_ms: Optional[int] = None,
     ):
         """Gửi lệnh ASCII bất kỳ tới laser"""
-        self._ensure_connection()
-        payload = command if command.endswith("\r\n") else f"{command}\r\n"
-        timeout_ms = timeout_ms or self.timeout_ms
+        try:
+            self._ensure_connection()
+            payload = command if command.endswith("\r\n") else f"{command}\r\n"
+            timeout_ms = timeout_ms or self.timeout_ms
 
-        log.info(f"Sending command to laser: {payload.strip()}")
-        if self.mode == LaserConnectMode.TCP:
-            response = self._send_tcp_command(payload, timeout_ms)
-        else:
-            response = self._send_serial_command(payload, timeout_ms)
+            log.info(f"Sending command to laser: {payload.strip()}")
+            if self.mode == LaserConnectMode.TCP:
+                response = self.sendTCPCommand(payload, timeout_ms)
+            else:
+                response = self.sendSerialCommand(payload, timeout_ms)
 
-        if response:
-            log.info(f"Laser response: {response}")
-        else:
-            log.warning("Laser returned empty response")
-        if expect_keyword and response and expect_keyword not in response:
-            raise RuntimeError(
-                f"Unexpected response for '{command.strip()}': '{response}' "
-                f"(expect '{expect_keyword}')"
-            )
-        return response
-
+            if response:
+                log.info(f"Laser response: {response}")
+            else:
+                log.warning("Laser returned empty response")
+            if expect_keyword and response and expect_keyword not in response:
+                raise RuntimeError(
+                    f"Unexpected response for '{command.strip()}': '{response}' "
+                    f"(expect '{expect_keyword}')"
+                )                                             
+        except Exception as exc:
+            log.error(f"Error: {exc}")
+            raise
     # ------------------------------------------------------------------
     # Low-level helpers
     # ------------------------------------------------------------------
@@ -181,7 +183,7 @@ class LaserWorker:
         if not self.is_connected:
             raise RuntimeError("Laser controller is not connected")
 
-    def _send_tcp_command(self, payload: str, timeout_ms: int) -> str:
+    def sendTCPCommand(self, payload: str, timeout_ms: int) -> str:
         if not self._socket:
             raise RuntimeError("TCP socket is not available")
         data = payload.encode("ascii")
@@ -203,9 +205,9 @@ class LaserWorker:
                 self.is_connected = False
                 raise RuntimeError(f"Socket error while sending: {exc}") from exc
 
-        return self._read_response_tcp(timeout_ms)
+        return self.readResponseTCP(timeout_ms)
 
-    def _send_serial_command(self, payload: str, timeout_ms: int) -> str:
+    def sendSerialCommand(self, payload: str, timeout_ms: int) -> str:
         if not self.serial_port or not self.serial_port.is_open:
             self.is_connected = False
             raise RuntimeError("Serial port is not available")
@@ -217,9 +219,9 @@ class LaserWorker:
             self.is_connected = False
             raise RuntimeError(f"Serial write error: {exc}") from exc
 
-        return self._read_response_serial(timeout_ms)
+        return self.readResponseSerial(timeout_ms)
 
-    def _read_response_tcp(self, timeout_ms: int) -> str:
+    def readResponseTCP(self, timeout_ms: int) -> str:
         deadline = time.time() + (timeout_ms / 1000)
         chunks = []
         while time.time() < deadline:
@@ -242,8 +244,9 @@ class LaserWorker:
 
         return b"".join(chunks).decode("ascii", errors="ignore").strip()
 
-    def _read_response_serial(self, timeout_ms: int) -> str:
+    def readResponseSerial(self, timeout_ms: int, idle_ms: int = 30) -> str:
         deadline = time.time() + (timeout_ms / 1000)
+        idle_deadline = None
         buffer = bytearray()
 
         while time.time() < deadline:
@@ -252,11 +255,14 @@ class LaserWorker:
                     data = self.serial_port.read(self.serial_port.in_waiting)
                     if data:
                         buffer.extend(data)
-                        break
+                        idle_deadline = time.time() + (idle_ms / 1000)
+                        # break  --> để đọc tất cả dữ liệu, nhưng nếu không có dữ liệu mới trong 100ms thì dừng
                         # Nếu nhận dữ liệu kết thúc bằng new line (\r\n)
                         # if buffer.endswith(b"\n") or buffer.endswith(b"\r\n"):
                         #     break
                 else:
+                    if idle_deadline and time.time() > idle_deadline:
+                        break
                     time.sleep(0.01)
             except SerialException as exc:
                 self.is_connected = False

@@ -14,7 +14,6 @@ from workers.marking_worker import MarkingWorker
 # Khởi tạo logger
 log = getLogger()
 
-
 class LaserPresenter(BasePresenter):
     connectionStatusChanged = Signal(bool)
     def __init__(self):
@@ -115,11 +114,18 @@ class LaserPresenter(BasePresenter):
             log.info("GA command completed")
             return True
         except (RuntimeError, TimeoutError, OSError) as exc:
-            # Phát hiện mất kết nối khi gửi lệnh thất bại
-            self._handle_connection_lost()
-            self.show_error(f"Error: {exc}")
-            log.error(f"Error: {exc}")
-            return False
+            # Phát hiện mất kết nối khi gửi lệnh thất bại   
+            try:
+                sleep(0.5) #delay 0.5s để COM / PLC ổn định
+                self.worker.send_ga(script, timeout_ms=self.command_timeout_ms)
+                self.show_success("GA command completed (retry)")
+                log.info("GA command completed (retry)")
+                return True
+            except (RuntimeError, TimeoutError, OSError) as exc:
+                # self._handle_connection_lost()
+                self.show_error(f"Error: {exc}")
+                log.error(f"Error: {exc}")
+                return False
         except Exception as exc:
             self.show_error(f"Error: {exc}")
             log.error(f"Error: {exc}")
@@ -139,10 +145,18 @@ class LaserPresenter(BasePresenter):
             return True
         except (RuntimeError, TimeoutError, OSError) as exc:
             # Phát hiện mất kết nối khi gửi lệnh thất bại
-            self._handle_connection_lost()
-            self.show_error(f"Error: {exc}")
-            log.error(f"Error: {exc}")
-            return False
+            # self._handle_connection_lost()
+            try:
+                sleep(0.5) #delay 0.5s để COM / PLC ổn định
+                self.worker.send_c2(script_id, content, timeout_ms=self.command_timeout_ms)
+                self.show_success("C2 command completed (retry)")
+                log.info("C2 command completed (retry)")
+                return True
+            except (RuntimeError, TimeoutError, OSError) as exc:
+                # self._handle_connection_lost()
+                self.show_error(f"Error: {exc}")
+                log.error(f"Error: {exc}")
+                return False
         except Exception as exc:
             self.show_error(f"Error: {exc}")
             log.error(f"Error: {exc}")
@@ -161,10 +175,18 @@ class LaserPresenter(BasePresenter):
             return True
         except (RuntimeError, TimeoutError, OSError) as exc:
             # Phát hiện mất kết nối khi gửi lệnh thất bại
-            self._handle_connection_lost()
-            self.show_error(f"Error: {exc}")
-            log.error(f"Error: {exc}")
-            return False
+            # self._handle_connection_lost()
+            try:
+                sleep(0.5) #delay 0.5s để COM / PLC ổn định
+                self.worker.send_nt(timeout_ms=self.command_timeout_ms)
+                self.show_success("NT command completed (retry)")
+                log.info("NT command completed (retry)")
+                return True
+            except (RuntimeError, TimeoutError, OSError) as exc:
+                # self._handle_connection_lost()
+                self.show_error(f"Error: {exc}")
+                log.error(f"Error: {exc}")
+                return False
         except Exception as exc:
             self.show_error(f"Error: {exc}")
             log.error(f"Error: {exc}")
