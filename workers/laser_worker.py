@@ -244,9 +244,9 @@ class LaserWorker:
 
         return b"".join(chunks).decode("ascii", errors="ignore").strip()
 
-    def readResponseSerial(self, timeout_ms: int, idle_ms: int = 30) -> str:
+    def readResponseSerial(self, timeout_ms: int) -> str:
         deadline = time.time() + (timeout_ms / 1000)
-        idle_deadline = None
+        # idle_deadline = None
         buffer = bytearray()
 
         while time.time() < deadline:
@@ -255,14 +255,13 @@ class LaserWorker:
                     data = self.serial_port.read(self.serial_port.in_waiting)
                     if data:
                         buffer.extend(data)
-                        idle_deadline = time.time() + (idle_ms / 1000)
+                        # idle_deadline = time.time() + (idle_ms / 1000)
                         # break  --> để đọc tất cả dữ liệu, nhưng nếu không có dữ liệu mới trong 100ms thì dừng
                         # Nếu nhận dữ liệu kết thúc bằng new line (\r\n)
-                        # if buffer.endswith(b"\n") or buffer.endswith(b"\r\n"):
-                        #     break
+                        if buffer.endswith(b"\n") or buffer.endswith(b"\r\n"):
+                            break
                 else:
-                    if idle_deadline and time.time() > idle_deadline:
-                        break
+                    # if idle_deadline and time.time() > idle_deadline:
                     time.sleep(0.01)
             except SerialException as exc:
                 self.is_connected = False
